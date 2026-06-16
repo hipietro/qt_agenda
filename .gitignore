@@ -1,1 +1,38 @@
 handoff_progetto_qt_oop.md
+# Build folders
+build/
+build-*/
+debug/
+release/
+
+# Object files and binaries
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+*.app
+
+# qmake / Qt Creator
+Makefile
+.qmake.stash
+*.pro.user
+*.pro.user.*
+moc_*
+ui_*
+qrc_*
+
+# macOS
+.DS_Store
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# LaTeX generated files
+docs/relation/*.aux
+docs/relation/*.log
+docs/relation/*.out
+docs/relation/*.toc
