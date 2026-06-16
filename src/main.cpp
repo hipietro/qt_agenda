@@ -5,9 +5,8 @@
 #include <QDateTime>
 
 #include <memory>
-#include <vector>
 
-#include "model/Activity.h"
+#include "model/ActivityManager.h"
 #include "model/EventActivity.h"
 #include "model/DeadlineActivity.h"
 #include "model/ReminderActivity.h"
@@ -24,8 +23,9 @@ int main(int argc, char *argv[])
 
     const QDateTime now = QDateTime::currentDateTime();
 
-    std::vector<std::unique_ptr<Activity>> activities;
-    activities.push_back(std::make_unique<EventActivity>(
+    ActivityManager manager;
+
+    manager.addActivity(std::make_unique<EventActivity>(
         "Object-Oriented Programming lecture",
         now.addDays(1),
         now.addDays(1).addSecs(7200),
@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
         Priority::High
     ));
 
-    activities.push_back(std::make_unique<DeadlineActivity>(
+    manager.addActivity(std::make_unique<DeadlineActivity>(
         "Submit Qt project",
         now.addDays(14),
         "Programming exam",
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
         Priority::Critical
     ));
 
-    activities.push_back(std::make_unique<ReminderActivity>(
+    manager.addActivity(std::make_unique<ReminderActivity>(
         "Call the doctor",
         now.addSecs(3600),
         15,
@@ -56,24 +56,26 @@ int main(int argc, char *argv[])
         Priority::Medium
     ));
 
-    ChecklistActivity checklist(
+    auto checklist = std::make_unique<ChecklistActivity>(
         "Prepare study session",
         now.addDays(3),
-        {},
+        QVector<ChecklistItem>{},
         "Prepare material before studying",
         "University",
         Priority::Medium
     );
-    checklist.addItem("Review theory");
-    checklist.addItem("Solve exercises");
-    checklist.addItem("Write summary notes");
 
-    activities.push_back(checklist.clone());
+    checklist->addItem("Review theory");
+    checklist->addItem("Solve exercises");
+    checklist->addItem("Write summary notes");
+
+    manager.addActivity(std::move(checklist));
 
     QString output;
-    output += "Agenda Qt - Core model hierarchy initialized\n\n";
+    output += "Agenda Qt - ActivityManager initialized\n\n";
+    output += QString("Stored activities: %1\n\n").arg(manager.size());
 
-    for (const auto& activity : activities) {
+    for (const Activity* activity : manager.activities()) {
         output += activity->summary();
         output += activity->isOverdue(now) ? " | OVERDUE\n" : " | OK\n";
     }

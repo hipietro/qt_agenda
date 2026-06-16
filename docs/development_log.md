@@ -115,3 +115,34 @@ Validation:
 - Verified that the application opens correctly on macOS.
 
 Estimated time spent: 2h
+
+### 2026-06-17 - ActivityManager
+
+Implemented `ActivityManager`, the model-level class responsible for owning and managing activities.
+
+Added:
+
+- storage based on `std::vector<std::unique_ptr<Activity>>`
+- safe activity insertion
+- activity removal by id
+- activity replacement by id
+- lookup by id
+- duplicate id prevention
+- read-only access to stored activities through non-owning `const Activity*` pointers
+- activity cloning by id
+
+Design notes:
+
+- `ActivityManager` owns all activities and prevents unsafe memory handling.
+- Activities are stored polymorphically through `std::unique_ptr<Activity>`.
+- The class is independent from the GUI and does not use Qt Widgets.
+- `removeActivity(...)` returns the removed activity, which will be useful later for undo/redo commands.
+- `replaceActivity(...)` requires the replacement object to preserve the same id, preventing accidental identity changes.
+
+Validation:
+
+- Updated temporary `main.cpp` test code to use `ActivityManager`.
+- Verified that four different concrete activity types can be stored and displayed polymorphically.
+- Verified successful qmake/make compilation.
+
+Estimated time spent: 1h
