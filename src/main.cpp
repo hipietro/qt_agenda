@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "model/ActivityManager.h"
+#include "model/SearchEngine.h"
 #include "model/EventActivity.h"
 #include "model/DeadlineActivity.h"
 #include "model/ReminderActivity.h"
@@ -72,12 +73,49 @@ int main(int argc, char *argv[])
     manager.addActivity(std::move(checklist));
 
     QString output;
-    output += "Agenda Qt - ActivityManager initialized\n\n";
+    output += "Agenda Qt - Advanced search initialized\n\n";
     output += QString("Stored activities: %1\n\n").arg(manager.size());
+
+    output += "All activities:\n\n";
 
     for (const Activity* activity : manager.activities()) {
         output += activity->summary();
         output += activity->isOverdue(now) ? " | OVERDUE\n" : " | OK\n";
+    }
+
+    output += "\n----------------------------------------\n\n";
+
+    const QString normalQuery = "qt";
+    const SearchEngine::SearchResponse normalSearch =
+        SearchEngine::search(manager.activities(), normalQuery);
+
+    output += QString("Search query: \"%1\"\n").arg(normalQuery);
+    output += QString("Direct results: %1\n\n").arg(static_cast<int>(normalSearch.results.size()));
+
+    for (const SearchEngine::SearchResult& result : normalSearch.results) {
+        output += QString("- %1 [matched field: %2, score: %3]\n")
+                .arg(result.activity->title())
+                .arg(result.matchedField)
+                .arg(result.score);
+    }
+
+    output += "\n----------------------------------------\n\n";
+
+    const QString typoQuery = "projet";
+    const SearchEngine::SearchResponse typoSearch =
+        SearchEngine::search(manager.activities(), typoQuery);
+
+    output += QString("Search query with typo: \"%1\"\n").arg(typoQuery);
+    output += QString("Direct results: %1\n").arg(static_cast<int>(typoSearch.results.size()));
+
+    if (!typoSearch.hasResults() && typoSearch.suggestion.isValid()) {
+        output += QString("No direct result. Did you mean: %1? ")
+                .arg(typoSearch.suggestion.suggestedText);
+        output += QString("(matched text: %1, distance: %2)\n")
+                .arg(typoSearch.suggestion.matchedText)
+                .arg(typoSearch.suggestion.distance);
+    } else if (!typoSearch.hasResults()) {
+        output += "No direct result and no reliable suggestion found.\n";
     }
 
     QMainWindow window;

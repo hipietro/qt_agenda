@@ -16,7 +16,8 @@ SOURCES += \
     src/model/DeadlineActivity.cpp \
     src/model/ReminderActivity.cpp \
     src/model/ChecklistActivity.cpp \
-    src/model/ActivityManager.cpp
+    src/model/ActivityManager.cpp \
+    src/model/SearchEngine.cpp
 
 HEADERS += \
     src/model/Priority.h \
@@ -25,7 +26,8 @@ HEADERS += \
     src/model/DeadlineActivity.h \
     src/model/ReminderActivity.h \
     src/model/ChecklistActivity.h \
-    src/model/ActivityManager.h
+    src/model/ActivityManager.h \
+    src/model/SearchEngine.h
 
 RESOURCES += \
     resources/resources.qrc
