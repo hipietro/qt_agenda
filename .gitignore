@@ -36,3 +36,6 @@ docs/relation/*.aux
 docs/relation/*.log
 docs/relation/*.out
 docs/relation/*.toc
+
+# VS Code local settings
+.vscode/

@@ -5,8 +5,25 @@ CONFIG += c++17
 TARGET = agenda_qt
 TEMPLATE = app
 
+INCLUDEPATH += \
+    src \
+    src/model
+
 SOURCES += \
-    src/main.cpp
+    src/main.cpp \
+    src/model/Activity.cpp \
+    src/model/EventActivity.cpp \
+    src/model/DeadlineActivity.cpp \
+    src/model/ReminderActivity.cpp \
+    src/model/ChecklistActivity.cpp
+
+HEADERS += \
+    src/model/Priority.h \
+    src/model/Activity.h \
+    src/model/EventActivity.h \
+    src/model/DeadlineActivity.h \
+    src/model/ReminderActivity.h \
+    src/model/ChecklistActivity.h
 
 RESOURCES += \
     resources/resources.qrc

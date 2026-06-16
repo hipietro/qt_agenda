@@ -80,3 +80,38 @@ Notes:
 - Docker is not currently installed locally, but Docker compatibility must be checked before delivery.
 
 Estimated time spent: 1h
+### 2026-06-17 - Core activity hierarchy
+
+Implemented the first version of the logical model.
+
+Added:
+
+- abstract base class `Activity`
+- concrete class `EventActivity`
+- concrete class `DeadlineActivity`
+- concrete class `ReminderActivity`
+- concrete class `ChecklistActivity`
+- `Priority` enum
+- polymorphic methods:
+  - `primaryDate()`
+  - `isOverdue(...)`
+  - `summary()`
+  - `clone()`
+
+Design notes:
+
+- The model does not depend on Qt Widgets or GUI classes.
+- The base class contains shared attributes such as id, title, description, category, priority, completion state, creation date and update date.
+- Each concrete activity type defines specific attributes and behavior.
+- `clone()` will be useful later for templates, undo/redo and safe editing.
+- `isOverdue(...)` is implemented differently by each concrete class, providing an initial example of non-trivial polymorphism.
+
+Validation:
+
+- Created temporary test data in `main.cpp`.
+- Stored different activity types inside a `std::vector<std::unique_ptr<Activity>>`.
+- Displayed polymorphic summaries through the base `Activity` interface.
+- Verified successful compilation with qmake and make.
+- Verified that the application opens correctly on macOS.
+
+Estimated time spent: 2h
