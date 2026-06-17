@@ -74,17 +74,17 @@ bool EventActivity::isOverdue(const QDateTime& now) const
 
 QString EventActivity::summary() const
 {
-    QString text = QString("Event: %1 | %2 - %3")
+    QString text = QString("Evento: %1 | %2 - %3")
             .arg(title(),
-                 m_startDateTime.toString("yyyy-MM-dd hh:mm"),
-                 m_endDateTime.toString("yyyy-MM-dd hh:mm"));
+                 m_startDateTime.toString("dd/MM/yyyy HH:mm"),
+                 m_endDateTime.toString("dd/MM/yyyy HH:mm"));
 
     if (!m_location.isEmpty()) {
-        text += QString(" | Location: %1").arg(m_location);
+        text += QString(" | Luogo: %1").arg(m_location);
     }
 
     if (!m_participants.isEmpty()) {
-        text += QString(" | Participants: %1").arg(m_participants.join(", "));
+        text += QString(" | Partecipanti: %1").arg(m_participants.join(", "));
     }
 
     return text;

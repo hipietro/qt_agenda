@@ -178,3 +178,36 @@ Validation:
 - Verified successful qmake/make compilation.
 
 Estimated time spent: 1.5h
+
+### 2026-06-17 - Advanced activity search
+
+Implemented `SearchEngine`, a model-level component responsible for searching activities independently from the GUI.
+
+Added:
+
+- case-insensitive search
+- partial matching
+- whitespace normalization
+- accent-insensitive normalization
+- search across title, category, description and polymorphic summary
+- result ranking through weighted fields
+- typo suggestion using Levenshtein distance when no direct result is found
+
+Design notes:
+
+- The search engine returns direct results only when there is an actual normalized partial match.
+- Fuzzy matching is not mixed with normal results.
+- If no direct result is found, the engine may return a separate suggestion.
+- This keeps the user interface clear because real matches and typo suggestions are not confused.
+- Search uses the base `Activity` interface and can work with any current or future concrete activity type.
+- The use of `summary()` lets the search include type-specific information through polymorphism without checking the concrete class manually.
+- All user-facing text currently displayed by the application has been kept in Italian.
+
+Validation:
+
+- Added temporary search tests in `main.cpp`.
+- Verified normal partial search with query `qt`.
+- Verified typo suggestion with query `progeto`, which suggests `Consegnare il progetto Qt`.
+- Verified successful qmake/make compilation.
+
+Estimated time spent: 1.5h

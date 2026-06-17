@@ -61,14 +61,14 @@ bool DeadlineActivity::isOverdue(const QDateTime& now) const
 
 QString DeadlineActivity::summary() const
 {
-    QString text = QString("Deadline: %1 | Due: %2")
-            .arg(title(), m_dueDate.toString("yyyy-MM-dd hh:mm"));
+    QString text = QString("Scadenza: %1 | Entro: %2")
+            .arg(title(), m_dueDate.toString("dd/MM/yyyy HH:mm"));
 
     if (!m_context.isEmpty()) {
-        text += QString(" | Context: %1").arg(m_context);
+        text += QString(" | Contesto: %1").arg(m_context);
     }
 
-    text += m_hardDeadline ? " | Hard deadline" : " | Soft deadline";
+    text += m_hardDeadline ? " | Scadenza rigida" : " | Scadenza flessibile";
 
     return text;
 }
