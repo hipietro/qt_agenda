@@ -77,3 +77,8 @@ std::unique_ptr<Activity> DeadlineActivity::clone() const
 {
     return std::make_unique<DeadlineActivity>(*this);
 }
+
+ActivityKind DeadlineActivity::kind() const
+{
+    return ActivityKind::Deadline;
+}

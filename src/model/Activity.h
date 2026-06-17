@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "Priority.h"
+#include "ActivityKind.h"
 
 class Activity
 {
@@ -41,6 +42,7 @@ public:
     QDateTime createdAt() const;
     QDateTime updatedAt() const;
 
+    virtual ActivityKind kind() const = 0;
     virtual QDateTime primaryDate() const = 0;
     virtual bool isOverdue(const QDateTime& now) const = 0;
     virtual QString summary() const = 0;

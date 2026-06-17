@@ -80,3 +80,7 @@ std::unique_ptr<Activity> ReminderActivity::clone() const
     return std::make_unique<ReminderActivity>(*this);
 }
 
+ActivityKind ReminderActivity::kind() const
+{
+    return ActivityKind::Reminder;
+}

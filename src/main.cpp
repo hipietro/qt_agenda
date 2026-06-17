@@ -5,9 +5,11 @@
 #include <QDateTime>
 
 #include <memory>
+#include <vector>
 
 #include "model/ActivityManager.h"
 #include "model/SearchEngine.h"
+#include "model/ActivityFilter.h"
 #include "model/EventActivity.h"
 #include "model/DeadlineActivity.h"
 #include "model/ReminderActivity.h"
@@ -53,6 +55,37 @@ static QString matchedFieldToItalian(const QString& matchedField)
     }
 
     return "campo sconosciuto";
+}
+
+static QString priorityToItalian(Priority priority)
+{
+    switch (priority) {
+    case Priority::Low:
+        return "Bassa";
+    case Priority::Medium:
+        return "Media";
+    case Priority::High:
+        return "Alta";
+    case Priority::Critical:
+        return "Critica";
+    }
+
+    return "Media";
+}
+
+static void appendActivityList(QString& output,
+                               const std::vector<const Activity*>& activities,
+                               const QDateTime& now)
+{
+    for (const Activity* activity : activities) {
+        output += QString("- %1 | Tipo: %2 | Categoria: %3 | Priorità: %4 | Stato: %5 | Data principale: %6\n")
+                .arg(activity->title())
+                .arg(activityKindToItalianString(activity->kind()))
+                .arg(activity->category())
+                .arg(priorityToItalian(activity->priority()))
+                .arg(activityStatusToItalian(activity, now))
+                .arg(activity->primaryDate().toString("dd/MM/yyyy HH:mm"));
+    }
 }
 
 int main(int argc, char *argv[])
@@ -115,18 +148,11 @@ int main(int argc, char *argv[])
     manager.addActivity(std::move(checklist));
 
     QString output;
-    output += "Agenda Qt - Ricerca avanzata inizializzata\n\n";
+    output += "Agenda Qt - Ricerca, filtri e ordinamento inizializzati\n\n";
     output += QString("Attività salvate: %1\n\n").arg(manager.size());
 
     output += "Tutte le attività:\n\n";
-
-    for (const Activity* activity : manager.activities()) {
-        output += QString("- %1 | Categoria: %2 | Stato: %3 | Data principale: %4\n")
-                .arg(activity->title())
-                .arg(activity->category())
-                .arg(activityStatusToItalian(activity, now))
-                .arg(activity->primaryDate().toString("dd/MM/yyyy HH:mm"));
-    }
+    appendActivityList(output, manager.activities(), now);
 
     output += "\n----------------------------------------\n\n";
 
@@ -163,9 +189,40 @@ int main(int argc, char *argv[])
         output += "Nessun risultato diretto e nessun suggerimento affidabile trovato.\n";
     }
 
+    output += "\n----------------------------------------\n\n";
+
+    ActivityFilter::Criteria universityCriteria;
+    universityCriteria.category = "Università";
+    universityCriteria.completion = ActivityFilter::CompletionFilter::ActiveOnly;
+    universityCriteria.fromDate = now;
+    universityCriteria.toDate = now.addDays(15);
+    universityCriteria.sortKey = ActivityFilter::SortKey::PrimaryDate;
+    universityCriteria.sortOrder = ActivityFilter::SortOrder::Ascending;
+
+    const std::vector<const Activity*> universityActivities =
+        ActivityFilter::apply(manager.activities(), universityCriteria, now);
+
+    output += "Filtro: categoria Università, attività attive, prossimi 15 giorni, ordinate per data\n";
+    output += QString("Risultati filtrati: %1\n\n").arg(static_cast<int>(universityActivities.size()));
+    appendActivityList(output, universityActivities, now);
+
+    output += "\n----------------------------------------\n\n";
+
+    ActivityFilter::Criteria deadlineCriteria;
+    deadlineCriteria.kind = ActivityKind::Deadline;
+    deadlineCriteria.sortKey = ActivityFilter::SortKey::Priority;
+    deadlineCriteria.sortOrder = ActivityFilter::SortOrder::Descending;
+
+    const std::vector<const Activity*> deadlineActivities =
+        ActivityFilter::apply(manager.activities(), deadlineCriteria, now);
+
+    output += "Filtro: solo scadenze, ordinate per priorità decrescente\n";
+    output += QString("Risultati filtrati: %1\n\n").arg(static_cast<int>(deadlineActivities.size()));
+    appendActivityList(output, deadlineActivities, now);
+
     QMainWindow window;
     window.setWindowTitle("Agenda Qt");
-    window.resize(900, 600);
+    window.resize(1000, 700);
 
     QTextEdit *textEdit = new QTextEdit();
     textEdit->setReadOnly(true);

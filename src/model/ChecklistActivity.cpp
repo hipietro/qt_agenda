@@ -136,3 +136,8 @@ bool ChecklistActivity::allSubtasksCompleted() const
 
     return true;
 }
+
+ActivityKind ChecklistActivity::kind() const
+{
+    return ActivityKind::Checklist;
+}

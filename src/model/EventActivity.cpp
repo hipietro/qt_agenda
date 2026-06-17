@@ -62,10 +62,16 @@ void EventActivity::setParticipants(const QStringList& participants)
     touch();
 }
 
+ActivityKind EventActivity::kind() const
+{
+    return ActivityKind::Event;
+}
+
 QDateTime EventActivity::primaryDate() const
 {
     return m_startDateTime;
 }
+
 
 bool EventActivity::isOverdue(const QDateTime& now) const
 {

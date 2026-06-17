@@ -42,6 +42,7 @@ public:
     bool isOverdue(const QDateTime& now) const override;
     QString summary() const override;
     std::unique_ptr<Activity> clone() const override;
+    ActivityKind kind() const override;
 
 private:
     bool allSubtasksCompleted() const;
