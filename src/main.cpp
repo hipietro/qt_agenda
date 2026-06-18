@@ -15,6 +15,7 @@
 #include "model/ReminderActivity.h"
 #include "model/ChecklistActivity.h"
 #include "model/CategoryManager.h"
+#include "model/RecurrenceRule.h"
 
 static QString activityStatusToString(const Activity* activity, const QDateTime& now)
 {
@@ -79,13 +80,23 @@ static void appendActivityList(QString& output,
                                const QDateTime& now)
 {
     for (const Activity* activity : activities) {
-        output += QString("- %1 | Type: %2 | Category: %3 | Priority: %4 | Status: %5 | Main date: %6\n")
-                .arg(activity->title())
-                .arg(activityKindToString(activity->kind()))
-                .arg(activity->category())
-                .arg(priorityToDisplayString(activity->priority()))
-                .arg(activityStatusToString(activity, now))
-                .arg(activity->primaryDate().toString("yyyy-MM-dd HH:mm"));
+        const QString recurrenceText = activity->hasRecurrence()
+            ? activity->recurrenceRule()->toDisplayString()
+            : "No recurrence";
+
+        const QDateTime nextOccurrence = activity->nextOccurrenceAfter(now);
+        const QString nextOccurrenceText = nextOccurrence.isValid()
+            ? nextOccurrence.toString("yyyy-MM-dd HH:mm")
+            : "No future occurrence";
+        output += QString("- %1 | Type: %2 | Category: %3 | Priority: %4 | Status: %5 | Main date: %6 | Recurrence: %7 | Next: %8\n")
+            .arg(activity->title())
+            .arg(activityKindToString(activity->kind()))
+            .arg(activity->category())
+            .arg(priorityToDisplayString(activity->priority()))
+            .arg(activityStatusToString(activity, now))
+            .arg(activity->primaryDate().toString("yyyy-MM-dd HH:mm"))
+            .arg(recurrenceText)
+            .arg(nextOccurrenceText);
     }
 }
 
@@ -128,7 +139,7 @@ int main(int argc, char *argv[])
         Priority::Critical
     ));
 
-    manager.addActivity(std::make_unique<ReminderActivity>(
+    auto reminder = std::make_unique<ReminderActivity>(
         "Call the doctor",
         now.addSecs(3600),
         15,
@@ -136,7 +147,17 @@ int main(int argc, char *argv[])
         "Personal reminder",
         "Health",
         Priority::Medium
+    );
+
+    reminder->setRecurrenceRule(RecurrenceRule(
+        RecurrenceRule::Frequency::Weekly,
+        1,
+        RecurrenceRule::EndMode::AfterOccurrences,
+        QDateTime(),
+        5
     ));
+
+    manager.addActivity(std::move(reminder));
 
     auto checklist = std::make_unique<ChecklistActivity>(
         "Prepare study session",
@@ -150,6 +171,14 @@ int main(int argc, char *argv[])
     checklist->addItem("Review theory");
     checklist->addItem("Solve exercises");
     checklist->addItem("Write summary notes");
+
+    checklist->setRecurrenceRule(RecurrenceRule(
+        RecurrenceRule::Frequency::Daily,
+        2,
+        RecurrenceRule::EndMode::UntilDate,
+        now.addDays(10),
+        1
+    ));
 
     manager.addActivity(std::move(checklist));
     const Category* universityCategory = categoryManager.findCategoryByName("University");
@@ -169,7 +198,7 @@ int main(int argc, char *argv[])
     output += "Available categories:\n\n";
 
     for (const Category& category : categoryManager.categories()) {
-    output += QString("- %1 | Color: %2\n")
+        output += QString("- %1 | Color: %2\n")
             .arg(category.name())
             .arg(category.colorHex());
     }
@@ -243,6 +272,20 @@ int main(int argc, char *argv[])
     output += "Filter: deadlines only, sorted by descending priority\n";
     output += QString("Filtered results: %1\n\n").arg(static_cast<int>(deadlineActivities.size()));
     appendActivityList(output, deadlineActivities, now);
+
+    output += "\n----------------------------------------\n\n";
+
+    ActivityFilter::Criteria recurringCriteria;
+    recurringCriteria.recurring = true;
+    recurringCriteria.sortKey = ActivityFilter::SortKey::PrimaryDate;
+    recurringCriteria.sortOrder = ActivityFilter::SortOrder::Ascending;
+
+    const std::vector<const Activity*> recurringActivities =
+        ActivityFilter::apply(manager.activities(), recurringCriteria, now);
+
+    output += "Filter: recurring activities only, sorted by date\n";
+    output += QString("Filtered results: %1\n\n").arg(static_cast<int>(recurringActivities.size()));
+    appendActivityList(output, recurringActivities, now);
 
     QMainWindow window;
     window.setWindowTitle("Agenda Qt");

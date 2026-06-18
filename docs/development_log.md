@@ -279,3 +279,47 @@ Validation:
 - Verified successful qmake/make compilation.
 
 Estimated time spent: 1.5h
+
+### 2026-06-17 - Recurring activities
+
+Implemented model-level support for recurring activities.
+
+Added:
+
+- `RecurrenceRule` model class
+- recurrence frequencies:
+  - daily
+  - weekly
+  - monthly
+  - yearly
+- recurrence interval support
+- recurrence ending modes:
+  - never
+  - until date
+  - after a fixed number of occurrences
+- recurrence validation
+- next occurrence calculation
+- optional recurrence support in `Activity`
+- recurrence removal through `Activity::clearRecurrenceRule()`
+- recurring activity filtering through `ActivityFilter`
+
+Design notes:
+
+- Recurrence is stored as an optional rule inside `Activity`.
+- Infinite recurrence is supported only through the explicit `EndMode::Never` option.
+- The default recurrence behavior avoids accidental infinite recurrence by using `AfterOccurrences`.
+- Recurring activities do not generate infinite copies in the model.
+- The next occurrence is calculated dynamically from the activity primary date and the recurrence rule.
+- Recurrence logic is independent from Qt Widgets and GUI code.
+- `Activity::nextOccurrenceAfter(...)` uses the polymorphic `primaryDate()` method, so each concrete activity type determines the starting date according to its own behavior.
+
+Validation:
+
+- Added temporary recurring test data in `main.cpp`.
+- Assigned a weekly recurrence to a reminder.
+- Assigned a repeated daily recurrence to a checklist with an end date.
+- Verified next occurrence calculation.
+- Verified filtering recurring activities only.
+- Verified successful qmake/make compilation.
+
+Estimated time spent: 2h

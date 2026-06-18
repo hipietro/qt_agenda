@@ -50,6 +50,7 @@ public:
         std::optional<ActivityKind> kind;
         QString category;
         std::optional<Priority> priority;
+        std::optional<bool> recurring;
         CompletionFilter completion = CompletionFilter::Any;
         OverdueFilter overdue = OverdueFilter::Any;
         std::optional<QDateTime> fromDate;

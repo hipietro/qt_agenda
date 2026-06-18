@@ -91,6 +91,47 @@ QDateTime Activity::updatedAt() const
     return m_updatedAt;
 }
 
+bool Activity::hasRecurrence() const
+{
+    return m_recurrenceRule.has_value();
+}
+
+std::optional<RecurrenceRule> Activity::recurrenceRule() const
+{
+    return m_recurrenceRule;
+}
+
+void Activity::setRecurrenceRule(const RecurrenceRule& recurrenceRule)
+{
+    if (recurrenceRule.isValid()) {
+        m_recurrenceRule = recurrenceRule;
+        touch();
+    }
+}
+
+void Activity::clearRecurrenceRule()
+{
+    if (m_recurrenceRule.has_value()) {
+        m_recurrenceRule.reset();
+        touch();
+    }
+}
+
+QDateTime Activity::nextOccurrenceAfter(const QDateTime& after) const
+{
+    const QDateTime firstOccurrence = primaryDate();
+
+    if (!firstOccurrence.isValid() || !after.isValid()) {
+        return QDateTime();
+    }
+
+    if (!m_recurrenceRule.has_value()) {
+        return firstOccurrence > after ? firstOccurrence : QDateTime();
+    }
+
+    return m_recurrenceRule->nextOccurrenceAfter(firstOccurrence, after);
+}
+
 void Activity::touch()
 {
     m_updatedAt = QDateTime::currentDateTime();

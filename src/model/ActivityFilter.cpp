@@ -47,6 +47,11 @@ bool ActivityFilter::matches(const Activity* activity,
         return false;
     }
 
+    if (criteria.recurring.has_value() &&
+        activity->hasRecurrence() != criteria.recurring.value()) {
+        return false;
+    }
+
     switch (criteria.completion) {
     case CompletionFilter::CompletedOnly:
         if (!activity->isCompleted()) {

@@ -4,9 +4,11 @@
 #include <QString>
 #include <QDateTime>
 #include <memory>
+#include <optional>
 
 #include "Priority.h"
 #include "ActivityKind.h"
+#include "RecurrenceRule.h"
 
 class Activity
 {
@@ -42,6 +44,12 @@ public:
     QDateTime createdAt() const;
     QDateTime updatedAt() const;
 
+    bool hasRecurrence() const;
+    std::optional<RecurrenceRule> recurrenceRule() const;
+    void setRecurrenceRule(const RecurrenceRule& recurrenceRule);
+    void clearRecurrenceRule();
+    QDateTime nextOccurrenceAfter(const QDateTime& after) const;
+
     virtual ActivityKind kind() const = 0;
     virtual QDateTime primaryDate() const = 0;
     virtual bool isOverdue(const QDateTime& now) const = 0;
@@ -60,6 +68,7 @@ private:
     bool m_completed;
     QDateTime m_createdAt;
     QDateTime m_updatedAt;
+    std::optional<RecurrenceRule> m_recurrenceRule;
 
     static QString generateId();
 };

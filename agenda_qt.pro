@@ -20,6 +20,7 @@ SOURCES += \
     src/model/SearchEngine.cpp \
     src/model/ActivityFilter.cpp \
     src/model/Category.cpp \
+    src/model/RecurrenceRule.cpp \
     src/model/CategoryManager.cpp
 
 HEADERS += \
@@ -34,6 +35,7 @@ HEADERS += \
     src/model/SearchEngine.h \
     src/model/ActivityFilter.h \
     src/model/Category.h \
+    src/model/RecurrenceRule.h \
     src/model/CategoryManager.h
 
 RESOURCES += \
