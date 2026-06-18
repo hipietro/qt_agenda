@@ -16,6 +16,7 @@
 #include "model/ChecklistActivity.h"
 #include "model/CategoryManager.h"
 #include "model/RecurrenceRule.h"
+#include "model/ActivityTemplateManager.h"
 
 static QString activityStatusToString(const Activity* activity, const QDateTime& now)
 {
@@ -113,10 +114,39 @@ int main(int argc, char *argv[])
 
     ActivityManager manager;
     CategoryManager categoryManager;
+    ActivityTemplateManager templateManager;
 
     categoryManager.addCategory("University", "#3F51B5");
     categoryManager.addCategory("Health", "#4CAF50");
     categoryManager.addCategory("Personal", "#9E9E9E");
+
+    templateManager.addTemplate(
+    "Exam deadline",
+    std::make_unique<DeadlineActivity>(
+        "New exam deadline",
+        now.addDays(7),
+        "University exam",
+        true,
+        "Prepare and submit exam-related material",
+        "University",
+        Priority::High
+    )
+);
+
+auto studyChecklistTemplate = std::make_unique<ChecklistActivity>(
+    "New study checklist",
+    now.addDays(5),
+    QVector<ChecklistItem>{},
+    "Reusable checklist for study sessions",
+    "University",
+    Priority::Medium
+);
+
+studyChecklistTemplate->addItem("Review theory");
+studyChecklistTemplate->addItem("Practice exercises");
+studyChecklistTemplate->addItem("Write final notes");
+
+templateManager.addTemplate("Study checklist", std::move(studyChecklistTemplate));
 
     manager.addActivity(std::make_unique<EventActivity>(
         "Object-Oriented Programming lecture",
@@ -190,10 +220,20 @@ int main(int argc, char *argv[])
 
     categoryManager.removeCategoryByName("Personal");
 
+    std::unique_ptr<Activity> activityFromTemplate =
+    templateManager.createActivityFromTemplateName("Exam deadline");
+
+if (activityFromTemplate) {
+    activityFromTemplate->setTitle("Register for OOP exam");
+    activityFromTemplate->setCategory("Study");
+    manager.addActivity(std::move(activityFromTemplate));
+}
+
     QString output;
     output += "Agenda Qt - Search, filters and sorting initialized\n\n";
     output += QString("Stored activities: %1\n\n").arg(manager.size());
     output += QString("Stored categories: %1\n\n").arg(categoryManager.size());
+    output += QString("Stored templates: %1\n\n").arg(templateManager.size());
 
     output += "Available categories:\n\n";
 
@@ -209,6 +249,21 @@ int main(int argc, char *argv[])
     appendActivityList(output, manager.activities(), now);
 
     output += "\n----------------------------------------\n\n";
+
+    output += "Available templates:\n\n";
+
+for (const ActivityTemplate* activityTemplate : templateManager.templates()) {
+    if (!activityTemplate || !activityTemplate->prototype()) {
+        continue;
+    }
+
+    output += QString("- %1 | Type: %2 | Prototype title: %3\n")
+            .arg(activityTemplate->name())
+            .arg(activityKindToString(activityTemplate->prototype()->kind()))
+            .arg(activityTemplate->prototype()->title());
+}
+
+output += "\n----------------------------------------\n\n";
 
     const QString normalQuery = "qt";
     const SearchEngine::SearchResponse normalSearch =

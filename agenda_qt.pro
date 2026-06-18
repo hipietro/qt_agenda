@@ -21,6 +21,8 @@ SOURCES += \
     src/model/ActivityFilter.cpp \
     src/model/Category.cpp \
     src/model/RecurrenceRule.cpp \
+    src/model/ActivityTemplate.cpp \
+    src/model/ActivityTemplateManager.cpp \
     src/model/CategoryManager.cpp
 
 HEADERS += \
@@ -36,6 +38,8 @@ HEADERS += \
     src/model/ActivityFilter.h \
     src/model/Category.h \
     src/model/RecurrenceRule.h \
+    src/model/ActivityTemplate.h \
+    src/model/ActivityTemplateManager.h \
     src/model/CategoryManager.h
 
 RESOURCES += \

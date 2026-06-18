@@ -137,6 +137,19 @@ void Activity::touch()
     m_updatedAt = QDateTime::currentDateTime();
 }
 
+std::unique_ptr<Activity> Activity::cloneWithNewId() const
+{
+    std::unique_ptr<Activity> copy = clone();
+
+    const QDateTime now = QDateTime::currentDateTime();
+
+    copy->m_id = generateId();
+    copy->m_createdAt = now;
+    copy->m_updatedAt = now;
+
+    return copy;
+}
+
 QString Activity::generateId()
 {
     return QUuid::createUuid().toString(QUuid::WithoutBraces);

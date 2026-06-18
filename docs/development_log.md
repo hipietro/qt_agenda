@@ -323,3 +323,40 @@ Validation:
 - Verified successful qmake/make compilation.
 
 Estimated time spent: 2h
+
+### 2026-06-17 - Activity templates
+
+Implemented model-level support for activity templates.
+
+Added:
+
+- `ActivityTemplate` model class
+- `ActivityTemplateManager` class
+- template creation
+- template update
+- template deletion
+- duplicate template name prevention
+- creation of new activities from templates
+- deep-copy support for templates
+- `Activity::cloneWithNewId()` for creating independent activities from prototypes
+
+Design notes:
+
+- Templates store a prototype activity.
+- Creating an activity from a template uses polymorphic cloning.
+- `clone()` preserves the original activity identity and remains useful for undo/redo.
+- `cloneWithNewId()` creates a separate activity with a new id and updated timestamps, which is appropriate for templates and future duplicate actions.
+- This implementation applies the Prototype Pattern in a concrete and useful way.
+- The template system is independent from Qt Widgets and GUI code.
+- Templates are prepared for future JSON persistence and GUI integration.
+
+Validation:
+
+- Added temporary template data in `main.cpp`.
+- Created an exam deadline template.
+- Created a study checklist template.
+- Generated a new activity from the exam deadline template.
+- Verified that the generated activity is inserted into `ActivityManager`.
+- Verified successful qmake/make compilation.
+
+Estimated time spent: 1.5h
