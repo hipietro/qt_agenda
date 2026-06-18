@@ -88,6 +88,40 @@ std::unique_ptr<Activity> ActivityManager::cloneActivity(const QString& id) cons
     return activity->clone();
 }
 
+int ActivityManager::replaceCategory(const QString& oldCategory, const QString& newCategory)
+{
+    int updatedCount = 0;
+
+    const QString normalizedOldCategory = oldCategory.simplified().toLower();
+
+    for (std::unique_ptr<Activity>& activity : m_activities) {
+        if (activity &&
+            activity->category().simplified().toLower() == normalizedOldCategory) {
+            activity->setCategory(newCategory);
+            ++updatedCount;
+        }
+    }
+
+    return updatedCount;
+}
+
+int ActivityManager::clearCategory(const QString& category)
+{
+    int updatedCount = 0;
+
+    const QString normalizedCategory = category.simplified().toLower();
+
+    for (std::unique_ptr<Activity>& activity : m_activities) {
+        if (activity &&
+            activity->category().simplified().toLower() == normalizedCategory) {
+            activity->setCategory(QString());
+            ++updatedCount;
+        }
+    }
+
+    return updatedCount;
+}
+
 std::vector<const Activity*> ActivityManager::activities() const
 {
     std::vector<const Activity*> result;

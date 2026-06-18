@@ -28,8 +28,13 @@ public:
     bool containsActivity(const QString& id) const;
     std::unique_ptr<Activity> cloneActivity(const QString& id) const;
 
+    int replaceCategory(const QString& oldCategory, const QString& newCategory);
+    int clearCategory(const QString& category);
+
+
     std::vector<const Activity*> activities() const;
 
+    
     int size() const;
     bool isEmpty() const;
     void clear();

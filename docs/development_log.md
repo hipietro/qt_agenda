@@ -241,3 +241,41 @@ Validation:
 - Verified that visible application text is now in English.
 
 Estimated time spent: 0.5h
+
+### 2026-06-17 - Customizable categories
+
+Implemented model-level support for customizable activity categories.
+
+Added:
+
+- `Category` model class
+- `CategoryManager` class
+- category creation
+- category update
+- category deletion by id and by name
+- duplicate category name prevention
+- stable category ids
+- category color validation using hex color strings
+- activity category propagation support through `ActivityManager::replaceCategory(...)`
+- activity category clearing support through `ActivityManager::clearCategory(...)`
+
+Design notes:
+
+- Categories are managed independently from the GUI.
+- Category names are normalized when checking duplicates, so names differing only by case or extra spaces are treated as duplicates.
+- Activities currently store their category as a string, which keeps filtering and search simple.
+- `CategoryManager` prepares the project for future JSON persistence and GUI category management.
+- `ActivityManager` provides explicit methods to propagate category rename/delete operations to existing activities.
+- This keeps responsibility separated: `CategoryManager` manages categories, while `ActivityManager` updates activities.
+
+Validation:
+
+- Added temporary test data in `main.cpp`.
+- Created initial categories.
+- Renamed `University` to `Study`.
+- Propagated the category rename to existing activities.
+- Removed an unused category.
+- Verified that filtering by the renamed category works.
+- Verified successful qmake/make compilation.
+
+Estimated time spent: 1.5h

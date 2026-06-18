@@ -14,6 +14,7 @@
 #include "model/DeadlineActivity.h"
 #include "model/ReminderActivity.h"
 #include "model/ChecklistActivity.h"
+#include "model/CategoryManager.h"
 
 static QString activityStatusToString(const Activity* activity, const QDateTime& now)
 {
@@ -100,6 +101,11 @@ int main(int argc, char *argv[])
     const QDateTime now = QDateTime::currentDateTime();
 
     ActivityManager manager;
+    CategoryManager categoryManager;
+
+    categoryManager.addCategory("University", "#3F51B5");
+    categoryManager.addCategory("Health", "#4CAF50");
+    categoryManager.addCategory("Personal", "#9E9E9E");
 
     manager.addActivity(std::make_unique<EventActivity>(
         "Object-Oriented Programming lecture",
@@ -146,10 +152,29 @@ int main(int argc, char *argv[])
     checklist->addItem("Write summary notes");
 
     manager.addActivity(std::move(checklist));
+    const Category* universityCategory = categoryManager.findCategoryByName("University");
+
+    if (universityCategory) {
+        categoryManager.updateCategory(universityCategory->id(), "Study", universityCategory->colorHex());
+        manager.replaceCategory("University", "Study");
+    }
+
+    categoryManager.removeCategoryByName("Personal");
 
     QString output;
     output += "Agenda Qt - Search, filters and sorting initialized\n\n";
     output += QString("Stored activities: %1\n\n").arg(manager.size());
+    output += QString("Stored categories: %1\n\n").arg(categoryManager.size());
+
+    output += "Available categories:\n\n";
+
+    for (const Category& category : categoryManager.categories()) {
+    output += QString("- %1 | Color: %2\n")
+            .arg(category.name())
+            .arg(category.colorHex());
+    }
+
+    output += "\n----------------------------------------\n\n";
 
     output += "All activities:\n\n";
     appendActivityList(output, manager.activities(), now);
@@ -192,7 +217,7 @@ int main(int argc, char *argv[])
     output += "\n----------------------------------------\n\n";
 
     ActivityFilter::Criteria universityCriteria;
-    universityCriteria.category = "University";
+    universityCriteria.category = "Study";
     universityCriteria.completion = ActivityFilter::CompletionFilter::ActiveOnly;
     universityCriteria.fromDate = now;
     universityCriteria.toDate = now.addDays(15);
@@ -202,8 +227,7 @@ int main(int argc, char *argv[])
     const std::vector<const Activity*> universityActivities =
         ActivityFilter::apply(manager.activities(), universityCriteria, now);
 
-    output += "Filter: University category, active activities, next 15 days, sorted by date\n";
-    output += QString("Filtered results: %1\n\n").arg(static_cast<int>(universityActivities.size()));
+    output += "Filter: Study category, active activities, next 15 days, sorted by date\n";    output += QString("Filtered results: %1\n\n").arg(static_cast<int>(universityActivities.size()));
     appendActivityList(output, universityActivities, now);
 
     output += "\n----------------------------------------\n\n";
