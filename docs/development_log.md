@@ -211,3 +211,33 @@ Validation:
 - Verified successful qmake/make compilation.
 
 Estimated time spent: 1.5h
+
+### 2026-06-17 - User-facing text switched to English
+
+Updated the visible application text from Italian to English.
+
+Reason:
+
+- The professor confirmed that the application can be written in English.
+- English makes the project more suitable for a public GitHub portfolio.
+- The final report will still be written in Italian.
+
+Changed:
+
+- temporary test output in `main.cpp`
+- activity summaries in concrete activity classes
+- activity kind display strings
+
+Design notes:
+
+- Source code, class names, commits and development documentation remain in English.
+- The final academic report will be written in Italian.
+- No Git rollback was performed because the language change was mixed with functional commits. A dedicated refactoring commit is safer and cleaner.
+
+Validation:
+
+- Recompiled successfully with qmake and make.
+- Verified that the application opens correctly.
+- Verified that visible application text is now in English.
+
+Estimated time spent: 0.5h

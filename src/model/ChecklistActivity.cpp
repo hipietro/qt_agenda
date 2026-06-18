@@ -110,7 +110,7 @@ bool ChecklistActivity::isOverdue(const QDateTime& now) const
 
 QString ChecklistActivity::summary() const
 {
-    return QString("Checklist: %1 | Avanzamento: %2/%3 (%4%)")
+    return QString("Checklist: %1 | Progress: %2/%3 (%4%)")
             .arg(title())
             .arg(completedItems())
             .arg(totalItems())

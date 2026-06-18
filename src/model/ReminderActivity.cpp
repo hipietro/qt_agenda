@@ -61,15 +61,15 @@ bool ReminderActivity::isOverdue(const QDateTime& now) const
 
 QString ReminderActivity::summary() const
 {
-    QString text = QString("Promemoria: %1 | Alle: %2")
-            .arg(title(), m_reminderDateTime.toString("dd/MM/yyyy HH:mm"));
+    QString text = QString("Reminder: %1 | At: %2")
+            .arg(title(), m_reminderDateTime.toString("yyyy-MM-dd HH:mm"));
 
     if (m_advanceMinutes > 0) {
-        text += QString(" | Anticipo: %1 min").arg(m_advanceMinutes);
+        text += QString(" | Advance: %1 min").arg(m_advanceMinutes);
     }
 
     if (!m_reminderNote.isEmpty()) {
-        text += QString(" | Nota: %1").arg(m_reminderNote);
+        text += QString(" | Note: %1").arg(m_reminderNote);
     }
 
     return text;

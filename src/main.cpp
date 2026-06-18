@@ -15,62 +15,62 @@
 #include "model/ReminderActivity.h"
 #include "model/ChecklistActivity.h"
 
-static QString activityStatusToItalian(const Activity* activity, const QDateTime& now)
+static QString activityStatusToString(const Activity* activity, const QDateTime& now)
 {
     if (!activity) {
-        return "Non valida";
+        return "Invalid";
     }
 
     if (activity->isCompleted()) {
-        return "Completata";
+        return "Completed";
     }
 
     if (activity->isOverdue(now)) {
-        return "Scaduta";
+        return "Overdue";
     }
 
-    return "Attiva";
+    return "Active";
 }
 
-static QString matchedFieldToItalian(const QString& matchedField)
+static QString matchedFieldToString(const QString& matchedField)
 {
     if (matchedField == "title") {
-        return "titolo";
+        return "title";
     }
 
     if (matchedField == "category") {
-        return "categoria";
+        return "category";
     }
 
     if (matchedField == "description") {
-        return "descrizione";
+        return "description";
     }
 
     if (matchedField == "summary") {
-        return "riepilogo";
+        return "summary";
     }
 
     if (matchedField == "all") {
-        return "tutti i campi";
+        return "all fields";
     }
 
-    return "campo sconosciuto";
+    return "unknown field";
 }
 
-static QString priorityToItalian(Priority priority)
+static QString priorityToDisplayString(Priority priority)
 {
     switch (priority) {
     case Priority::Low:
-        return "Bassa";
+        return "Low";
     case Priority::Medium:
-        return "Media";
+        return "Medium";
     case Priority::High:
-        return "Alta";
+        return "High";
     case Priority::Critical:
-        return "Critica";
+        return "Critical";
     }
 
-    return "Media";
+    return "Medium";
 }
 
 static void appendActivityList(QString& output,
@@ -78,13 +78,13 @@ static void appendActivityList(QString& output,
                                const QDateTime& now)
 {
     for (const Activity* activity : activities) {
-        output += QString("- %1 | Tipo: %2 | Categoria: %3 | Priorità: %4 | Stato: %5 | Data principale: %6\n")
+        output += QString("- %1 | Type: %2 | Category: %3 | Priority: %4 | Status: %5 | Main date: %6\n")
                 .arg(activity->title())
-                .arg(activityKindToItalianString(activity->kind()))
+                .arg(activityKindToString(activity->kind()))
                 .arg(activity->category())
-                .arg(priorityToItalian(activity->priority()))
-                .arg(activityStatusToItalian(activity, now))
-                .arg(activity->primaryDate().toString("dd/MM/yyyy HH:mm"));
+                .arg(priorityToDisplayString(activity->priority()))
+                .arg(activityStatusToString(activity, now))
+                .arg(activity->primaryDate().toString("yyyy-MM-dd HH:mm"));
     }
 }
 
@@ -102,56 +102,56 @@ int main(int argc, char *argv[])
     ActivityManager manager;
 
     manager.addActivity(std::make_unique<EventActivity>(
-        "Lezione di Programmazione a Oggetti",
+        "Object-Oriented Programming lecture",
         now.addDays(1),
         now.addDays(1).addSecs(7200),
-        "Aula A",
-        QStringList{"Docente", "Studenti"},
-        "Discussione sul progetto Qt",
-        "Università",
+        "Room A",
+        QStringList{"Professor", "Students"},
+        "Qt project discussion",
+        "University",
         Priority::High
     ));
 
     manager.addActivity(std::make_unique<DeadlineActivity>(
-        "Consegnare il progetto Qt",
+        "Submit Qt project",
         now.addDays(14),
-        "Esame di Programmazione",
+        "Programming exam",
         true,
-        "Consegna finale su Moodle",
-        "Università",
+        "Final delivery on Moodle",
+        "University",
         Priority::Critical
     ));
 
     manager.addActivity(std::make_unique<ReminderActivity>(
-        "Chiamare il medico",
+        "Call the doctor",
         now.addSecs(3600),
         15,
-        "Chiedere conferma dell'appuntamento",
-        "Promemoria personale",
-        "Salute",
+        "Ask about appointment confirmation",
+        "Personal reminder",
+        "Health",
         Priority::Medium
     ));
 
     auto checklist = std::make_unique<ChecklistActivity>(
-        "Preparare sessione di studio",
+        "Prepare study session",
         now.addDays(3),
         QVector<ChecklistItem>{},
-        "Preparare il materiale prima di studiare",
-        "Università",
+        "Prepare the material before studying",
+        "University",
         Priority::Medium
     );
 
-    checklist->addItem("Ripassare la teoria");
-    checklist->addItem("Svolgere esercizi");
-    checklist->addItem("Scrivere appunti riassuntivi");
+    checklist->addItem("Review theory");
+    checklist->addItem("Solve exercises");
+    checklist->addItem("Write summary notes");
 
     manager.addActivity(std::move(checklist));
 
     QString output;
-    output += "Agenda Qt - Ricerca, filtri e ordinamento inizializzati\n\n";
-    output += QString("Attività salvate: %1\n\n").arg(manager.size());
+    output += "Agenda Qt - Search, filters and sorting initialized\n\n";
+    output += QString("Stored activities: %1\n\n").arg(manager.size());
 
-    output += "Tutte le attività:\n\n";
+    output += "All activities:\n\n";
     appendActivityList(output, manager.activities(), now);
 
     output += "\n----------------------------------------\n\n";
@@ -160,39 +160,39 @@ int main(int argc, char *argv[])
     const SearchEngine::SearchResponse normalSearch =
         SearchEngine::search(manager.activities(), normalQuery);
 
-    output += QString("Ricerca: \"%1\"\n").arg(normalQuery);
-    output += QString("Risultati diretti: %1\n\n").arg(static_cast<int>(normalSearch.results.size()));
+    output += QString("Search query: \"%1\"\n").arg(normalQuery);
+    output += QString("Direct results: %1\n\n").arg(static_cast<int>(normalSearch.results.size()));
 
     for (const SearchEngine::SearchResult& result : normalSearch.results) {
-        output += QString("- %1 [campo trovato: %2, punteggio: %3]\n")
+        output += QString("- %1 [matched field: %2, score: %3]\n")
                 .arg(result.activity->title())
-                .arg(matchedFieldToItalian(result.matchedField))
+                .arg(matchedFieldToString(result.matchedField))
                 .arg(result.score);
     }
 
     output += "\n----------------------------------------\n\n";
 
-    const QString typoQuery = "progeto";
+    const QString typoQuery = "projet";
     const SearchEngine::SearchResponse typoSearch =
         SearchEngine::search(manager.activities(), typoQuery);
 
-    output += QString("Ricerca con errore di battitura: \"%1\"\n").arg(typoQuery);
-    output += QString("Risultati diretti: %1\n").arg(static_cast<int>(typoSearch.results.size()));
+    output += QString("Search query with typo: \"%1\"\n").arg(typoQuery);
+    output += QString("Direct results: %1\n").arg(static_cast<int>(typoSearch.results.size()));
 
     if (!typoSearch.hasResults() && typoSearch.suggestion.isValid()) {
-        output += QString("Nessun risultato diretto. Forse cercavi: %1? ")
+        output += QString("No direct result. Did you mean: %1? ")
                 .arg(typoSearch.suggestion.suggestedText);
-        output += QString("(testo confrontato: %1, distanza: %2)\n")
+        output += QString("(matched text: %1, distance: %2)\n")
                 .arg(typoSearch.suggestion.matchedText)
                 .arg(typoSearch.suggestion.distance);
     } else if (!typoSearch.hasResults()) {
-        output += "Nessun risultato diretto e nessun suggerimento affidabile trovato.\n";
+        output += "No direct result and no reliable suggestion found.\n";
     }
 
     output += "\n----------------------------------------\n\n";
 
     ActivityFilter::Criteria universityCriteria;
-    universityCriteria.category = "Università";
+    universityCriteria.category = "University";
     universityCriteria.completion = ActivityFilter::CompletionFilter::ActiveOnly;
     universityCriteria.fromDate = now;
     universityCriteria.toDate = now.addDays(15);
@@ -202,8 +202,8 @@ int main(int argc, char *argv[])
     const std::vector<const Activity*> universityActivities =
         ActivityFilter::apply(manager.activities(), universityCriteria, now);
 
-    output += "Filtro: categoria Università, attività attive, prossimi 15 giorni, ordinate per data\n";
-    output += QString("Risultati filtrati: %1\n\n").arg(static_cast<int>(universityActivities.size()));
+    output += "Filter: University category, active activities, next 15 days, sorted by date\n";
+    output += QString("Filtered results: %1\n\n").arg(static_cast<int>(universityActivities.size()));
     appendActivityList(output, universityActivities, now);
 
     output += "\n----------------------------------------\n\n";
@@ -216,8 +216,8 @@ int main(int argc, char *argv[])
     const std::vector<const Activity*> deadlineActivities =
         ActivityFilter::apply(manager.activities(), deadlineCriteria, now);
 
-    output += "Filtro: solo scadenze, ordinate per priorità decrescente\n";
-    output += QString("Risultati filtrati: %1\n\n").arg(static_cast<int>(deadlineActivities.size()));
+    output += "Filter: deadlines only, sorted by descending priority\n";
+    output += QString("Filtered results: %1\n\n").arg(static_cast<int>(deadlineActivities.size()));
     appendActivityList(output, deadlineActivities, now);
 
     QMainWindow window;

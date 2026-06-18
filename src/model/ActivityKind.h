@@ -11,20 +11,20 @@ enum class ActivityKind
     Checklist
 };
 
-inline QString activityKindToItalianString(ActivityKind kind)
+inline QString activityKindToString(ActivityKind kind)
 {
     switch (kind) {
     case ActivityKind::Event:
-        return "Evento";
+        return "Event";
     case ActivityKind::Deadline:
-        return "Scadenza";
+        return "Deadline";
     case ActivityKind::Reminder:
-        return "Promemoria";
+        return "Reminder";
     case ActivityKind::Checklist:
         return "Checklist";
     }
 
-    return "Attività";
+    return "Activity";
 }
 
 #endif
