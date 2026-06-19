@@ -8,7 +8,8 @@ TEMPLATE = app
 INCLUDEPATH += \
     src \
     src/model \
-    src/gui
+    src/gui \
+    src/persistence
 
 SOURCES += \
     src/main.cpp \
@@ -25,7 +26,8 @@ SOURCES += \
     src/model/ActivityTemplate.cpp \
     src/model/ActivityTemplateManager.cpp \
     src/model/CategoryManager.cpp \
-    src/gui/MainWindow.cpp
+    src/gui/MainWindow.cpp \
+    src/persistence/ActivityJsonSerializer.cpp
 
 HEADERS += \
     src/model/Priority.h \
@@ -43,7 +45,8 @@ HEADERS += \
     src/model/ActivityTemplate.h \
     src/model/ActivityTemplateManager.h \
     src/model/CategoryManager.h \
-    src/gui/MainWindow.h
+    src/gui/MainWindow.h \
+    src/persistence/ActivityJsonSerializer.h
 
 RESOURCES += \
     resources/resources.qrc

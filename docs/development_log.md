@@ -503,3 +503,38 @@ Validation:
 - Verified that buttons and filters are readable with the updated QSS.
 
 Estimated time spent: 1h
+
+### 2026-06-19 - Activity JSON serialization
+
+Implemented model-level JSON serialization for activities.
+
+Added:
+
+- `ActivityJsonSerializer`
+- serialization of common `Activity` fields
+- serialization of activity type
+- serialization of priority
+- serialization of completion state
+- serialization of creation and update timestamps
+- serialization of optional recurrence rules
+- serialization of `EventActivity` fields
+- serialization of `DeadlineActivity` fields
+- serialization of `ReminderActivity` fields
+- serialization of `ChecklistActivity` fields
+
+Design notes:
+
+- JSON serialization is independent from Qt Widgets and GUI code.
+- The serializer converts polymorphic activities into structured JSON objects.
+- The activity type is saved explicitly so deserialization can later reconstruct the correct concrete class.
+- Recurrence is serialized only when present.
+- Checklist date serialization uses the polymorphic `primaryDate()` method, keeping the serializer compatible with the current model interface.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that all concrete activity types are handled by the serializer.
+- Verified that recurrence data can be converted to JSON.
+- Verified that serialization code is located in the persistence layer.
+
+Estimated time spent: 1.5h
