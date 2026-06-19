@@ -39,7 +39,7 @@ void MainWindow::setupUi()
     QLabel* titleLabel = new QLabel("Agenda Qt", centralWidget);
     titleLabel->setObjectName("appTitleLabel");
 
-    QLabel* subtitleLabel = new QLabel("First GUI prototype - activity list, details, search and filters", centralWidget);
+    QLabel* subtitleLabel = new QLabel("Manage activities with search, filters and basic actions", centralWidget);
     subtitleLabel->setObjectName("appSubtitleLabel");
 
     mainLayout->addWidget(titleLabel);
@@ -48,6 +48,8 @@ void MainWindow::setupUi()
     QSplitter* splitter = new QSplitter(centralWidget);
 
     QWidget* leftPanel = new QWidget(splitter);
+    leftPanel->setMinimumWidth(360);
+
     QVBoxLayout* leftLayout = new QVBoxLayout(leftPanel);
 
     QLabel* searchLabel = new QLabel("Search", leftPanel);
@@ -63,11 +65,16 @@ void MainWindow::setupUi()
     m_typeCombo->addItem("Checklists", static_cast<int>(ActivityKind::Checklist));
 
     m_resultCountLabel = new QLabel(leftPanel);
+    m_resultCountLabel->setObjectName("resultCountLabel");
 
     m_activityList = new QListWidget(leftPanel);
+    m_activityList->setSpacing(4);
 
-    m_toggleCompletedButton = new QPushButton("Toggle completed", leftPanel);
+    m_toggleCompletedButton = new QPushButton("Mark completed", leftPanel);
+    m_toggleCompletedButton->setObjectName("primaryButton");
+
     m_deleteButton = new QPushButton("Delete activity", leftPanel);
+    m_deleteButton->setObjectName("dangerButton");
 
     QHBoxLayout* actionLayout = new QHBoxLayout();
     actionLayout->addWidget(m_toggleCompletedButton);
@@ -82,6 +89,8 @@ void MainWindow::setupUi()
     leftLayout->addLayout(actionLayout);
 
     QWidget* rightPanel = new QWidget(splitter);
+    rightPanel->setMinimumWidth(620);
+
     QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
 
     QLabel* detailLabel = new QLabel("Activity details", rightPanel);
@@ -143,39 +152,70 @@ void MainWindow::connectSignals()
 
 void MainWindow::refreshActivityList()
 {
+    const QString previousSelectedId = selectedActivityId();
+
     m_activityList->clear();
 
     const std::vector<const Activity*> visibleActivities = collectVisibleActivities();
+
+    int rowToSelect = -1;
 
     for (const Activity* activity : visibleActivities) {
         if (!activity) {
             continue;
         }
 
-        const QString itemText = QString("%1\n%2 | %3")
+        const QString itemText = QString("%1\n%2 | %3 | %4")
                 .arg(activity->title())
                 .arg(activityKindToString(activity->kind()))
-                .arg(activity->primaryDate().toString("yyyy-MM-dd HH:mm"));
+                .arg(activity->primaryDate().toString("yyyy-MM-dd HH:mm"))
+                .arg(statusText(activity));
 
         QListWidgetItem* item = new QListWidgetItem(itemText);
         item->setData(Qt::UserRole, activity->id());
         item->setToolTip(activity->summary());
 
+        const int newRow = m_activityList->count();
         m_activityList->addItem(item);
+
+        if (activity->id() == previousSelectedId) {
+            rowToSelect = newRow;
+        }
     }
 
     const QString query = m_searchEdit->text().trimmed();
+    const QString typeFilter = m_typeCombo->currentText();
 
     if (query.isEmpty()) {
-        m_resultCountLabel->setText(QString("Activities shown: %1").arg(visibleActivities.size()));
+        m_resultCountLabel->setText(QString("Activities shown: %1 | Filter: %2")
+                                    .arg(visibleActivities.size())
+                                    .arg(typeFilter));
     } else {
-        m_resultCountLabel->setText(QString("Search results: %1").arg(visibleActivities.size()));
+        m_resultCountLabel->setText(QString("Search results: %1 | Query: \"%2\" | Filter: %3")
+                                    .arg(visibleActivities.size())
+                                    .arg(query)
+                                    .arg(typeFilter));
     }
 
     if (m_activityList->count() > 0) {
-        m_activityList->setCurrentRow(0);
+        if (rowToSelect < 0) {
+            rowToSelect = 0;
+        }
+
+        m_activityList->setCurrentRow(rowToSelect);
     } else {
-        showActivityDetails(nullptr);
+        if (query.isEmpty()) {
+            m_detailView->setPlainText(
+                "No activities are available.\n\n"
+                "When activity creation is implemented, new activities will appear here."
+            );
+        } else {
+            m_detailView->setPlainText(
+                QString("No activities match \"%1\".\n\n"
+                        "Try changing the search text or the activity type filter.")
+                        .arg(query)
+            );
+        }
     }
 
     updateActionButtons();
@@ -184,7 +224,10 @@ void MainWindow::refreshActivityList()
 void MainWindow::showActivityDetails(const Activity* activity)
 {
     if (!activity) {
-        m_detailView->setPlainText("No activity selected.");
+        m_detailView->setPlainText(
+            "No activity selected.\n\n"
+            "Select an activity from the list to view its details."
+        );
         return;
     }
 
@@ -222,10 +265,19 @@ void MainWindow::showActivityDetails(const Activity* activity)
 
 void MainWindow::updateActionButtons()
 {
-    const bool hasSelection = !selectedActivityId().isEmpty();
+    const QString activityId = selectedActivityId();
+    const Activity* activity = activityId.isEmpty() ? nullptr : findActivityById(activityId);
+
+    const bool hasSelection = activity != nullptr;
 
     if (m_toggleCompletedButton) {
         m_toggleCompletedButton->setEnabled(hasSelection);
+
+        if (activity && activity->isCompleted()) {
+            m_toggleCompletedButton->setText("Mark active");
+        } else {
+            m_toggleCompletedButton->setText("Mark completed");
+        }
     }
 
     if (m_deleteButton) {
@@ -362,7 +414,10 @@ void MainWindow::toggleSelectedActivityCompletion()
 
     activity->setCompleted(!activity->isCompleted());
 
-    showActivityDetails(activity);
+    refreshActivityList();
+
+    const Activity* updatedActivity = findActivityById(activityId);
+    showActivityDetails(updatedActivity);
     updateActionButtons();
 }
 

@@ -467,3 +467,39 @@ Validation:
 - Verified that buttons and filters are visible with the updated QSS.
 
 Estimated time spent: 1.5h
+
+### 2026-06-19 - GUI layout and feedback improvements
+
+Improved the first GUI prototype layout and user feedback.
+
+Added:
+
+- clearer activity list rows with activity status
+- dynamic completion button text:
+  - Mark completed
+  - Mark active
+- improved result count label
+- clearer empty-state messages
+- clearer no-results message for searches
+- selection preservation after list refresh when possible
+- improved button styling
+- improved readability for search, filters, list and detail panels
+
+Design notes:
+
+- The GUI remains based on a single `MainWindow`.
+- The window content updates according to the selected activity, search query and filters.
+- The activity list continues to store activity ids instead of copying activity objects.
+- The interface is still a prototype, but it is now easier to test and present.
+- Future create/edit/category screens should be implemented inside the same main window, most likely through stacked internal pages instead of separate top-level windows.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that activities show their status in the list.
+- Verified that the completion button changes text according to the selected activity state.
+- Verified that toggling completion keeps the selected activity visible when possible.
+- Verified that empty search results show a clear message.
+- Verified that buttons and filters are readable with the updated QSS.
+
+Estimated time spent: 1h
