@@ -55,8 +55,9 @@ public:
     virtual bool isOverdue(const QDateTime& now) const = 0;
     virtual QString summary() const = 0;
     virtual std::unique_ptr<Activity> clone() const = 0;
-
     std::unique_ptr<Activity> cloneWithNewId() const;
+
+
 
 protected:
     void touch();

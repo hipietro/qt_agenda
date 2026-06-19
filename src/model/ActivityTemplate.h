@@ -2,7 +2,6 @@
 #define ACTIVITYTEMPLATE_H
 
 #include "Activity.h"
-#include "ActivityKind.h"
 
 #include <QString>
 #include <memory>

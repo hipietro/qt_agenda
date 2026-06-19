@@ -1,6 +1,7 @@
 #include "ActivityTemplateManager.h"
 
 #include <algorithm>
+#include <utility>
 
 bool ActivityTemplateManager::addTemplate(const QString& name, std::unique_ptr<Activity> prototype)
 {

@@ -1,6 +1,7 @@
 #include "Activity.h"
 
 #include <QUuid>
+#include <utility>
 
 Activity::Activity(const QString& title,
                    const QString& description,
