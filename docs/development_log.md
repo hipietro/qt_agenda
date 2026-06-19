@@ -397,3 +397,39 @@ Validation:
 - Verified successful qmake/make compilation.
 
 Estimated time spent: 1.5h
+
+### 2026-06-19 - First GUI prototype
+
+Implemented the first real GUI prototype.
+
+Added:
+
+- `MainWindow` class
+- activity list view
+- activity detail view
+- search input
+- activity type filter
+- automatic list refresh when search or filter changes
+- selection-based detail panel
+- demo data moved from static text output to structured GUI population
+
+Design notes:
+
+- The GUI uses the existing model classes instead of duplicating activity logic.
+- Activity details are still read-only in this first prototype.
+- The model remains separated from Qt Widgets.
+- Search uses `SearchEngine`.
+- Type filtering uses `ActivityFilter`.
+- The activity list stores activity ids instead of copying full objects.
+- Demo data remains temporary and will later be replaced by JSON persistence.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that the main window opens correctly.
+- Verified that activities are displayed in the list.
+- Verified that selecting an activity updates the detail panel.
+- Verified that search updates the visible activities.
+- Verified that the activity type filter works.
+
+Estimated time spent: 2h

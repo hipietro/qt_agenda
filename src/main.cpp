@@ -1,118 +1,24 @@
 #include <QApplication>
-#include <QFile>
-#include <QMainWindow>
-#include <QTextEdit>
 #include <QDateTime>
+#include <QFile>
 
 #include <memory>
-#include <vector>
+
+#include "gui/MainWindow.h"
 
 #include "model/ActivityManager.h"
-#include "model/SearchEngine.h"
-#include "model/ActivityFilter.h"
-#include "model/EventActivity.h"
-#include "model/DeadlineActivity.h"
-#include "model/ReminderActivity.h"
-#include "model/ChecklistActivity.h"
-#include "model/CategoryManager.h"
-#include "model/RecurrenceRule.h"
 #include "model/ActivityTemplateManager.h"
+#include "model/CategoryManager.h"
+#include "model/ChecklistActivity.h"
+#include "model/DeadlineActivity.h"
+#include "model/EventActivity.h"
+#include "model/ReminderActivity.h"
+#include "model/RecurrenceRule.h"
 
-static QString activityStatusToString(const Activity* activity, const QDateTime& now)
+static void populateDemoData(ActivityManager& manager)
 {
-    if (!activity) {
-        return "Invalid";
-    }
-
-    if (activity->isCompleted()) {
-        return "Completed";
-    }
-
-    if (activity->isOverdue(now)) {
-        return "Overdue";
-    }
-
-    return "Active";
-}
-
-static QString matchedFieldToString(const QString& matchedField)
-{
-    if (matchedField == "title") {
-        return "title";
-    }
-
-    if (matchedField == "category") {
-        return "category";
-    }
-
-    if (matchedField == "description") {
-        return "description";
-    }
-
-    if (matchedField == "summary") {
-        return "summary";
-    }
-
-    if (matchedField == "all") {
-        return "all fields";
-    }
-
-    return "unknown field";
-}
-
-static QString priorityToDisplayString(Priority priority)
-{
-    switch (priority) {
-    case Priority::Low:
-        return "Low";
-    case Priority::Medium:
-        return "Medium";
-    case Priority::High:
-        return "High";
-    case Priority::Critical:
-        return "Critical";
-    }
-
-    return "Medium";
-}
-
-static void appendActivityList(QString& output,
-                               const std::vector<const Activity*>& activities,
-                               const QDateTime& now)
-{
-    for (const Activity* activity : activities) {
-        const QString recurrenceText = activity->hasRecurrence()
-            ? activity->recurrenceRule()->toDisplayString()
-            : "No recurrence";
-
-        const QDateTime nextOccurrence = activity->nextOccurrenceAfter(now);
-        const QString nextOccurrenceText = nextOccurrence.isValid()
-            ? nextOccurrence.toString("yyyy-MM-dd HH:mm")
-            : "No future occurrence";
-        output += QString("- %1 | Type: %2 | Category: %3 | Priority: %4 | Status: %5 | Main date: %6 | Recurrence: %7 | Next: %8\n")
-            .arg(activity->title())
-            .arg(activityKindToString(activity->kind()))
-            .arg(activity->category())
-            .arg(priorityToDisplayString(activity->priority()))
-            .arg(activityStatusToString(activity, now))
-            .arg(activity->primaryDate().toString("yyyy-MM-dd HH:mm"))
-            .arg(recurrenceText)
-            .arg(nextOccurrenceText);
-    }
-}
-
-int main(int argc, char *argv[])
-{
-    QApplication app(argc, argv);
-
-    QFile styleFile(":/style.qss");
-    if (styleFile.open(QFile::ReadOnly | QFile::Text)) {
-        app.setStyleSheet(QString::fromUtf8(styleFile.readAll()));
-    }
-
     const QDateTime now = QDateTime::currentDateTime();
 
-    ActivityManager manager;
     CategoryManager categoryManager;
     ActivityTemplateManager templateManager;
 
@@ -121,32 +27,32 @@ int main(int argc, char *argv[])
     categoryManager.addCategory("Personal", "#9E9E9E");
 
     templateManager.addTemplate(
-    "Exam deadline",
-    std::make_unique<DeadlineActivity>(
-        "New exam deadline",
-        now.addDays(7),
-        "University exam",
-        true,
-        "Prepare and submit exam-related material",
+        "Exam deadline",
+        std::make_unique<DeadlineActivity>(
+            "New exam deadline",
+            now.addDays(7),
+            "University exam",
+            true,
+            "Prepare and submit exam-related material",
+            "University",
+            Priority::High
+        )
+    );
+
+    auto studyChecklistTemplate = std::make_unique<ChecklistActivity>(
+        "New study checklist",
+        now.addDays(5),
+        QVector<ChecklistItem>{},
+        "Reusable checklist for study sessions",
         "University",
-        Priority::High
-    )
-);
+        Priority::Medium
+    );
 
-auto studyChecklistTemplate = std::make_unique<ChecklistActivity>(
-    "New study checklist",
-    now.addDays(5),
-    QVector<ChecklistItem>{},
-    "Reusable checklist for study sessions",
-    "University",
-    Priority::Medium
-);
+    studyChecklistTemplate->addItem("Review theory");
+    studyChecklistTemplate->addItem("Practice exercises");
+    studyChecklistTemplate->addItem("Write final notes");
 
-studyChecklistTemplate->addItem("Review theory");
-studyChecklistTemplate->addItem("Practice exercises");
-studyChecklistTemplate->addItem("Write final notes");
-
-templateManager.addTemplate("Study checklist", std::move(studyChecklistTemplate));
+    templateManager.addTemplate("Study checklist", std::move(studyChecklistTemplate));
 
     manager.addActivity(std::make_unique<EventActivity>(
         "Object-Oriented Programming lecture",
@@ -211,6 +117,7 @@ templateManager.addTemplate("Study checklist", std::move(studyChecklistTemplate)
     ));
 
     manager.addActivity(std::move(checklist));
+
     const Category* universityCategory = categoryManager.findCategoryByName("University");
 
     if (universityCategory) {
@@ -221,136 +128,29 @@ templateManager.addTemplate("Study checklist", std::move(studyChecklistTemplate)
     categoryManager.removeCategoryByName("Personal");
 
     std::unique_ptr<Activity> activityFromTemplate =
-    templateManager.createActivityFromTemplateName("Exam deadline");
+        templateManager.createActivityFromTemplateName("Exam deadline");
 
-if (activityFromTemplate) {
-    activityFromTemplate->setTitle("Register for OOP exam");
-    activityFromTemplate->setCategory("Study");
-    manager.addActivity(std::move(activityFromTemplate));
+    if (activityFromTemplate) {
+        activityFromTemplate->setTitle("Register for OOP exam");
+        activityFromTemplate->setCategory("Study");
+        manager.addActivity(std::move(activityFromTemplate));
+    }
 }
 
-    QString output;
-    output += "Agenda Qt - Search, filters and sorting initialized\n\n";
-    output += QString("Stored activities: %1\n\n").arg(manager.size());
-    output += QString("Stored categories: %1\n\n").arg(categoryManager.size());
-    output += QString("Stored templates: %1\n\n").arg(templateManager.size());
+int main(int argc, char *argv[])
+{
+    QApplication app(argc, argv);
 
-    output += "Available categories:\n\n";
+    QFile styleFile(":/style.qss");
 
-    for (const Category& category : categoryManager.categories()) {
-        output += QString("- %1 | Color: %2\n")
-            .arg(category.name())
-            .arg(category.colorHex());
+    if (styleFile.open(QFile::ReadOnly | QFile::Text)) {
+        app.setStyleSheet(QString::fromUtf8(styleFile.readAll()));
     }
 
-    output += "\n----------------------------------------\n\n";
+    ActivityManager manager;
+    populateDemoData(manager);
 
-    output += "All activities:\n\n";
-    appendActivityList(output, manager.activities(), now);
-
-    output += "\n----------------------------------------\n\n";
-
-    output += "Available templates:\n\n";
-
-for (const ActivityTemplate* activityTemplate : templateManager.templates()) {
-    if (!activityTemplate || !activityTemplate->prototype()) {
-        continue;
-    }
-
-    output += QString("- %1 | Type: %2 | Prototype title: %3\n")
-            .arg(activityTemplate->name())
-            .arg(activityKindToString(activityTemplate->prototype()->kind()))
-            .arg(activityTemplate->prototype()->title());
-}
-
-output += "\n----------------------------------------\n\n";
-
-    const QString normalQuery = "qt";
-    const SearchEngine::SearchResponse normalSearch =
-        SearchEngine::search(manager.activities(), normalQuery);
-
-    output += QString("Search query: \"%1\"\n").arg(normalQuery);
-    output += QString("Direct results: %1\n\n").arg(static_cast<int>(normalSearch.results.size()));
-
-    for (const SearchEngine::SearchResult& result : normalSearch.results) {
-        output += QString("- %1 [matched field: %2, score: %3]\n")
-                .arg(result.activity->title())
-                .arg(matchedFieldToString(result.matchedField))
-                .arg(result.score);
-    }
-
-    output += "\n----------------------------------------\n\n";
-
-    const QString typoQuery = "projet";
-    const SearchEngine::SearchResponse typoSearch =
-        SearchEngine::search(manager.activities(), typoQuery);
-
-    output += QString("Search query with typo: \"%1\"\n").arg(typoQuery);
-    output += QString("Direct results: %1\n").arg(static_cast<int>(typoSearch.results.size()));
-
-    if (!typoSearch.hasResults() && typoSearch.suggestion.isValid()) {
-        output += QString("No direct result. Did you mean: %1? ")
-                .arg(typoSearch.suggestion.suggestedText);
-        output += QString("(matched text: %1, distance: %2)\n")
-                .arg(typoSearch.suggestion.matchedText)
-                .arg(typoSearch.suggestion.distance);
-    } else if (!typoSearch.hasResults()) {
-        output += "No direct result and no reliable suggestion found.\n";
-    }
-
-    output += "\n----------------------------------------\n\n";
-
-    ActivityFilter::Criteria universityCriteria;
-    universityCriteria.category = "Study";
-    universityCriteria.completion = ActivityFilter::CompletionFilter::ActiveOnly;
-    universityCriteria.fromDate = now;
-    universityCriteria.toDate = now.addDays(15);
-    universityCriteria.sortKey = ActivityFilter::SortKey::PrimaryDate;
-    universityCriteria.sortOrder = ActivityFilter::SortOrder::Ascending;
-
-    const std::vector<const Activity*> universityActivities =
-        ActivityFilter::apply(manager.activities(), universityCriteria, now);
-
-    output += "Filter: Study category, active activities, next 15 days, sorted by date\n";    output += QString("Filtered results: %1\n\n").arg(static_cast<int>(universityActivities.size()));
-    appendActivityList(output, universityActivities, now);
-
-    output += "\n----------------------------------------\n\n";
-
-    ActivityFilter::Criteria deadlineCriteria;
-    deadlineCriteria.kind = ActivityKind::Deadline;
-    deadlineCriteria.sortKey = ActivityFilter::SortKey::Priority;
-    deadlineCriteria.sortOrder = ActivityFilter::SortOrder::Descending;
-
-    const std::vector<const Activity*> deadlineActivities =
-        ActivityFilter::apply(manager.activities(), deadlineCriteria, now);
-
-    output += "Filter: deadlines only, sorted by descending priority\n";
-    output += QString("Filtered results: %1\n\n").arg(static_cast<int>(deadlineActivities.size()));
-    appendActivityList(output, deadlineActivities, now);
-
-    output += "\n----------------------------------------\n\n";
-
-    ActivityFilter::Criteria recurringCriteria;
-    recurringCriteria.recurring = true;
-    recurringCriteria.sortKey = ActivityFilter::SortKey::PrimaryDate;
-    recurringCriteria.sortOrder = ActivityFilter::SortOrder::Ascending;
-
-    const std::vector<const Activity*> recurringActivities =
-        ActivityFilter::apply(manager.activities(), recurringCriteria, now);
-
-    output += "Filter: recurring activities only, sorted by date\n";
-    output += QString("Filtered results: %1\n\n").arg(static_cast<int>(recurringActivities.size()));
-    appendActivityList(output, recurringActivities, now);
-
-    QMainWindow window;
-    window.setWindowTitle("Agenda Qt");
-    window.resize(1000, 700);
-
-    QTextEdit *textEdit = new QTextEdit();
-    textEdit->setReadOnly(true);
-    textEdit->setText(output);
-
-    window.setCentralWidget(textEdit);
+    MainWindow window(&manager);
     window.show();
 
     return app.exec();

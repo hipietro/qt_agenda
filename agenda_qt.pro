@@ -7,7 +7,8 @@ TEMPLATE = app
 
 INCLUDEPATH += \
     src \
-    src/model
+    src/model \
+    src/gui
 
 SOURCES += \
     src/main.cpp \
@@ -23,7 +24,8 @@ SOURCES += \
     src/model/RecurrenceRule.cpp \
     src/model/ActivityTemplate.cpp \
     src/model/ActivityTemplateManager.cpp \
-    src/model/CategoryManager.cpp
+    src/model/CategoryManager.cpp \
+    src/gui/MainWindow.cpp
 
 HEADERS += \
     src/model/Priority.h \
@@ -40,7 +42,8 @@ HEADERS += \
     src/model/RecurrenceRule.h \
     src/model/ActivityTemplate.h \
     src/model/ActivityTemplateManager.h \
-    src/model/CategoryManager.h
+    src/model/CategoryManager.h \
+    src/gui/MainWindow.h
 
 RESOURCES += \
     resources/resources.qrc
