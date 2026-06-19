@@ -15,6 +15,7 @@ class QComboBox;
 class QLabel;
 class QLineEdit;
 class QListWidget;
+class QPushButton;
 class QTextEdit;
 
 class MainWindow : public QMainWindow
@@ -28,13 +29,18 @@ private:
 
     void refreshActivityList();
     void showActivityDetails(const Activity* activity);
+    void updateActionButtons();
 
     std::vector<const Activity*> collectVisibleActivities() const;
     const Activity* findActivityById(const QString& id) const;
+    QString selectedActivityId() const;
 
     QString statusText(const Activity* activity) const;
     QString priorityText(Priority priority) const;
     QString recurrenceText(const Activity* activity) const;
+
+    void toggleSelectedActivityCompletion();
+    void deleteSelectedActivity();
 
     ActivityManager* m_activityManager = nullptr;
 
@@ -43,6 +49,8 @@ private:
     QListWidget* m_activityList = nullptr;
     QTextEdit* m_detailView = nullptr;
     QLabel* m_resultCountLabel = nullptr;
+    QPushButton* m_toggleCompletedButton = nullptr;
+    QPushButton* m_deleteButton = nullptr;
 };
 
 #endif

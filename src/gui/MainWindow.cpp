@@ -11,6 +11,8 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QListWidgetItem>
+#include <QMessageBox>
+#include <QPushButton>
 #include <QSplitter>
 #include <QTextEdit>
 #include <QVBoxLayout>
@@ -64,12 +66,20 @@ void MainWindow::setupUi()
 
     m_activityList = new QListWidget(leftPanel);
 
+    m_toggleCompletedButton = new QPushButton("Toggle completed", leftPanel);
+    m_deleteButton = new QPushButton("Delete activity", leftPanel);
+
+    QHBoxLayout* actionLayout = new QHBoxLayout();
+    actionLayout->addWidget(m_toggleCompletedButton);
+    actionLayout->addWidget(m_deleteButton);
+
     leftLayout->addWidget(searchLabel);
     leftLayout->addWidget(m_searchEdit);
     leftLayout->addWidget(typeLabel);
     leftLayout->addWidget(m_typeCombo);
     leftLayout->addWidget(m_resultCountLabel);
     leftLayout->addWidget(m_activityList);
+    leftLayout->addLayout(actionLayout);
 
     QWidget* rightPanel = new QWidget(splitter);
     QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
@@ -105,6 +115,7 @@ void MainWindow::connectSignals()
     connect(m_activityList, &QListWidget::currentRowChanged, this, [this](int currentRow) {
         if (currentRow < 0) {
             showActivityDetails(nullptr);
+            updateActionButtons();
             return;
         }
 
@@ -112,11 +123,21 @@ void MainWindow::connectSignals()
 
         if (!item) {
             showActivityDetails(nullptr);
+            updateActionButtons();
             return;
         }
 
         const QString activityId = item->data(Qt::UserRole).toString();
         showActivityDetails(findActivityById(activityId));
+        updateActionButtons();
+    });
+
+    connect(m_toggleCompletedButton, &QPushButton::clicked, this, [this]() {
+        toggleSelectedActivityCompletion();
+    });
+
+    connect(m_deleteButton, &QPushButton::clicked, this, [this]() {
+        deleteSelectedActivity();
     });
 }
 
@@ -136,7 +157,7 @@ void MainWindow::refreshActivityList()
                 .arg(activityKindToString(activity->kind()))
                 .arg(activity->primaryDate().toString("yyyy-MM-dd HH:mm"));
 
-        QListWidgetItem* item = new QListWidgetItem(itemText, m_activityList);
+        QListWidgetItem* item = new QListWidgetItem(itemText);
         item->setData(Qt::UserRole, activity->id());
         item->setToolTip(activity->summary());
 
@@ -156,6 +177,8 @@ void MainWindow::refreshActivityList()
     } else {
         showActivityDetails(nullptr);
     }
+
+    updateActionButtons();
 }
 
 void MainWindow::showActivityDetails(const Activity* activity)
@@ -180,6 +203,7 @@ void MainWindow::showActivityDetails(const Activity* activity)
     details += QString("Recurrence: %1\n").arg(recurrenceText(activity));
 
     const QDateTime nextOccurrence = activity->nextOccurrenceAfter(QDateTime::currentDateTime());
+
     details += QString("Next occurrence: %1\n")
             .arg(nextOccurrence.isValid()
                  ? nextOccurrence.toString("yyyy-MM-dd HH:mm")
@@ -194,6 +218,19 @@ void MainWindow::showActivityDetails(const Activity* activity)
     }
 
     m_detailView->setPlainText(details);
+}
+
+void MainWindow::updateActionButtons()
+{
+    const bool hasSelection = !selectedActivityId().isEmpty();
+
+    if (m_toggleCompletedButton) {
+        m_toggleCompletedButton->setEnabled(hasSelection);
+    }
+
+    if (m_deleteButton) {
+        m_deleteButton->setEnabled(hasSelection);
+    }
 }
 
 std::vector<const Activity*> MainWindow::collectVisibleActivities() const
@@ -245,6 +282,21 @@ const Activity* MainWindow::findActivityById(const QString& id) const
     return m_activityManager->findActivityById(id);
 }
 
+QString MainWindow::selectedActivityId() const
+{
+    if (!m_activityList) {
+        return QString();
+    }
+
+    QListWidgetItem* item = m_activityList->currentItem();
+
+    if (!item) {
+        return QString();
+    }
+
+    return item->data(Qt::UserRole).toString();
+}
+
 QString MainWindow::statusText(const Activity* activity) const
 {
     if (!activity) {
@@ -288,4 +340,62 @@ QString MainWindow::recurrenceText(const Activity* activity) const
     }
 
     return activity->recurrenceRule()->toDisplayString();
+}
+
+void MainWindow::toggleSelectedActivityCompletion()
+{
+    if (!m_activityManager) {
+        return;
+    }
+
+    const QString activityId = selectedActivityId();
+
+    if (activityId.isEmpty()) {
+        return;
+    }
+
+    Activity* activity = m_activityManager->findActivityById(activityId);
+
+    if (!activity) {
+        return;
+    }
+
+    activity->setCompleted(!activity->isCompleted());
+
+    showActivityDetails(activity);
+    updateActionButtons();
+}
+
+void MainWindow::deleteSelectedActivity()
+{
+    if (!m_activityManager) {
+        return;
+    }
+
+    const QString activityId = selectedActivityId();
+
+    if (activityId.isEmpty()) {
+        return;
+    }
+
+    const Activity* activity = m_activityManager->findActivityById(activityId);
+
+    if (!activity) {
+        return;
+    }
+
+    const QMessageBox::StandardButton answer = QMessageBox::question(
+        this,
+        "Delete activity",
+        QString("Do you really want to delete \"%1\"?").arg(activity->title()),
+        QMessageBox::Yes | QMessageBox::No
+    );
+
+    if (answer != QMessageBox::Yes) {
+        return;
+    }
+
+    m_activityManager->removeActivity(activityId);
+
+    refreshActivityList();
 }

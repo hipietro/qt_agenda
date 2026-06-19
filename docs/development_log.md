@@ -433,3 +433,37 @@ Validation:
 - Verified that the activity type filter works.
 
 Estimated time spent: 2h
+
+### 2026-06-19 - Basic GUI actions
+
+Implemented basic interactive GUI actions.
+
+Added:
+
+- toggle completion action for the selected activity
+- delete action for the selected activity
+- confirmation dialog before deletion
+- automatic detail refresh after completion changes
+- automatic list refresh after deletion
+- disabled action buttons when no activity is selected
+- improved QSS styling for buttons, combo boxes, inputs and lists
+
+Design notes:
+
+- The GUI modifies activities through `ActivityManager`.
+- The activity list keeps using activity ids instead of copying objects.
+- The completion toggle uses the existing `Activity::setCompleted(...)` method.
+- Deletion uses `ActivityManager::removeActivity(...)`.
+- The confirmation dialog prevents accidental deletion.
+- Styling was made explicit to avoid unreadable white-on-white widgets on macOS.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that the toggle completed button updates the selected activity status.
+- Verified that the detail panel refreshes after toggling completion.
+- Verified that the delete button asks for confirmation.
+- Verified that confirmed deletion removes the activity from the list.
+- Verified that buttons and filters are visible with the updated QSS.
+
+Estimated time spent: 1.5h
