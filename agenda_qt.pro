@@ -27,7 +27,8 @@ SOURCES += \
     src/model/ActivityTemplateManager.cpp \
     src/model/CategoryManager.cpp \
     src/gui/MainWindow.cpp \
-    src/persistence/ActivityJsonSerializer.cpp
+    src/persistence/ActivityJsonSerializer.cpp \
+    src/persistence/AgendaJsonStorage.cpp
 
 HEADERS += \
     src/model/Priority.h \
@@ -46,7 +47,8 @@ HEADERS += \
     src/model/ActivityTemplateManager.h \
     src/model/CategoryManager.h \
     src/gui/MainWindow.h \
-    src/persistence/ActivityJsonSerializer.h
+    src/persistence/ActivityJsonSerializer.h \
+    src/persistence/AgendaJsonStorage.h
 
 RESOURCES += \
     resources/resources.qrc

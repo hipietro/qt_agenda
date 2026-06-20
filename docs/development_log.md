@@ -578,3 +578,39 @@ Validation:
 - Verified that constructor signatures are compatible with persistence requirements.
 
 Estimated time spent: 2h
+
+### 2026-06-20 - JSON file save and load for ActivityManager
+
+Implemented JSON file persistence for the activity manager.
+
+Added:
+
+- `AgendaJsonStorage`
+- saving an `ActivityManager` to a JSON file
+- loading an `ActivityManager` from a JSON file
+- root JSON object with file version
+- activities array serialization
+- complete reconstruction of activities through `ActivityJsonSerializer`
+- error reporting through optional error message output
+- validation of JSON structure
+- validation of supported file version
+- duplicated activity id detection during loading
+
+Design notes:
+
+- File persistence is implemented in the persistence layer.
+- The GUI is not involved in the storage logic.
+- The JSON root object contains a `version` field to support future format changes.
+- Loading uses a temporary vector before replacing the current manager content.
+- The current agenda is cleared only after the file has been parsed and all activities have been reconstructed successfully.
+- This avoids leaving the application in a partially loaded state if the file is invalid.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that `AgendaJsonStorage` can access `ActivityManager`.
+- Verified that saving uses `ActivityJsonSerializer`.
+- Verified that loading reconstructs concrete activities through `ActivityJsonSerializer::fromJson(...)`.
+- Verified that the persistence layer remains independent from Qt Widgets.
+
+Estimated time spent: 1.5h
