@@ -6,6 +6,7 @@
 #include "model/ReminderActivity.h"
 
 #include <QJsonArray>
+#include <QJsonValue>
 
 QJsonObject ActivityJsonSerializer::toJson(const Activity& activity)
 {
@@ -66,6 +67,153 @@ QJsonObject ActivityJsonSerializer::toJson(const Activity& activity)
     }
 
     return json;
+}
+
+std::unique_ptr<Activity> ActivityJsonSerializer::fromJson(const QJsonObject& json)
+{
+    const std::optional<ActivityKind> kind =
+        activityKindFromJsonString(json["type"].toString());
+
+    if (!kind.has_value()) {
+        return nullptr;
+    }
+
+    const QString id = json["id"].toString();
+    const QString title = json["title"].toString();
+    const QString description = json["description"].toString();
+    const QString category = json["category"].toString();
+    const Priority priority = priorityFromJsonString(json["priority"].toString());
+    const bool completed = json["completed"].toBool(false);
+
+    const QDateTime createdAt = dateTimeFromJsonString(json["createdAt"].toString());
+    const QDateTime updatedAt = dateTimeFromJsonString(json["updatedAt"].toString());
+
+    std::unique_ptr<Activity> activity;
+
+    switch (kind.value()) {
+    case ActivityKind::Event: {
+        const QDateTime startDateTime = dateTimeFromJsonString(json["startDateTime"].toString());
+        const QDateTime endDateTime = dateTimeFromJsonString(json["endDateTime"].toString());
+        const QString location = json["location"].toString();
+
+        QStringList participants;
+
+        const QJsonArray participantsArray = json["participants"].toArray();
+
+        for (const QJsonValue& value : participantsArray) {
+            participants.append(value.toString());
+        }
+
+        activity = std::make_unique<EventActivity>(
+            title,
+            startDateTime,
+            endDateTime,
+            location,
+            participants,
+            description,
+            category,
+            priority,
+            completed,
+            id,
+            createdAt,
+            updatedAt
+        );
+
+        break;
+    }
+
+    case ActivityKind::Deadline: {
+        const QDateTime dueDate = dateTimeFromJsonString(json["dueDate"].toString());
+        const QString context = json["context"].toString();
+        const bool hardDeadline = json["hardDeadline"].toBool(false);
+
+        activity = std::make_unique<DeadlineActivity>(
+            title,
+            dueDate,
+            context,
+            hardDeadline,
+            description,
+            category,
+            priority,
+            completed,
+            id,
+            createdAt,
+            updatedAt
+        );
+
+        break;
+    }
+
+    case ActivityKind::Reminder: {
+        const QDateTime reminderDateTime = dateTimeFromJsonString(json["reminderDateTime"].toString());
+        const int advanceMinutes = json["advanceMinutes"].toInt(0);
+        const QString reminderNote = json["reminderNote"].toString();
+
+        activity = std::make_unique<ReminderActivity>(
+            title,
+            reminderDateTime,
+            advanceMinutes,
+            reminderNote,
+            description,
+            category,
+            priority,
+            completed,
+            id,
+            createdAt,
+            updatedAt
+        );
+
+        break;
+    }
+
+    case ActivityKind::Checklist: {
+        const QDateTime targetDate = dateTimeFromJsonString(json["targetDate"].toString());
+
+        QVector<ChecklistItem> items;
+
+        const QJsonArray itemsArray = json["items"].toArray();
+
+        for (const QJsonValue& value : itemsArray) {
+            const QJsonObject itemObject = value.toObject();
+
+            ChecklistItem item;
+            item.text = itemObject["text"].toString();
+            item.completed = itemObject["completed"].toBool(false);
+
+            items.append(item);
+        }
+
+        activity = std::make_unique<ChecklistActivity>(
+            title,
+            targetDate,
+            items,
+            description,
+            category,
+            priority,
+            completed,
+            id,
+            createdAt,
+            updatedAt
+        );
+
+        break;
+    }
+    }
+
+    if (!activity) {
+        return nullptr;
+    }
+
+    if (json.contains("recurrence") && json["recurrence"].isObject()) {
+        const std::optional<RecurrenceRule> recurrence =
+            recurrenceFromJson(json["recurrence"].toObject());
+
+        if (recurrence.has_value()) {
+            activity->setRecurrenceRule(recurrence.value());
+        }
+    }
+
+    return activity;
 }
 
 QJsonObject ActivityJsonSerializer::commonFieldsToJson(const Activity& activity)
@@ -177,4 +325,117 @@ QString ActivityJsonSerializer::recurrenceEndModeToJsonString(RecurrenceRule::En
     }
 
     return "after_occurrences";
+}
+
+Priority ActivityJsonSerializer::priorityFromJsonString(const QString& value)
+{
+    const QString normalized = value.trimmed().toLower();
+
+    if (normalized == "low") {
+        return Priority::Low;
+    }
+
+    if (normalized == "high") {
+        return Priority::High;
+    }
+
+    if (normalized == "critical") {
+        return Priority::Critical;
+    }
+
+    return Priority::Medium;
+}
+
+std::optional<ActivityKind> ActivityJsonSerializer::activityKindFromJsonString(const QString& value)
+{
+    const QString normalized = value.trimmed().toLower();
+
+    if (normalized == "event") {
+        return ActivityKind::Event;
+    }
+
+    if (normalized == "deadline") {
+        return ActivityKind::Deadline;
+    }
+
+    if (normalized == "reminder") {
+        return ActivityKind::Reminder;
+    }
+
+    if (normalized == "checklist") {
+        return ActivityKind::Checklist;
+    }
+
+    return std::nullopt;
+}
+
+RecurrenceRule::Frequency ActivityJsonSerializer::recurrenceFrequencyFromJsonString(const QString& value)
+{
+    const QString normalized = value.trimmed().toLower();
+
+    if (normalized == "daily") {
+        return RecurrenceRule::Frequency::Daily;
+    }
+
+    if (normalized == "monthly") {
+        return RecurrenceRule::Frequency::Monthly;
+    }
+
+    if (normalized == "yearly") {
+        return RecurrenceRule::Frequency::Yearly;
+    }
+
+    return RecurrenceRule::Frequency::Weekly;
+}
+
+RecurrenceRule::EndMode ActivityJsonSerializer::recurrenceEndModeFromJsonString(const QString& value)
+{
+    const QString normalized = value.trimmed().toLower();
+
+    if (normalized == "never") {
+        return RecurrenceRule::EndMode::Never;
+    }
+
+    if (normalized == "until_date") {
+        return RecurrenceRule::EndMode::UntilDate;
+    }
+
+    return RecurrenceRule::EndMode::AfterOccurrences;
+}
+
+std::optional<RecurrenceRule> ActivityJsonSerializer::recurrenceFromJson(const QJsonObject& json)
+{
+    const RecurrenceRule::Frequency frequency =
+        recurrenceFrequencyFromJsonString(json["frequency"].toString());
+
+    const int interval = json["interval"].toInt(1);
+
+    const RecurrenceRule::EndMode endMode =
+        recurrenceEndModeFromJsonString(json["endMode"].toString());
+
+    const QDateTime untilDate = dateTimeFromJsonString(json["untilDate"].toString());
+    const int maxOccurrences = json["maxOccurrences"].toInt(1);
+
+    RecurrenceRule recurrenceRule(
+        frequency,
+        interval,
+        endMode,
+        untilDate,
+        maxOccurrences
+    );
+
+    if (!recurrenceRule.isValid()) {
+        return std::nullopt;
+    }
+
+    return recurrenceRule;
+}
+
+QDateTime ActivityJsonSerializer::dateTimeFromJsonString(const QString& value)
+{
+    if (value.trimmed().isEmpty()) {
+        return QDateTime();
+    }
+
+    return QDateTime::fromString(value, Qt::ISODate);
 }

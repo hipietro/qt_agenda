@@ -9,15 +9,17 @@ class EventActivity : public Activity
 {
 public:
     EventActivity(const QString& title,
-                  const QDateTime& startDateTime,
-                  const QDateTime& endDateTime,
-                  const QString& location = QString(),
-                  const QStringList& participants = QStringList(),
-                  const QString& description = QString(),
-                  const QString& category = QString(),
-                  Priority priority = Priority::Medium,
-                  bool completed = false,
-                  const QString& id = QString());
+                const QDateTime& startDateTime,
+                const QDateTime& endDateTime,
+                const QString& location = QString(),
+                const QStringList& participants = QStringList(),
+                const QString& description = QString(),
+                const QString& category = QString(),
+                Priority priority = Priority::Medium,
+                bool completed = false,
+                const QString& id = QString(),
+                const QDateTime& createdAt = QDateTime::currentDateTime(),
+                const QDateTime& updatedAt = QDateTime::currentDateTime());
 
     QDateTime startDateTime() const;
     void setStartDateTime(const QDateTime& startDateTime);

@@ -7,8 +7,10 @@ ChecklistActivity::ChecklistActivity(const QString& title,
                                      const QString& category,
                                      Priority priority,
                                      bool completed,
-                                     const QString& id)
-    : Activity(title, description, category, priority, completed, id),
+                                     const QString& id,
+                                     const QDateTime& createdAt,
+                                     const QDateTime& updatedAt)
+    : Activity(title, description, category, priority, completed, id, createdAt, updatedAt),
       m_dueDate(dueDate),
       m_items(items)
 {

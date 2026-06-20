@@ -7,14 +7,16 @@ class DeadlineActivity : public Activity
 {
 public:
     DeadlineActivity(const QString& title,
-                     const QDateTime& dueDate,
-                     const QString& context = QString(),
-                     bool hardDeadline = true,
-                     const QString& description = QString(),
-                     const QString& category = QString(),
-                     Priority priority = Priority::Medium,
-                     bool completed = false,
-                     const QString& id = QString());
+                    const QDateTime& dueDate,
+                    const QString& context = QString(),
+                    bool hardDeadline = true,
+                    const QString& description = QString(),
+                    const QString& category = QString(),
+                    Priority priority = Priority::Medium,
+                    bool completed = false,
+                    const QString& id = QString(),
+                    const QDateTime& createdAt = QDateTime::currentDateTime(),
+                    const QDateTime& updatedAt = QDateTime::currentDateTime());
 
     QDateTime dueDate() const;
     void setDueDate(const QDateTime& dueDate);

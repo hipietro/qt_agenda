@@ -7,14 +7,16 @@ class ReminderActivity : public Activity
 {
 public:
     ReminderActivity(const QString& title,
-                     const QDateTime& reminderDateTime,
-                     int advanceMinutes = 0,
-                     const QString& reminderNote = QString(),
-                     const QString& description = QString(),
-                     const QString& category = QString(),
-                     Priority priority = Priority::Medium,
-                     bool completed = false,
-                     const QString& id = QString());
+                    const QDateTime& reminderDateTime,
+                    int advanceMinutes = 0,
+                    const QString& reminderNote = QString(),
+                    const QString& description = QString(),
+                    const QString& category = QString(),
+                    Priority priority = Priority::Medium,
+                    bool completed = false,
+                    const QString& id = QString(),
+                    const QDateTime& createdAt = QDateTime::currentDateTime(),
+                    const QDateTime& updatedAt = QDateTime::currentDateTime());
 
     QDateTime reminderDateTime() const;
     void setReminderDateTime(const QDateTime& reminderDateTime);

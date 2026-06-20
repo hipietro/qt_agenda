@@ -538,3 +538,43 @@ Validation:
 - Verified that serialization code is located in the persistence layer.
 
 Estimated time spent: 1.5h
+
+### 2026-06-19 - Activity JSON deserialization
+
+Implemented JSON deserialization for concrete activity reconstruction.
+
+Added:
+
+- `ActivityJsonSerializer::fromJson(...)`
+- JSON reconstruction for `EventActivity`
+- JSON reconstruction for `DeadlineActivity`
+- JSON reconstruction for `ReminderActivity`
+- JSON reconstruction for `ChecklistActivity`
+- priority parsing from JSON strings
+- activity type parsing from JSON strings
+- recurrence parsing from JSON objects
+- ISO date/time parsing from JSON strings
+- support for restoring activity identity and timestamps
+
+Updated:
+
+- concrete activity constructors now support restoring `createdAt` and `updatedAt`
+- `EventActivity`, `DeadlineActivity`, `ReminderActivity` and `ChecklistActivity` can now be reconstructed from persisted data
+
+Design notes:
+
+- Deserialization uses the saved activity type to rebuild the correct concrete subclass.
+- Invalid or unknown activity types return `nullptr`.
+- Recurrence is restored only when valid recurrence data is present.
+- Preserving activity ids is necessary for future save/load consistency and GUI selection logic.
+- Preserving timestamps avoids treating loaded activities as newly created ones.
+- The persistence layer remains independent from Qt Widgets and GUI code.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that all concrete activity types can be constructed from JSON data.
+- Verified that recurrence data can be parsed and restored.
+- Verified that constructor signatures are compatible with persistence requirements.
+
+Estimated time spent: 2h

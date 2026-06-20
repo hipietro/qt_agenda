@@ -15,13 +15,15 @@ class ChecklistActivity : public Activity
 {
 public:
     ChecklistActivity(const QString& title,
-                      const QDateTime& dueDate = QDateTime(),
-                      const QVector<ChecklistItem>& items = QVector<ChecklistItem>(),
-                      const QString& description = QString(),
-                      const QString& category = QString(),
-                      Priority priority = Priority::Medium,
-                      bool completed = false,
-                      const QString& id = QString());
+                    const QDateTime& dueDate = QDateTime(),
+                    const QVector<ChecklistItem>& items = QVector<ChecklistItem>(),
+                    const QString& description = QString(),
+                    const QString& category = QString(),
+                    Priority priority = Priority::Medium,
+                    bool completed = false,
+                    const QString& id = QString(),
+                    const QDateTime& createdAt = QDateTime::currentDateTime(),
+                    const QDateTime& updatedAt = QDateTime::currentDateTime());
 
     QDateTime dueDate() const;
     void setDueDate(const QDateTime& dueDate);

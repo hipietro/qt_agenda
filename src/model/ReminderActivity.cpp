@@ -8,8 +8,10 @@ ReminderActivity::ReminderActivity(const QString& title,
                                    const QString& category,
                                    Priority priority,
                                    bool completed,
-                                   const QString& id)
-    : Activity(title, description, category, priority, completed, id),
+                                   const QString& id,
+                                   const QDateTime& createdAt,
+                                   const QDateTime& updatedAt)
+    : Activity(title, description, category, priority, completed, id, createdAt, updatedAt),
       m_reminderDateTime(reminderDateTime),
       m_advanceMinutes(advanceMinutes),
       m_reminderNote(reminderNote)
