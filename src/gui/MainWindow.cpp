@@ -3,6 +3,7 @@
 #include "model/ActivityFilter.h"
 #include "model/ActivityManager.h"
 #include "model/SearchEngine.h"
+#include "persistence/AgendaJsonStorage.h"
 
 #include <QComboBox>
 #include <QDateTime>
@@ -18,12 +19,17 @@
 #include <QVBoxLayout>
 #include <QVariant>
 #include <QWidget>
+#include <QFileDialog>
+#include <QMenu>
+#include <QMenuBar>
+#include <QStatusBar>
 
 MainWindow::MainWindow(ActivityManager* activityManager, QWidget* parent)
     : QMainWindow(parent),
       m_activityManager(activityManager)
 {
     setupUi();
+    setupMenuBar();
     connectSignals();
     refreshActivityList();
 }
@@ -109,6 +115,31 @@ void MainWindow::setupUi()
     mainLayout->addWidget(splitter);
 
     setCentralWidget(centralWidget);
+}
+
+void MainWindow::setupMenuBar()
+{
+    QMenu* fileMenu = menuBar()->addMenu("File");
+
+    QAction* loadAction = fileMenu->addAction("Load...");
+    QAction* saveAction = fileMenu->addAction("Save");
+    QAction* saveAsAction = fileMenu->addAction("Save As...");
+
+    loadAction->setShortcut(QKeySequence("Ctrl+O"));
+    saveAction->setShortcut(QKeySequence("Ctrl+S"));
+    saveAsAction->setShortcut(QKeySequence("Ctrl+Shift+S"));
+
+    connect(loadAction, &QAction::triggered, this, [this]() {
+        loadAgenda();
+    });
+
+    connect(saveAction, &QAction::triggered, this, [this]() {
+        saveAgenda();
+    });
+
+    connect(saveAsAction, &QAction::triggered, this, [this]() {
+        saveAgendaAs();
+    });
 }
 
 void MainWindow::connectSignals()
@@ -453,4 +484,94 @@ void MainWindow::deleteSelectedActivity()
     m_activityManager->removeActivity(activityId);
 
     refreshActivityList();
+}
+
+void MainWindow::saveAgenda()
+{
+    if (m_currentFilePath.trimmed().isEmpty()) {
+        saveAgendaAs();
+        return;
+    }
+
+    QString errorMessage;
+
+    const bool saved = AgendaJsonStorage::saveToFile(
+        *m_activityManager,
+        m_currentFilePath,
+        &errorMessage
+    );
+
+    if (!saved) {
+        QMessageBox::warning(this, "Save failed", errorMessage);
+        statusBar()->showMessage("Save failed", 3000);
+        return;
+    }
+
+    statusBar()->showMessage(QString("Saved to %1").arg(m_currentFilePath), 3000);
+    updateWindowTitle();
+}
+
+void MainWindow::saveAgendaAs()
+{
+    const QString filePath = QFileDialog::getSaveFileName(
+        this,
+        "Save agenda",
+        QString(),
+        "Agenda JSON (*.json);;All files (*)"
+    );
+
+    if (filePath.trimmed().isEmpty()) {
+        return;
+    }
+
+    m_currentFilePath = filePath;
+    saveAgenda();
+}
+
+void MainWindow::loadAgenda()
+{
+    const QString filePath = QFileDialog::getOpenFileName(
+        this,
+        "Load agenda",
+        QString(),
+        "Agenda JSON (*.json);;All files (*)"
+    );
+
+    if (filePath.trimmed().isEmpty()) {
+        return;
+    }
+
+    QString errorMessage;
+
+    const bool loaded = AgendaJsonStorage::loadFromFile(
+        *m_activityManager,
+        filePath,
+        &errorMessage
+    );
+
+    if (!loaded) {
+        QMessageBox::warning(this, "Load failed", errorMessage);
+        statusBar()->showMessage("Load failed", 3000);
+        return;
+    }
+
+    m_currentFilePath = filePath;
+
+    m_searchEdit->clear();
+    m_typeCombo->setCurrentIndex(0);
+
+    refreshActivityList();
+    updateWindowTitle();
+
+    statusBar()->showMessage(QString("Loaded from %1").arg(m_currentFilePath), 3000);
+}
+
+void MainWindow::updateWindowTitle()
+{
+    if (m_currentFilePath.trimmed().isEmpty()) {
+        setWindowTitle("Agenda Qt - Untitled");
+        return;
+    }
+
+    setWindowTitle(QString("Agenda Qt - %1").arg(m_currentFilePath));
 }

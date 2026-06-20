@@ -25,11 +25,13 @@ public:
 
 private:
     void setupUi();
+    void setupMenuBar();
     void connectSignals();
 
     void refreshActivityList();
     void showActivityDetails(const Activity* activity);
     void updateActionButtons();
+    void updateWindowTitle();
 
     std::vector<const Activity*> collectVisibleActivities() const;
     const Activity* findActivityById(const QString& id) const;
@@ -42,6 +44,10 @@ private:
     void toggleSelectedActivityCompletion();
     void deleteSelectedActivity();
 
+    void saveAgenda();
+    void saveAgendaAs();
+    void loadAgenda();
+
     ActivityManager* m_activityManager = nullptr;
 
     QLineEdit* m_searchEdit = nullptr;
@@ -51,6 +57,8 @@ private:
     QLabel* m_resultCountLabel = nullptr;
     QPushButton* m_toggleCompletedButton = nullptr;
     QPushButton* m_deleteButton = nullptr;
+
+    QString m_currentFilePath;
 };
 
 #endif

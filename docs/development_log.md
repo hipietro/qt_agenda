@@ -614,3 +614,42 @@ Validation:
 - Verified that the persistence layer remains independent from Qt Widgets.
 
 Estimated time spent: 1.5h
+
+### 2026-06-20 - GUI save and load actions
+
+Added file save and load actions to the GUI.
+
+Added:
+
+- File menu
+- Load action
+- Save action
+- Save As action
+- keyboard shortcuts for file actions
+- JSON save through `AgendaJsonStorage`
+- JSON load through `AgendaJsonStorage`
+- file dialogs for choosing save/load paths
+- status bar feedback after save/load operations
+- window title update based on the current file path
+
+Design notes:
+
+- File paths are selected through `QFileDialog`.
+- No hardcoded persistence path is used.
+- `Save` reuses the current file path when available.
+- `Save As` lets the user choose a new file path.
+- `Load` replaces the current agenda content only if the selected JSON file is valid.
+- The GUI remains based on a single `MainWindow`.
+- Deleting an activity does not automatically save the file; the user must explicitly save the current state.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that Save As creates a JSON file.
+- Verified that Load restores previously saved activities.
+- Verified that deleted activities return when loading an older saved file.
+- Verified that Cmd+S saves the current agenda state.
+- Verified that file actions work without hardcoded paths.
+- Verified that shortcuts work correctly on macOS.
+
+Estimated time spent: 1.5h
