@@ -6,6 +6,7 @@
 #include "persistence/AgendaJsonStorage.h"
 
 #include <QComboBox>
+#include <QAction>
 #include <QDateTime>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -32,6 +33,15 @@ MainWindow::MainWindow(ActivityManager* activityManager, QWidget* parent)
     setupMenuBar();
     connectSignals();
     refreshActivityList();
+}
+
+void MainWindow::closeEvent(QCloseEvent* event)
+{
+    if (confirmDiscardUnsavedChanges()) {
+        event->accept();
+    } else {
+        event->ignore();
+    }
 }
 
 void MainWindow::setupUi()
@@ -444,6 +454,7 @@ void MainWindow::toggleSelectedActivityCompletion()
     }
 
     activity->setCompleted(!activity->isCompleted());
+    setUnsavedChanges(true);
 
     refreshActivityList();
 
@@ -482,6 +493,7 @@ void MainWindow::deleteSelectedActivity()
     }
 
     m_activityManager->removeActivity(activityId);
+    setUnsavedChanges(true);
 
     refreshActivityList();
 }
@@ -507,6 +519,7 @@ void MainWindow::saveAgenda()
         return;
     }
 
+    setUnsavedChanges(false);
     statusBar()->showMessage(QString("Saved to %1").arg(m_currentFilePath), 3000);
     updateWindowTitle();
 }
@@ -530,6 +543,10 @@ void MainWindow::saveAgendaAs()
 
 void MainWindow::loadAgenda()
 {
+    if (!confirmDiscardUnsavedChanges()) {
+        return;
+    }
+
     const QString filePath = QFileDialog::getOpenFileName(
         this,
         "Load agenda",
@@ -556,6 +573,7 @@ void MainWindow::loadAgenda()
     }
 
     m_currentFilePath = filePath;
+    setUnsavedChanges(false);
 
     m_searchEdit->clear();
     m_typeCombo->setCurrentIndex(0);
@@ -568,10 +586,44 @@ void MainWindow::loadAgenda()
 
 void MainWindow::updateWindowTitle()
 {
+    const QString dirtyMarker = m_hasUnsavedChanges ? " *" : "";
+
     if (m_currentFilePath.trimmed().isEmpty()) {
-        setWindowTitle("Agenda Qt - Untitled");
+        setWindowTitle(QString("Agenda Qt - Untitled%1").arg(dirtyMarker));
         return;
     }
 
-    setWindowTitle(QString("Agenda Qt - %1").arg(m_currentFilePath));
+    setWindowTitle(QString("Agenda Qt - %1%2")
+                   .arg(m_currentFilePath)
+                   .arg(dirtyMarker));
+}
+
+void MainWindow::setUnsavedChanges(bool hasUnsavedChanges)
+{
+    if (m_hasUnsavedChanges == hasUnsavedChanges) {
+        return;
+    }
+
+    m_hasUnsavedChanges = hasUnsavedChanges;
+    updateWindowTitle();
+
+    if (m_hasUnsavedChanges) {
+        statusBar()->showMessage("Unsaved changes", 2000);
+    }
+}
+
+bool MainWindow::confirmDiscardUnsavedChanges()
+{
+    if (!m_hasUnsavedChanges) {
+        return true;
+    }
+
+    const QMessageBox::StandardButton answer = QMessageBox::question(
+        this,
+        "Unsaved changes",
+        "There are unsaved changes. Do you want to discard them?",
+        QMessageBox::Yes | QMessageBox::No
+    );
+
+    return answer == QMessageBox::Yes;
 }

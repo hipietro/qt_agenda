@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QCloseEvent>
 #include <QMainWindow>
 #include <QString>
 
@@ -22,6 +23,8 @@ class MainWindow : public QMainWindow
 {
 public:
     explicit MainWindow(ActivityManager* activityManager, QWidget* parent = nullptr);
+protected:
+    void closeEvent(QCloseEvent* event) override;
 
 private:
     void setupUi();
@@ -32,6 +35,8 @@ private:
     void showActivityDetails(const Activity* activity);
     void updateActionButtons();
     void updateWindowTitle();
+    void setUnsavedChanges(bool hasUnsavedChanges);
+    bool confirmDiscardUnsavedChanges();
 
     std::vector<const Activity*> collectVisibleActivities() const;
     const Activity* findActivityById(const QString& id) const;
@@ -59,6 +64,7 @@ private:
     QPushButton* m_deleteButton = nullptr;
 
     QString m_currentFilePath;
+    bool m_hasUnsavedChanges = false;
 };
 
 #endif

@@ -653,3 +653,39 @@ Validation:
 - Verified that shortcuts work correctly on macOS.
 
 Estimated time spent: 1.5h
+
+### 2026-06-20 - Unsaved changes tracking
+
+Implemented unsaved changes tracking in the GUI.
+
+Added:
+
+- dirty-state tracking for unsaved changes
+- `*` marker in the window title when the agenda has unsaved changes
+- confirmation dialog before loading another file with unsaved changes
+- confirmation dialog before closing the app with unsaved changes
+- dirty-state reset after successful save
+- dirty-state reset after successful load
+- dirty-state update after deleting an activity
+- dirty-state update after toggling activity completion
+
+Design notes:
+
+- The GUI tracks whether the current in-memory agenda differs from the last saved or loaded file.
+- The `*` marker gives immediate visual feedback to the user.
+- Loading a file is blocked unless the user confirms discarding unsaved changes.
+- Closing the application is blocked unless the user confirms discarding unsaved changes.
+- This feature does not implement undo/redo yet; it only protects against accidental loss of unsaved work.
+- Save and Load still rely on `AgendaJsonStorage`, keeping persistence logic separated from the GUI.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that deleting an activity marks the agenda as unsaved.
+- Verified that toggling completion marks the agenda as unsaved.
+- Verified that saving removes the unsaved marker.
+- Verified that loading a file with unsaved changes asks for confirmation.
+- Verified that closing the app with unsaved changes asks for confirmation.
+- Verified that loading a valid JSON file still refreshes the GUI correctly.
+
+Estimated time spent: 1h
