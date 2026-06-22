@@ -3,7 +3,9 @@
 #include "model/ActivityFilter.h"
 #include "model/ActivityManager.h"
 #include "model/SearchEngine.h"
+#include "model/ChecklistActivity.h"
 #include "persistence/AgendaJsonStorage.h"
+#include "ActivityCreationDialog.h"
 
 #include <QComboBox>
 #include <QAction>
@@ -24,6 +26,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QStatusBar>
+#include <QDialog>
 
 MainWindow::MainWindow(ActivityManager* activityManager, QWidget* parent)
     : QMainWindow(parent),
@@ -86,6 +89,9 @@ void MainWindow::setupUi()
     m_activityList = new QListWidget(leftPanel);
     m_activityList->setSpacing(4);
 
+    m_addButton = new QPushButton("Add activity", leftPanel);
+    m_addButton->setObjectName("primaryButton");
+
     m_toggleCompletedButton = new QPushButton("Mark completed", leftPanel);
     m_toggleCompletedButton->setObjectName("primaryButton");
 
@@ -93,6 +99,7 @@ void MainWindow::setupUi()
     m_deleteButton->setObjectName("dangerButton");
 
     QHBoxLayout* actionLayout = new QHBoxLayout();
+    actionLayout->addWidget(m_addButton);
     actionLayout->addWidget(m_toggleCompletedButton);
     actionLayout->addWidget(m_deleteButton);
 
@@ -180,6 +187,10 @@ void MainWindow::connectSignals()
         const QString activityId = item->data(Qt::UserRole).toString();
         showActivityDetails(findActivityById(activityId));
         updateActionButtons();
+    });
+
+    connect(m_addButton, &QPushButton::clicked, this, [this]() {
+        createActivity();
     });
 
     connect(m_toggleCompletedButton, &QPushButton::clicked, this, [this]() {
@@ -301,11 +312,33 @@ void MainWindow::showActivityDetails(const Activity* activity)
         details += activity->description();
     }
 
+    /* Se l'attività è una checklist mostro anche i singoli item.
+       Ho scelto di farlo qui perché la detail view deve essere utile
+       anche prima di implementare il dialog di modifica. */
+    if (activity->kind() == ActivityKind::Checklist) {
+        const ChecklistActivity& checklist =
+            static_cast<const ChecklistActivity&>(*activity);
+
+        details += "\n\nChecklist items:\n";
+
+        if (checklist.items().isEmpty()) {
+            details += "- No items\n";
+        } else {
+            for (const ChecklistItem& item : checklist.items()) {
+                const QString marker = item.completed ? "[x]" : "[ ]";
+                details += QString("%1 %2\n").arg(marker, item.text);
+            }
+        }
+    }
+
     m_detailView->setPlainText(details);
 }
 
 void MainWindow::updateActionButtons()
 {
+    if (m_addButton) {
+        m_addButton->setEnabled(m_activityManager != nullptr);
+    }
     const QString activityId = selectedActivityId();
     const Activity* activity = activityId.isEmpty() ? nullptr : findActivityById(activityId);
 
@@ -626,4 +659,56 @@ bool MainWindow::confirmDiscardUnsavedChanges()
     );
 
     return answer == QMessageBox::Yes;
+}
+
+void MainWindow::createActivity()
+{
+    if (!m_activityManager) {
+        return;
+    }
+
+    /*
+     * Il dialog costruisce l'attività concreta e la restituisce come Activity.
+     * Ho scelto questo flusso per tenere la logica di creazione fuori dalla MainWindow.
+     */
+    ActivityCreationDialog dialog(this);
+
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    std::unique_ptr<Activity> activity = dialog.takeCreatedActivity();
+
+    if (!activity) {
+        return;
+    }
+
+    const QString createdActivityId = activity->id();
+
+    if (!m_activityManager->addActivity(std::move(activity))) {
+        QMessageBox::warning(this, "Create activity failed", "The activity could not be added.");
+        return;
+    }
+
+    setUnsavedChanges(true);
+
+    refreshActivityList();
+
+    /*
+     * Dopo il refresh provo a selezionare subito l'attività appena creata,
+     * così l'utente vede immediatamente il risultato dell'operazione.
+     */
+    for (int row = 0; row < m_activityList->count(); ++row) {
+        QListWidgetItem* item = m_activityList->item(row);
+
+        if (item && item->data(Qt::UserRole).toString() == createdActivityId) {
+            m_activityList->setCurrentRow(row);
+            break;
+        }
+    }
+
+    showActivityDetails(findActivityById(createdActivityId));
+    updateActionButtons();
+
+    statusBar()->showMessage("Activity created", 3000);
 }

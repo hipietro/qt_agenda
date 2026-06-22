@@ -48,6 +48,7 @@ private:
 
     void toggleSelectedActivityCompletion();
     void deleteSelectedActivity();
+    void createActivity();
 
     void saveAgenda();
     void saveAgendaAs();
@@ -60,6 +61,8 @@ private:
     QListWidget* m_activityList = nullptr;
     QTextEdit* m_detailView = nullptr;
     QLabel* m_resultCountLabel = nullptr;
+
+    QPushButton* m_addButton = nullptr;
     QPushButton* m_toggleCompletedButton = nullptr;
     QPushButton* m_deleteButton = nullptr;
 

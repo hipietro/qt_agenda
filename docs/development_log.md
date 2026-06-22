@@ -689,3 +689,63 @@ Validation:
 - Verified that loading a valid JSON file still refreshes the GUI correctly.
 
 Estimated time spent: 1h
+
+### 2026-06-21 - Activity creation dialog
+
+Implemented the activity creation dialog.
+
+Added:
+
+- `ActivityCreationDialog`
+- creation form for `EventActivity`
+- creation form for `DeadlineActivity`
+- creation form for `ReminderActivity`
+- creation form for `ChecklistActivity`
+- common fields shared by all activity types:
+  - title
+  - description
+  - category
+  - priority
+- type-specific fields shown through an internal `QStackedWidget`
+- validation for empty titles
+- validation for event end time after start time
+- add activity button in `MainWindow`
+- insertion of created activities into `ActivityManager`
+- automatic selection of the newly created activity
+- unsaved changes tracking after activity creation
+
+Improved:
+
+- dialog layout and spacing
+- readability of date/time widgets
+- readability of combo boxes and spin boxes
+- dropdown arrow visibility for combo boxes and date/time fields
+- hover/selection feedback for combo box popup items
+- checklist item visibility in the activity detail panel
+- QSS styling for the creation workflow
+
+Design notes:
+
+- The creation dialog is separated from `MainWindow` to keep the main window focused on coordination and navigation.
+- The dialog creates concrete activity subclasses and returns them as `std::unique_ptr<Activity>`.
+- This keeps the rest of the GUI based on the abstract `Activity` interface.
+- I used a `QStackedWidget` because each concrete activity type needs different input fields.
+- I kept the dialog modal because it is a temporary data-entry step, not a separate persistent application window.
+- The created activity is inserted through `ActivityManager`, so ownership remains centralized.
+- The GUI remains based on a single main workflow, while necessary temporary dialogs are used only when appropriate.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that Event activities can be created.
+- Verified that Deadline activities can be created.
+- Verified that Reminder activities can be created.
+- Verified that Checklist activities can be created.
+- Verified that checklist items are shown in the detail panel.
+- Verified that created activities appear in the main list.
+- Verified that the newly created activity is selected after creation.
+- Verified that creating an activity marks the agenda as unsaved.
+- Verified that saved and reloaded JSON files preserve created activities.
+- Verified that date/time fields are readable and no longer show black-on-black text.
+
+Estimated time spent: 2.5h
