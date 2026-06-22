@@ -1,0 +1,256 @@
+# Extra features and design highlights
+
+This document tracks the optional or enhanced features implemented in the project, beyond the minimum functional requirements.
+Its purpose is to make these choices explicit for the final report and for project evaluation.
+
+## Search improvements
+
+### Case-insensitive search
+
+The search system is case-insensitive.
+This means that searching for `meeting`, `Meeting` or `MEETING` produces consistent results.
+
+This improves usability because users do not need to remember the exact capitalization used when creating an activity.
+
+### Accent-insensitive search
+
+The search system normalizes text before comparing it.
+This makes searches more tolerant when working with accented characters.
+
+For example, a search can still match relevant text even when accents are typed differently.
+
+### Partial search
+
+The search system supports partial matches.
+The user does not need to type the complete title or description of an activity.
+
+This makes the search more practical in everyday use, especially when the agenda contains many activities.
+
+### Ranked search results
+
+Search results are not simply returned in arbitrary order.
+The `SearchEngine` assigns relevance based on where the match occurs, for example giving more importance to matches in the title than matches in secondary text.
+
+This makes the search more useful because the most relevant activities tend to appear first.
+
+### Fuzzy suggestion when no direct result is found
+
+If the search produces no exact or partial result, the system can suggest close matches using a similarity-based approach.
+
+This is useful when the user makes small typing mistakes or remembers only an approximate title.
+
+## Filtering and sorting
+
+### Advanced activity filtering
+
+The project includes a dedicated filtering component, `ActivityFilter`, which allows activities to be filtered by multiple criteria.
+
+Supported filters include:
+
+* activity type
+* category
+* priority
+* completion state
+* overdue state
+* recurrence state
+* date range
+
+This goes beyond a basic agenda list because the user can narrow the visible activities according to practical needs.
+
+### Multiple sorting criteria
+
+Activities can be sorted using different criteria, such as:
+
+* title
+* primary date
+* priority
+* completion state
+* creation date
+* update date
+
+This improves the flexibility of the application and keeps sorting logic separated from the GUI.
+
+## Checklist improvements
+
+### Checklist activities as a concrete activity type
+
+Checklist activities are implemented as one of the concrete subclasses of `Activity`.
+
+They are not just plain text notes: each checklist stores individual items and each item has its own completion state.
+
+### Checklist progress calculation
+
+Checklist activities can show their completion progress based on the number of completed items.
+
+This gives the user more information than a simple completed/not completed state.
+
+### Checklist item editing through GUI checkboxes
+
+Checklist items can be edited using selectable checkbox items in the edit dialog.
+
+This avoids requiring the user to manually write textual markers such as `[x]` or `[ ]`, reducing input errors and making the GUI more intuitive.
+
+## Activity hierarchy and polymorphism
+
+### Abstract base class with concrete activity types
+
+The project uses an abstract `Activity` base class and multiple concrete derived classes:
+
+* `EventActivity`
+* `DeadlineActivity`
+* `ReminderActivity`
+* `ChecklistActivity`
+
+Each concrete activity type defines its own behavior for methods such as:
+
+* `kind()`
+* `primaryDate()`
+* `isOverdue()`
+* `summary()`
+* `clone()`
+
+### Non-trivial polymorphism
+
+The application relies on polymorphism to treat different activity types through the common `Activity` interface.
+
+For example, the GUI and manager can work with `Activity` pointers while each concrete subclass provides its own summary, date logic and overdue behavior.
+
+This avoids placing all behavior in a single monolithic class.
+
+## Activity manager features
+
+### Centralized ownership
+
+Activities are stored and managed by `ActivityManager`.
+
+The GUI does not own activities directly.
+This keeps ownership centralized and makes memory management clearer.
+
+### Safe replacement of edited activities
+
+When an activity is edited, the edit dialog creates an updated concrete instance.
+The `ActivityManager` then replaces the old activity while preserving the same id.
+
+This keeps editing logic clean and avoids exposing too many type-specific setters in the model.
+
+### Activity cloning
+
+Activities support cloning through polymorphic `clone()` methods.
+
+This is useful for features such as templates and safe object duplication.
+
+## Templates
+
+### Activity templates
+
+The model includes support for reusable activity templates through `ActivityTemplate` and `ActivityTemplateManager`.
+
+Templates allow the application to create new activities starting from a predefined prototype.
+
+This is an optional feature that improves extensibility and can be useful for repeated tasks.
+
+## Categories
+
+### Custom category model
+
+The project includes a `Category` model and a `CategoryManager`.
+
+Categories are not only plain strings inside activities: they can be managed separately and can include additional information such as color.
+
+### Category propagation
+
+The activity manager includes logic to update or clear categories across existing activities.
+
+This allows category changes to be reflected consistently in the agenda.
+
+## Recurrence
+
+### Recurrence model
+
+The project includes a `RecurrenceRule` model.
+
+Supported recurrence frequencies include:
+
+* daily
+* weekly
+* monthly
+* yearly
+
+Supported end modes include:
+
+* never
+* until a specific date
+* after a number of occurrences
+
+Although the GUI controls for recurrence are still being developed, the model and persistence layers already support recurring activities.
+
+## Persistence
+
+### JSON serialization and deserialization
+
+The application supports saving and loading activities from local JSON files.
+
+The JSON persistence layer reconstructs the correct concrete activity subclass when loading data.
+
+### Safe loading strategy
+
+The JSON loading process reconstructs activities before replacing the current agenda.
+
+This reduces the risk of losing the current state if the selected JSON file is invalid.
+
+### File dialog integration
+
+Save and load operations are integrated into the GUI through file dialogs.
+
+The application does not rely on hardcoded file paths.
+
+## GUI and user experience
+
+### Single main window workflow
+
+The application is based on a single main window.
+
+Temporary modal dialogs are used only for focused actions such as creating or editing an activity.
+
+This keeps navigation simple and avoids opening many unrelated top-level windows.
+
+### Unsaved changes tracking
+
+The GUI tracks unsaved changes.
+
+When the agenda has been modified, the window title shows an unsaved marker and the user is warned before closing or loading another file.
+
+This reduces the risk of accidental data loss.
+
+### Automatic selection after creation and editing
+
+After creating or editing an activity, the application automatically selects the affected activity in the list.
+
+This gives immediate visual feedback and makes the workflow smoother.
+
+### Improved widget styling
+
+The project includes custom QSS styling to improve readability and consistency.
+
+Specific attention was given to:
+
+* date/time fields
+* combo boxes
+* spin boxes
+* checklist checkboxes
+* button states
+* selected list items
+
+This also helps the application look less like a default Qt prototype.
+
+## Planned enhancements to mention if completed later
+
+The following features are planned or partially prepared, but should only be listed as completed if they are actually implemented before submission:
+
+* recurrence controls in the GUI
+* template creation and usage from the GUI
+* category management from the GUI
+* undo/redo commands
+* CSV import/export
+* final modern GUI polish with sidebar, icons and dashboard-like layout
+* Docker validation with the professor's environment
