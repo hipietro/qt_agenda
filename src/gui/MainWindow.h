@@ -49,6 +49,7 @@ private:
     void toggleSelectedActivityCompletion();
     void deleteSelectedActivity();
     void createActivity();
+    void editSelectedActivity();
 
     void saveAgenda();
     void saveAgendaAs();
@@ -65,6 +66,7 @@ private:
     QPushButton* m_addButton = nullptr;
     QPushButton* m_toggleCompletedButton = nullptr;
     QPushButton* m_deleteButton = nullptr;
+    QPushButton* m_editButton = nullptr;
 
     QString m_currentFilePath;
     bool m_hasUnsavedChanges = false;

@@ -234,3 +234,34 @@ QPushButton#dangerButton:disabled {
     color: #888888;
     border: 1px solid #cfcfcf;
 }
+
+/* Rendo visibili le checkbox usate nella modifica delle checklist.
+   Ho scelto di stilare sia QListWidget::indicator sia QCheckBox::indicator
+   perché Qt può usare indicator diversi a seconda del widget concreto. */
+
+QListWidget::indicator,
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border: 1px solid #555555;
+    border-radius: 3px;
+    background-color: #ffffff;
+}
+
+QListWidget::indicator:hover,
+QCheckBox::indicator:hover {
+    border: 1px solid #3F51B5;
+    background-color: #eef2ff;
+}
+
+QListWidget::indicator:checked,
+QCheckBox::indicator:checked {
+    border: 1px solid #303F9F;
+    background-color: #3F51B5;
+}
+
+QListWidget::indicator:disabled,
+QCheckBox::indicator:disabled {
+    border: 1px solid #aaaaaa;
+    background-color: #dddddd;
+}

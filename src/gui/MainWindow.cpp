@@ -6,6 +6,7 @@
 #include "model/ChecklistActivity.h"
 #include "persistence/AgendaJsonStorage.h"
 #include "ActivityCreationDialog.h"
+#include "ActivityEditDialog.h"
 
 #include <QComboBox>
 #include <QAction>
@@ -89,8 +90,11 @@ void MainWindow::setupUi()
     m_activityList = new QListWidget(leftPanel);
     m_activityList->setSpacing(4);
 
-    m_addButton = new QPushButton("Add activity", leftPanel);
+   m_addButton = new QPushButton("Add activity", leftPanel);
     m_addButton->setObjectName("primaryButton");
+
+    m_editButton = new QPushButton("Edit activity", leftPanel);
+    m_editButton->setObjectName("primaryButton");
 
     m_toggleCompletedButton = new QPushButton("Mark completed", leftPanel);
     m_toggleCompletedButton->setObjectName("primaryButton");
@@ -98,10 +102,13 @@ void MainWindow::setupUi()
     m_deleteButton = new QPushButton("Delete activity", leftPanel);
     m_deleteButton->setObjectName("dangerButton");
 
-    QHBoxLayout* actionLayout = new QHBoxLayout();
-    actionLayout->addWidget(m_addButton);
-    actionLayout->addWidget(m_toggleCompletedButton);
-    actionLayout->addWidget(m_deleteButton);
+    QHBoxLayout* primaryActionLayout = new QHBoxLayout();
+    primaryActionLayout->addWidget(m_addButton);
+    primaryActionLayout->addWidget(m_editButton);
+
+    QHBoxLayout* secondaryActionLayout = new QHBoxLayout();
+    secondaryActionLayout->addWidget(m_toggleCompletedButton);
+    secondaryActionLayout->addWidget(m_deleteButton);
 
     leftLayout->addWidget(searchLabel);
     leftLayout->addWidget(m_searchEdit);
@@ -109,7 +116,8 @@ void MainWindow::setupUi()
     leftLayout->addWidget(m_typeCombo);
     leftLayout->addWidget(m_resultCountLabel);
     leftLayout->addWidget(m_activityList);
-    leftLayout->addLayout(actionLayout);
+    leftLayout->addLayout(primaryActionLayout);
+    leftLayout->addLayout(secondaryActionLayout);
 
     QWidget* rightPanel = new QWidget(splitter);
     rightPanel->setMinimumWidth(620);
@@ -199,6 +207,10 @@ void MainWindow::connectSignals()
 
     connect(m_deleteButton, &QPushButton::clicked, this, [this]() {
         deleteSelectedActivity();
+    });
+
+    connect(m_editButton, &QPushButton::clicked, this, [this]() {
+        editSelectedActivity();
     });
 }
 
@@ -353,6 +365,10 @@ void MainWindow::updateActionButtons()
             m_toggleCompletedButton->setText("Mark completed");
         }
     }
+
+    if (m_editButton) {
+    m_editButton->setEnabled(hasSelection);
+}
 
     if (m_deleteButton) {
         m_deleteButton->setEnabled(hasSelection);
@@ -711,4 +727,62 @@ void MainWindow::createActivity()
     updateActionButtons();
 
     statusBar()->showMessage("Activity created", 3000);
+}
+
+void MainWindow::editSelectedActivity()
+{
+    if (!m_activityManager) {
+        return;
+    }
+
+    const QString activityId = selectedActivityId();
+
+    if (activityId.isEmpty()) {
+        return;
+    }
+
+    const Activity* activity = m_activityManager->findActivityById(activityId);
+
+    if (!activity) {
+        return;
+    }
+
+    /*
+     * Il dialog modifica una copia logica dell'attività.
+     * Quando l'utente conferma, sostituisco l'oggetto nel manager mantenendo lo stesso id.
+     */
+    ActivityEditDialog dialog(*activity, this);
+
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    std::unique_ptr<Activity> updatedActivity = dialog.takeUpdatedActivity();
+
+    if (!updatedActivity) {
+        return;
+    }
+
+    if (!m_activityManager->replaceActivity(activityId, std::move(updatedActivity))) {
+        QMessageBox::warning(this, "Edit activity failed", "The activity could not be updated.");
+        return;
+    }
+
+    setUnsavedChanges(true);
+
+    refreshActivityList();
+
+    for (int row = 0; row < m_activityList->count(); ++row) {
+        QListWidgetItem* item = m_activityList->item(row);
+
+        if (item && item->data(Qt::UserRole).toString() == activityId) {
+            m_activityList->setCurrentRow(row);
+            break;
+        }
+    }
+
+    showActivityDetails(findActivityById(activityId));
+    updateActionButtons();
+
+    statusBar()->showMessage("Activity updated", 3000);
 }

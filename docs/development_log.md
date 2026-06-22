@@ -749,3 +749,55 @@ Validation:
 - Verified that date/time fields are readable and no longer show black-on-black text.
 
 Estimated time spent: 2.5h
+
+### 2026-06-21 - Activity edit dialog
+
+Implemented the activity edit dialog.
+
+Added:
+
+- `ActivityEditDialog`
+- editing support for `EventActivity`
+- editing support for `DeadlineActivity`
+- editing support for `ReminderActivity`
+- editing support for `ChecklistActivity`
+- edit activity button in `MainWindow`
+- replacement of edited activities through `ActivityManager::replaceActivity(...)`
+- preservation of activity id
+- preservation of original creation timestamp
+- update of modification timestamp after editing
+- unsaved changes tracking after editing
+- automatic reselection of the edited activity after refresh
+
+Improved:
+
+- checklist editing through selectable checkbox items
+- checklist item addition from the edit dialog
+- checklist item removal from the edit dialog
+- checklist item completion state editing
+- checklist details display in the main detail panel
+- checkbox visibility in QSS
+
+Design notes:
+
+- Activity type cannot be changed while editing.
+- I chose this because changing a concrete type would require converting type-specific fields and could cause data loss.
+- The edit dialog creates an updated concrete activity and gives it back to `MainWindow`.
+- `MainWindow` replaces the old object inside `ActivityManager`, keeping ownership centralized.
+- Checklist items are edited through a `QListWidget` with checkboxes instead of a textual `[x]` format.
+- I chose this because it avoids user input errors and keeps the GUI closer to the actual boolean state stored in `ChecklistItem`.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that existing activities can be edited.
+- Verified that Event fields can be updated.
+- Verified that Deadline fields can be updated.
+- Verified that Reminder fields can be updated.
+- Verified that Checklist items can be added, removed and marked as completed.
+- Verified that checklist progress updates correctly after editing.
+- Verified that edited activities remain selected after refresh.
+- Verified that editing marks the agenda as unsaved.
+- Verified that checkbox indicators are visible in the edit dialog.
+
+Estimated time spent: 2.5h

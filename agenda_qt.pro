@@ -30,6 +30,8 @@ SOURCES += \
     src/persistence/ActivityJsonSerializer.cpp \
     src/persistence/AgendaJsonStorage.cpp \
     src/gui/ActivityCreationDialog.cpp \
+    src/gui/ActivityEditDialog.cpp \
+    
 
 HEADERS += \
     src/model/Priority.h \
@@ -51,6 +53,7 @@ HEADERS += \
     src/persistence/ActivityJsonSerializer.h \
     src/persistence/AgendaJsonStorage.h \
     src/gui/ActivityCreationDialog.h \
+    src/gui/ActivityEditDialog.h \
 
 RESOURCES += \
     resources/resources.qrc
