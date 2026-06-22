@@ -21,6 +21,10 @@
 #include <QStackedWidget>
 #include <QTextEdit>
 #include <QVBoxLayout>
+#include <QGridLayout>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QLabel>
 
 ActivityCreationDialog::ActivityCreationDialog(QWidget* parent)
     : QDialog(parent)
@@ -223,13 +227,97 @@ void ActivityCreationDialog::setupUi()
 
     specificLayout->addWidget(m_typeStack);
 
+   /*
+    * La ricorrenza resta compatta e mostra solo i campi necessari.
+    * Ho scelto questa struttura perché "Repeat every 2 week(s)" è più chiaro
+    * di un campo generico chiamato "Interval".
+    */
+    m_recurrenceGroup = new QGroupBox("Recurrence", this);
+    QVBoxLayout* recurrenceLayout = new QVBoxLayout(m_recurrenceGroup);
+    recurrenceLayout->setContentsMargins(12, 12, 12, 12);
+    recurrenceLayout->setSpacing(8);
+
+    m_repeatsCheck = new QCheckBox("Repeats", m_recurrenceGroup);
+    recurrenceLayout->addWidget(m_repeatsCheck);
+
+    m_recurrenceOptionsWidget = new QWidget(m_recurrenceGroup);
+    QGridLayout* recurrenceGrid = new QGridLayout(m_recurrenceOptionsWidget);
+    recurrenceGrid->setContentsMargins(0, 0, 0, 0);
+    recurrenceGrid->setHorizontalSpacing(10);
+    recurrenceGrid->setVerticalSpacing(8);
+
+    QLabel* repeatEveryLabel = new QLabel("Repeat every", m_recurrenceOptionsWidget);
+
+    QWidget* repeatEveryWidget = new QWidget(m_recurrenceOptionsWidget);
+    QHBoxLayout* repeatEveryLayout = new QHBoxLayout(repeatEveryWidget);
+    repeatEveryLayout->setContentsMargins(0, 0, 0, 0);
+    repeatEveryLayout->setSpacing(8);
+
+    m_recurrenceIntervalSpin = new QSpinBox(repeatEveryWidget);
+    m_recurrenceIntervalSpin->setRange(1, 365);
+    m_recurrenceIntervalSpin->setValue(1);
+    m_recurrenceIntervalSpin->setMinimumWidth(80);
+
+    m_recurrenceFrequencyCombo = new QComboBox(repeatEveryWidget);
+    m_recurrenceFrequencyCombo->addItem("day(s)", static_cast<int>(RecurrenceRule::Frequency::Daily));
+    m_recurrenceFrequencyCombo->addItem("week(s)", static_cast<int>(RecurrenceRule::Frequency::Weekly));
+    m_recurrenceFrequencyCombo->addItem("month(s)", static_cast<int>(RecurrenceRule::Frequency::Monthly));
+    m_recurrenceFrequencyCombo->addItem("year(s)", static_cast<int>(RecurrenceRule::Frequency::Yearly));
+    m_recurrenceFrequencyCombo->setMinimumWidth(140);
+
+    repeatEveryLayout->addWidget(m_recurrenceIntervalSpin);
+    repeatEveryLayout->addWidget(m_recurrenceFrequencyCombo, 1);
+
+    QLabel* endConditionLabel = new QLabel("End condition", m_recurrenceOptionsWidget);
+
+    m_recurrenceEndModeCombo = new QComboBox(m_recurrenceOptionsWidget);
+    m_recurrenceEndModeCombo->addItem("Never", static_cast<int>(RecurrenceRule::EndMode::Never));
+    m_recurrenceEndModeCombo->addItem("Until date", static_cast<int>(RecurrenceRule::EndMode::UntilDate));
+    m_recurrenceEndModeCombo->addItem("After occurrences", static_cast<int>(RecurrenceRule::EndMode::AfterOccurrences));
+    m_recurrenceEndModeCombo->setMinimumWidth(180);
+
+    m_recurrenceEndDetailsWidget = new QWidget(m_recurrenceOptionsWidget);
+    QHBoxLayout* endDetailsLayout = new QHBoxLayout(m_recurrenceEndDetailsWidget);
+    endDetailsLayout->setContentsMargins(0, 0, 0, 0);
+    endDetailsLayout->setSpacing(8);
+
+    m_recurrenceEndDetailsLabel = new QLabel(m_recurrenceEndDetailsWidget);
+
+    m_recurrenceUntilEdit = new QDateTimeEdit(QDateTime::currentDateTime().addMonths(1),
+                                            m_recurrenceEndDetailsWidget);
+    m_recurrenceUntilEdit->setCalendarPopup(true);
+    m_recurrenceUntilEdit->setDisplayFormat("yyyy-MM-dd HH:mm");
+    m_recurrenceUntilEdit->setMinimumWidth(200);
+
+    m_recurrenceOccurrencesSpin = new QSpinBox(m_recurrenceEndDetailsWidget);
+    m_recurrenceOccurrencesSpin->setRange(1, 999);
+    m_recurrenceOccurrencesSpin->setValue(5);
+    m_recurrenceOccurrencesSpin->setMinimumWidth(100);
+
+    endDetailsLayout->addWidget(m_recurrenceEndDetailsLabel);
+    endDetailsLayout->addWidget(m_recurrenceUntilEdit, 1);
+    endDetailsLayout->addWidget(m_recurrenceOccurrencesSpin, 1);
+
+    recurrenceGrid->addWidget(repeatEveryLabel, 0, 0);
+    recurrenceGrid->addWidget(repeatEveryWidget, 0, 1);
+    recurrenceGrid->addWidget(endConditionLabel, 1, 0);
+    recurrenceGrid->addWidget(m_recurrenceEndModeCombo, 1, 1);
+    recurrenceGrid->addWidget(m_recurrenceEndDetailsWidget, 2, 0, 1, 2);
+
+    recurrenceGrid->setColumnStretch(1, 1);
+
+    recurrenceLayout->addWidget(m_recurrenceOptionsWidget);
+
     m_buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
     m_buttonBox->button(QDialogButtonBox::Ok)->setText("Create");
     m_buttonBox->button(QDialogButtonBox::Cancel)->setText("Cancel");
 
     mainLayout->addWidget(commonGroup);
     mainLayout->addWidget(specificGroup);
+    mainLayout->addWidget(m_recurrenceGroup);
     mainLayout->addWidget(m_buttonBox);
+
+    updateRecurrenceControls();
 }
 
 void ActivityCreationDialog::connectSignals()
@@ -244,6 +332,14 @@ void ActivityCreationDialog::connectSignals()
 
     connect(m_buttonBox, &QDialogButtonBox::rejected, this, [this]() {
         reject();
+    });
+
+    connect(m_repeatsCheck, &QCheckBox::toggled, this, [this]() {
+    updateRecurrenceControls();
+    });
+
+    connect(m_recurrenceEndModeCombo, &QComboBox::currentIndexChanged, this, [this]() {
+        updateRecurrenceControls();
     });
 }
 
@@ -287,11 +383,8 @@ std::unique_ptr<Activity> ActivityCreationDialog::createActivityFromForm() const
     const QString category = m_categoryEdit->text().trimmed();
     const Priority priority = selectedPriority();
 
-    /*
-     * Qui creo la sottoclasse concreta corretta.
-     * La MainWindow riceve comunque un puntatore a Activity, quindi può
-     * usare il polimorfismo senza conoscere i dettagli della creazione.
-     */
+    std::unique_ptr<Activity> activity;
+
     switch (selectedActivityKind()) {
     case ActivityKind::Event: {
         QStringList participants;
@@ -307,7 +400,7 @@ std::unique_ptr<Activity> ActivityCreationDialog::createActivityFromForm() const
             }
         }
 
-        return std::make_unique<EventActivity>(
+        activity = std::make_unique<EventActivity>(
             title,
             m_eventStartEdit->dateTime(),
             m_eventEndEdit->dateTime(),
@@ -317,10 +410,12 @@ std::unique_ptr<Activity> ActivityCreationDialog::createActivityFromForm() const
             category,
             priority
         );
+
+        break;
     }
 
     case ActivityKind::Deadline:
-        return std::make_unique<DeadlineActivity>(
+        activity = std::make_unique<DeadlineActivity>(
             title,
             m_deadlineDueEdit->dateTime(),
             m_deadlineContextEdit->text().trimmed(),
@@ -330,8 +425,10 @@ std::unique_ptr<Activity> ActivityCreationDialog::createActivityFromForm() const
             priority
         );
 
+        break;
+
     case ActivityKind::Reminder:
-        return std::make_unique<ReminderActivity>(
+        activity = std::make_unique<ReminderActivity>(
             title,
             m_reminderDateEdit->dateTime(),
             m_reminderAdvanceSpin->value(),
@@ -341,35 +438,31 @@ std::unique_ptr<Activity> ActivityCreationDialog::createActivityFromForm() const
             priority
         );
 
-    case ActivityKind::Checklist: {
-        QVector<ChecklistItem> items;
+        break;
 
-        const QStringList lines =
-            m_checklistItemsEdit->toPlainText().split("\n", Qt::SkipEmptyParts);
-
-        for (const QString& line : lines) {
-            const QString itemText = line.trimmed();
-
-            if (!itemText.isEmpty()) {
-                ChecklistItem item;
-                item.text = itemText;
-                item.completed = false;
-                items.append(item);
-            }
-        }
-
-        return std::make_unique<ChecklistActivity>(
+    case ActivityKind::Checklist:
+        activity = std::make_unique<ChecklistActivity>(
             title,
             m_checklistDueEdit->dateTime(),
-            items,
+            checklistItemsFromText(),
             description,
             category,
             priority
         );
-    }
+
+        break;
     }
 
-    return nullptr;
+    if (!activity) {
+        return nullptr;
+    }
+
+    if (const std::optional<RecurrenceRule> recurrence = recurrenceRuleFromForm();
+        recurrence.has_value()) {
+        activity->setRecurrenceRule(recurrence.value());
+    }
+
+    return activity;
 }
 
 Priority ActivityCreationDialog::selectedPriority() const
@@ -380,4 +473,112 @@ Priority ActivityCreationDialog::selectedPriority() const
 ActivityKind ActivityCreationDialog::selectedActivityKind() const
 {
     return static_cast<ActivityKind>(m_typeCombo->currentData().toInt());
+}
+
+void ActivityCreationDialog::updateRecurrenceControls()
+{
+    const bool recurrenceEnabled = m_repeatsCheck->isChecked();
+
+    m_recurrenceOptionsWidget->setVisible(recurrenceEnabled);
+
+    if (!recurrenceEnabled) {
+        m_recurrenceEndDetailsWidget->setVisible(false);
+        adjustSize();
+        return;
+    }
+
+    const RecurrenceRule::EndMode endMode = selectedRecurrenceEndMode();
+
+    const bool usesUntilDate = endMode == RecurrenceRule::EndMode::UntilDate;
+    const bool usesOccurrences = endMode == RecurrenceRule::EndMode::AfterOccurrences;
+
+    m_recurrenceEndDetailsWidget->setVisible(usesUntilDate || usesOccurrences);
+
+    m_recurrenceEndDetailsLabel->setText(usesUntilDate ? "Until" : "Occurrences");
+    m_recurrenceUntilEdit->setVisible(usesUntilDate);
+    m_recurrenceOccurrencesSpin->setVisible(usesOccurrences);
+
+    adjustSize();
+}
+
+std::optional<RecurrenceRule> ActivityCreationDialog::recurrenceRuleFromForm() const
+{
+    if (!m_repeatsCheck->isChecked()) {
+        return std::nullopt;
+    }
+
+    const RecurrenceRule::EndMode endMode = selectedRecurrenceEndMode();
+
+    const QDateTime untilDate =
+        endMode == RecurrenceRule::EndMode::UntilDate
+            ? m_recurrenceUntilEdit->dateTime()
+            : QDateTime();
+
+    const int maxOccurrences =
+        endMode == RecurrenceRule::EndMode::AfterOccurrences
+            ? m_recurrenceOccurrencesSpin->value()
+            : 1;
+
+    RecurrenceRule recurrenceRule(
+        selectedRecurrenceFrequency(),
+        m_recurrenceIntervalSpin->value(),
+        endMode,
+        untilDate,
+        maxOccurrences
+    );
+
+    if (!recurrenceRule.isValid()) {
+        return std::nullopt;
+    }
+
+    return recurrenceRule;
+}
+
+QVector<ChecklistItem> ActivityCreationDialog::checklistItemsFromText() const
+{
+    QVector<ChecklistItem> items;
+
+    const QStringList lines =
+        m_checklistItemsEdit->toPlainText().split("\n", Qt::SkipEmptyParts);
+
+    for (QString line : lines) {
+        line = line.trimmed();
+
+        if (line.isEmpty()) {
+            continue;
+        }
+
+        ChecklistItem item;
+
+        if (line.startsWith("[x]", Qt::CaseInsensitive)) {
+            item.completed = true;
+            item.text = line.mid(3).trimmed();
+        } else if (line.startsWith("[ ]")) {
+            item.completed = false;
+            item.text = line.mid(3).trimmed();
+        } else {
+            item.completed = false;
+            item.text = line;
+        }
+
+        if (!item.text.isEmpty()) {
+            items.append(item);
+        }
+    }
+
+    return items;
+}
+
+RecurrenceRule::Frequency ActivityCreationDialog::selectedRecurrenceFrequency() const
+{
+    return static_cast<RecurrenceRule::Frequency>(
+        m_recurrenceFrequencyCombo->currentData().toInt()
+    );
+}
+
+RecurrenceRule::EndMode ActivityCreationDialog::selectedRecurrenceEndMode() const
+{
+    return static_cast<RecurrenceRule::EndMode>(
+        m_recurrenceEndModeCombo->currentData().toInt()
+    );
 }

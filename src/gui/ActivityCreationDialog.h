@@ -4,10 +4,13 @@
 #include <QDialog>
 
 #include <memory>
+#include <optional>
 
 #include "model/Activity.h"
 #include "model/ActivityKind.h"
+#include "model/ChecklistActivity.h"
 #include "model/Priority.h"
+#include "model/RecurrenceRule.h"
 
 class QCheckBox;
 class QComboBox;
@@ -17,6 +20,9 @@ class QLineEdit;
 class QSpinBox;
 class QStackedWidget;
 class QTextEdit;
+class QGroupBox;
+class QLabel;
+class QWidget;
 
 /*
  * Dialog usato per creare una nuova attività.
@@ -54,12 +60,29 @@ private:
     Priority selectedPriority() const;
     ActivityKind selectedActivityKind() const;
 
+    QVector<ChecklistItem> checklistItemsFromText() const;
+
+    void updateRecurrenceControls();
+    std::optional<RecurrenceRule> recurrenceRuleFromForm() const;
+    RecurrenceRule::Frequency selectedRecurrenceFrequency() const;
+    RecurrenceRule::EndMode selectedRecurrenceEndMode() const;
+
     QComboBox* m_typeCombo = nullptr;
     QLineEdit* m_titleEdit = nullptr;
     QTextEdit* m_descriptionEdit = nullptr;
     QLineEdit* m_categoryEdit = nullptr;
     QComboBox* m_priorityCombo = nullptr;
 
+    QGroupBox* m_recurrenceGroup = nullptr;
+    QCheckBox* m_repeatsCheck = nullptr;
+    QWidget* m_recurrenceOptionsWidget = nullptr;
+    QComboBox* m_recurrenceFrequencyCombo = nullptr;
+    QSpinBox* m_recurrenceIntervalSpin = nullptr;
+    QComboBox* m_recurrenceEndModeCombo = nullptr;
+    QWidget* m_recurrenceEndDetailsWidget = nullptr;
+    QLabel* m_recurrenceEndDetailsLabel = nullptr;
+    QDateTimeEdit* m_recurrenceUntilEdit = nullptr;
+    QSpinBox* m_recurrenceOccurrencesSpin = nullptr;
     /*
      * Uso uno QStackedWidget per mostrare campi diversi in base al tipo
      * concreto scelto: Event, Deadline, Reminder o Checklist.

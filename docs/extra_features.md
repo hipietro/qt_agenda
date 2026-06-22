@@ -254,3 +254,58 @@ The following features are planned or partially prepared, but should only be lis
 * CSV import/export
 * final modern GUI polish with sidebar, icons and dashboard-like layout
 * Docker validation with the professor's environment
+
+## Type-aware creation and editing dialogs
+
+### Type-specific activity fields in the GUI
+
+The GUI does not use a single generic form for every activity.
+
+Creation and editing dialogs show fields that depend on the concrete activity type:
+
+- events expose start time, end time, location and participants
+- deadlines expose due date, context and hard deadline flag
+- reminders expose reminder time, advance notice and note
+- checklists expose target date and editable checklist items
+
+This makes the GUI consistent with the object-oriented model and makes the differences between concrete subclasses visible to the user.
+
+### Checklist editing with selectable items
+
+Checklist items can be edited through GUI list items with checkboxes.
+
+This is more user-friendly than requiring textual markers such as `[x]` or `[ ]`, and it maps directly to the boolean completion state stored in each checklist item.
+
+## Recurrence controls in the GUI
+
+### Editable recurrence rules
+
+The GUI allows the user to create and edit recurrence rules for activities.
+
+Supported options include:
+
+- repeat frequency
+- repeat interval
+- end condition
+- end date
+- maximum number of occurrences
+
+This makes the existing `RecurrenceRule` model directly usable from the interface.
+
+### Conditional recurrence fields
+
+The recurrence section shows only the fields that are relevant to the selected end condition.
+
+For example:
+
+- if the recurrence never ends, no extra end field is shown
+- if it ends at a date, the date field is shown
+- if it ends after a number of occurrences, the occurrences field is shown
+
+This improves usability and avoids exposing irrelevant inputs at the same time.
+
+### Persistence of recurring activities
+
+Recurring activities can be saved to JSON and loaded again while preserving their recurrence settings.
+
+This shows that recurrence is supported consistently across the model, GUI and persistence layers.

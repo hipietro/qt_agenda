@@ -4,11 +4,13 @@
 #include <QDialog>
 
 #include <memory>
+#include <optional>
 
 #include "model/Activity.h"
 #include "model/ActivityKind.h"
 #include "model/Priority.h"
 #include "model/ChecklistActivity.h"
+#include "model/RecurrenceRule.h"
 
 class QCheckBox;
 class QComboBox;
@@ -21,6 +23,8 @@ class QPushButton;
 class QSpinBox;
 class QStackedWidget;
 class QTextEdit;
+class QGroupBox;
+class QWidget;
 
 /*
  * Dialog usato per modificare un'attività esistente.
@@ -53,6 +57,13 @@ private:
 
     void populateChecklistItems(const Activity& activity);
     QVector<ChecklistItem> checklistItemsFromList() const;
+
+    void populateRecurrence(const Activity& activity);
+    void updateRecurrenceControls();
+
+    std::optional<RecurrenceRule> recurrenceRuleFromForm() const;
+    RecurrenceRule::Frequency selectedRecurrenceFrequency() const;
+    RecurrenceRule::EndMode selectedRecurrenceEndMode() const;
 
     ActivityKind m_activityKind;
     QString m_originalId;
@@ -87,6 +98,17 @@ private:
     QPushButton* m_removeChecklistItemButton = nullptr;
 
     QDialogButtonBox* m_buttonBox = nullptr;
+
+    QGroupBox* m_recurrenceGroup = nullptr;
+    QCheckBox* m_repeatsCheck = nullptr;
+    QWidget* m_recurrenceOptionsWidget = nullptr;
+    QComboBox* m_recurrenceFrequencyCombo = nullptr;
+    QSpinBox* m_recurrenceIntervalSpin = nullptr;
+    QComboBox* m_recurrenceEndModeCombo = nullptr;
+    QWidget* m_recurrenceEndDetailsWidget = nullptr;
+    QLabel* m_recurrenceEndDetailsLabel = nullptr;
+    QDateTimeEdit* m_recurrenceUntilEdit = nullptr;
+    QSpinBox* m_recurrenceOccurrencesSpin = nullptr;
 
     std::unique_ptr<Activity> m_updatedActivity;
 };

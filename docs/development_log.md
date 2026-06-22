@@ -801,3 +801,47 @@ Validation:
 - Verified that checkbox indicators are visible in the edit dialog.
 
 Estimated time spent: 2.5h
+
+### 2026-06-21 - Recurrence editing controls
+
+Implemented recurrence controls in the activity creation and edit dialogs.
+
+Added:
+
+- recurrence section in `ActivityCreationDialog`
+- recurrence section in `ActivityEditDialog`
+- repeat enable/disable checkbox
+- frequency selection:
+  - daily
+  - weekly
+  - monthly
+  - yearly
+- interval selection through a "Repeat every" control
+- end condition selection:
+  - never
+  - until date
+  - after occurrences
+- conditional recurrence fields depending on the selected end condition
+- recurrence preservation when editing an existing recurring activity
+- recurrence removal when disabling repeats in the edit dialog
+- integration with the existing `RecurrenceRule` model
+- integration with existing JSON persistence
+
+Design notes:
+
+- Recurrence is treated as a common property of every activity type, not as a type-specific field.
+- I chose to show recurrence controls inside both creation and edit dialogs because this makes the existing recurrence model visible and usable from the GUI.
+- The GUI does not generate separate future activity instances yet; it stores and displays the recurrence rule associated with the activity.
+- The current recurrence layout is functional but will be visually improved during the final UI polish phase.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that a recurring activity can be created.
+- Verified that recurrence appears in the activity details.
+- Verified that recurring activities can be saved to JSON.
+- Verified that recurring activities can be loaded from JSON.
+- Verified that recurrence values are preserved when editing an activity.
+- Verified that disabling repeats removes the recurrence rule from the activity.
+
+Estimated time spent: 2h
