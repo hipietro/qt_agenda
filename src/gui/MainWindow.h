@@ -12,6 +12,7 @@
 #include "model/Priority.h"
 
 class ActivityManager;
+class ActivityTemplateManager;
 class QComboBox;
 class QLabel;
 class QLineEdit;
@@ -22,7 +23,9 @@ class QTextEdit;
 class MainWindow : public QMainWindow
 {
 public:
-    explicit MainWindow(ActivityManager* activityManager, QWidget* parent = nullptr);
+explicit MainWindow(ActivityManager* activityManager,
+                    ActivityTemplateManager* templateManager,
+                    QWidget* parent = nullptr);
 protected:
     void closeEvent(QCloseEvent* event) override;
 
@@ -50,13 +53,15 @@ private:
     void deleteSelectedActivity();
     void createActivity();
     void editSelectedActivity();
+    void createActivityFromTemplate();
+    void saveSelectedActivityAsTemplate();
 
     void saveAgenda();
     void saveAgendaAs();
     void loadAgenda();
 
     ActivityManager* m_activityManager = nullptr;
-
+    ActivityTemplateManager* m_templateManager = nullptr;
     QLineEdit* m_searchEdit = nullptr;
     QComboBox* m_typeCombo = nullptr;
     QListWidget* m_activityList = nullptr;
@@ -67,6 +72,7 @@ private:
     QPushButton* m_toggleCompletedButton = nullptr;
     QPushButton* m_deleteButton = nullptr;
     QPushButton* m_editButton = nullptr;
+    QPushButton* m_templateButton = nullptr;
 
     QString m_currentFilePath;
     bool m_hasUnsavedChanges = false;

@@ -845,3 +845,40 @@ Validation:
 - Verified that disabling repeats removes the recurrence rule from the activity.
 
 Estimated time spent: 2h
+
+### 2026-06-21 - Template-based activity creation
+
+Implemented template-based activity creation in the GUI.
+
+Added:
+
+- `ActivityTemplateManager` lifetime moved from demo-data local scope to application scope
+- `MainWindow` integration with `ActivityTemplateManager`
+- `From template` button in the main window
+- `Templates` menu
+- creation of new activities from existing templates
+- saving the selected activity as a new template
+- template selection through a simple dialog
+- automatic insertion of the generated activity into `ActivityManager`
+- automatic selection of the newly created activity
+- unsaved changes tracking after creating an activity from a template
+
+Design notes:
+
+- Templates are stored in memory for the current session.
+- JSON persistence for templates is intentionally left to a separate issue.
+- Template creation uses the existing polymorphic clone mechanism.
+- The GUI does not manually duplicate type-specific fields; it asks `ActivityTemplateManager` to create a new activity from the selected template.
+- This part was less immediate than expected because `ActivityTemplateManager` was originally created only inside demo-data setup, so it was destroyed before the GUI could use it. The solution was to move its lifetime to `main()` and pass it to `MainWindow`.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that demo templates are available from the GUI.
+- Verified that a new activity can be created from a template.
+- Verified that the new activity is inserted into the agenda.
+- Verified that the newly created activity is selected automatically.
+- Verified that the selected activity can be saved as a new template.
+- Verified that newly saved templates can be reused during the same session.
+
+Estimated time spent: 2h

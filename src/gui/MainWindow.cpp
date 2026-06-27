@@ -7,8 +7,11 @@
 #include "persistence/AgendaJsonStorage.h"
 #include "ActivityCreationDialog.h"
 #include "ActivityEditDialog.h"
+#include "model/ActivityTemplate.h"
+#include "model/ActivityTemplateManager.h"
 
 #include <QComboBox>
+#include <QInputDialog>
 #include <QAction>
 #include <QDateTime>
 #include <QHBoxLayout>
@@ -29,9 +32,12 @@
 #include <QStatusBar>
 #include <QDialog>
 
-MainWindow::MainWindow(ActivityManager* activityManager, QWidget* parent)
+MainWindow::MainWindow(ActivityManager* activityManager,
+                       ActivityTemplateManager* templateManager,
+                       QWidget* parent)
     : QMainWindow(parent),
-      m_activityManager(activityManager)
+      m_activityManager(activityManager),
+      m_templateManager(templateManager)
 {
     setupUi();
     setupMenuBar();
@@ -96,6 +102,9 @@ void MainWindow::setupUi()
     m_editButton = new QPushButton("Edit activity", leftPanel);
     m_editButton->setObjectName("primaryButton");
 
+    m_templateButton = new QPushButton("From template", leftPanel);
+    m_templateButton->setObjectName("primaryButton");
+
     m_toggleCompletedButton = new QPushButton("Mark completed", leftPanel);
     m_toggleCompletedButton->setObjectName("primaryButton");
 
@@ -105,6 +114,9 @@ void MainWindow::setupUi()
     QHBoxLayout* primaryActionLayout = new QHBoxLayout();
     primaryActionLayout->addWidget(m_addButton);
     primaryActionLayout->addWidget(m_editButton);
+
+    QHBoxLayout* templateActionLayout = new QHBoxLayout();
+    templateActionLayout->addWidget(m_templateButton);
 
     QHBoxLayout* secondaryActionLayout = new QHBoxLayout();
     secondaryActionLayout->addWidget(m_toggleCompletedButton);
@@ -117,6 +129,7 @@ void MainWindow::setupUi()
     leftLayout->addWidget(m_resultCountLabel);
     leftLayout->addWidget(m_activityList);
     leftLayout->addLayout(primaryActionLayout);
+    leftLayout->addLayout(templateActionLayout);
     leftLayout->addLayout(secondaryActionLayout);
 
     QWidget* rightPanel = new QWidget(splitter);
@@ -165,6 +178,22 @@ void MainWindow::setupMenuBar()
     connect(saveAsAction, &QAction::triggered, this, [this]() {
         saveAgendaAs();
     });
+
+    QMenu* templatesMenu = menuBar()->addMenu("Templates");
+
+    QAction* createFromTemplateAction = templatesMenu->addAction("Create from template...");
+    QAction* saveAsTemplateAction = templatesMenu->addAction("Save selected as template...");
+
+    createFromTemplateAction->setShortcut(QKeySequence("Ctrl+T"));
+    saveAsTemplateAction->setShortcut(QKeySequence("Ctrl+Shift+T"));
+
+    connect(createFromTemplateAction, &QAction::triggered, this, [this]() {
+        createActivityFromTemplate();
+    });
+
+    connect(saveAsTemplateAction, &QAction::triggered, this, [this]() {
+        saveSelectedActivityAsTemplate();
+    });
 }
 
 void MainWindow::connectSignals()
@@ -199,6 +228,10 @@ void MainWindow::connectSignals()
 
     connect(m_addButton, &QPushButton::clicked, this, [this]() {
         createActivity();
+    });
+    
+    connect(m_templateButton, &QPushButton::clicked, this, [this]() {
+        createActivityFromTemplate(); 
     });
 
     connect(m_toggleCompletedButton, &QPushButton::clicked, this, [this]() {
@@ -350,6 +383,11 @@ void MainWindow::updateActionButtons()
 {
     if (m_addButton) {
         m_addButton->setEnabled(m_activityManager != nullptr);
+    }
+    if (m_templateButton) {
+        m_templateButton->setEnabled(m_activityManager != nullptr &&
+                                    m_templateManager != nullptr &&
+                                    !m_templateManager->isEmpty());
     }
     const QString activityId = selectedActivityId();
     const Activity* activity = activityId.isEmpty() ? nullptr : findActivityById(activityId);
@@ -785,4 +823,180 @@ void MainWindow::editSelectedActivity()
     updateActionButtons();
 
     statusBar()->showMessage("Activity updated", 3000);
+}
+
+void MainWindow::createActivityFromTemplate()
+{
+    if (!m_activityManager || !m_templateManager) {
+        return;
+    }
+
+    const std::vector<const ActivityTemplate*> templates = m_templateManager->templates();
+
+    if (templates.empty()) {
+        QMessageBox::information(
+            this,
+            "No templates",
+            "No activity templates are available in the current session."
+        );
+        return;
+    }
+
+    QStringList templateNames;
+
+    for (const ActivityTemplate* activityTemplate : templates) {
+        if (activityTemplate && activityTemplate->isValid()) {
+            templateNames.append(activityTemplate->name());
+        }
+    }
+
+    if (templateNames.isEmpty()) {
+        QMessageBox::information(
+            this,
+            "No templates",
+            "No valid activity templates are available."
+        );
+        return;
+    }
+
+    bool ok = false;
+
+    const QString selectedTemplateName = QInputDialog::getItem(
+        this,
+        "Create from template",
+        "Template",
+        templateNames,
+        0,
+        false,
+        &ok
+    );
+
+    if (!ok || selectedTemplateName.trimmed().isEmpty()) {
+        return;
+    }
+
+    /*
+     * Il template manager crea una nuova attività clonando il prototipo.
+     * Ho scelto di passare da questo metodo per mantenere la logica dei template
+     * nel modello e non dentro la GUI.
+     */
+    std::unique_ptr<Activity> activity =
+        m_templateManager->createActivityFromTemplateName(selectedTemplateName);
+
+    if (!activity) {
+        QMessageBox::warning(
+            this,
+            "Template failed",
+            "The selected template could not create an activity."
+        );
+        return;
+    }
+
+    const QString createdActivityId = activity->id();
+
+    if (!m_activityManager->addActivity(std::move(activity))) {
+        QMessageBox::warning(
+            this,
+            "Create activity failed",
+            "The activity could not be added."
+        );
+        return;
+    }
+
+    setUnsavedChanges(true);
+    refreshActivityList();
+
+    for (int row = 0; row < m_activityList->count(); ++row) {
+        QListWidgetItem* item = m_activityList->item(row);
+
+        if (item && item->data(Qt::UserRole).toString() == createdActivityId) {
+            m_activityList->setCurrentRow(row);
+            break;
+        }
+    }
+
+    showActivityDetails(findActivityById(createdActivityId));
+    updateActionButtons();
+
+    statusBar()->showMessage(
+        QString("Activity created from template \"%1\"").arg(selectedTemplateName),
+        3000
+    );
+}
+
+void MainWindow::saveSelectedActivityAsTemplate()
+{
+    if (!m_activityManager || !m_templateManager) {
+        return;
+    }
+
+    const QString activityId = selectedActivityId();
+
+    if (activityId.isEmpty()) {
+        QMessageBox::information(
+            this,
+            "No activity selected",
+            "Select an activity before saving it as a template."
+        );
+        return;
+    }
+
+    const Activity* activity = findActivityById(activityId);
+
+    if (!activity) {
+        QMessageBox::warning(
+            this,
+            "Invalid activity",
+            "The selected activity could not be found."
+        );
+        return;
+    }
+
+    bool ok = false;
+
+    const QString defaultTemplateName =
+        QString("%1 template").arg(activity->title());
+
+    const QString templateName = QInputDialog::getText(
+        this,
+        "Save selected as template",
+        "Template name",
+        QLineEdit::Normal,
+        defaultTemplateName,
+        &ok
+    ).trimmed();
+
+    if (!ok) {
+        return;
+    }
+
+    if (templateName.isEmpty()) {
+        QMessageBox::warning(
+            this,
+            "Invalid template",
+            "The template name cannot be empty."
+        );
+        return;
+    }
+
+    /*
+     * Salvo una copia polimorfa dell'attività selezionata come prototipo.
+     * Quando il template verrà usato, il modello creerà una nuova attività
+     * con una nuova identità.
+     */
+    if (!m_templateManager->addTemplate(templateName, activity->clone())) {
+        QMessageBox::warning(
+            this,
+            "Template not saved",
+            "The template could not be saved. The name may already be used."
+        );
+        return;
+    }
+
+    updateActionButtons();
+
+    statusBar()->showMessage(
+        QString("Template \"%1\" saved for this session").arg(templateName),
+        3000
+    );
 }

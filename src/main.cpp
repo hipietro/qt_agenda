@@ -15,12 +15,12 @@
 #include "model/ReminderActivity.h"
 #include "model/RecurrenceRule.h"
 
-static void populateDemoData(ActivityManager& manager)
+static void populateDemoData(ActivityManager& manager,
+                             ActivityTemplateManager& templateManager)
 {
     const QDateTime now = QDateTime::currentDateTime();
 
     CategoryManager categoryManager;
-    ActivityTemplateManager templateManager;
 
     categoryManager.addCategory("University", "#3F51B5");
     categoryManager.addCategory("Health", "#4CAF50");
@@ -148,9 +148,11 @@ int main(int argc, char *argv[])
     }
 
     ActivityManager manager;
-    populateDemoData(manager);
+    ActivityTemplateManager templateManager;
 
-    MainWindow window(&manager);
+    populateDemoData(manager, templateManager);
+
+    MainWindow window(&manager, &templateManager);
     window.show();
 
     return app.exec();

@@ -309,3 +309,33 @@ This improves usability and avoids exposing irrelevant inputs at the same time.
 Recurring activities can be saved to JSON and loaded again while preserving their recurrence settings.
 
 This shows that recurrence is supported consistently across the model, GUI and persistence layers.
+
+## Template-based activity creation
+
+### Reusable activity templates
+
+The GUI allows activities to be created from reusable templates.
+
+A template stores a prototype activity, and the application can create a new independent activity from that prototype.
+
+This is useful for repeated activity structures, such as exam deadlines, study checklists or recurring planning tasks.
+
+### Save selected activity as template
+
+The user can select an existing activity and save it as a template.
+
+This makes the feature flexible because templates do not need to be hardcoded: they can be created from real activities already present in the agenda.
+
+### Polymorphic template cloning
+
+Template-based creation relies on polymorphic cloning.
+
+The GUI does not need to know how to manually duplicate every concrete activity type. Instead, the model creates a new activity from the stored prototype.
+
+This keeps template logic closer to the model and avoids duplicating type-specific construction logic inside the GUI.
+
+### Current limitation
+
+Templates are currently stored only during the active application session.
+
+Persistence of templates in JSON is tracked as a separate future issue.
