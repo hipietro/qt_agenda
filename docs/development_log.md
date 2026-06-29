@@ -993,3 +993,41 @@ Validation:
 - Verified that the implementation does not require GUI changes yet.
 
 Estimated time spent: 0.75h
+
+### 2026-06-21 - RemoveActivityCommand
+
+Implemented the command used to remove activities through the future undo/redo system.
+
+Added:
+
+- `RemoveActivityCommand`
+- command execution for removing an activity from `ActivityManager`
+- command undo logic for restoring the removed activity
+- activity id tracking
+- activity title tracking for command descriptions
+- removed activity backup through polymorphic cloning
+- duplicate protection when undoing a removal
+- project integration through `agenda_qt.pro`
+
+Design notes:
+
+- The command stores the id of the activity to remove.
+- Before removing the activity, the command saves a polymorphic clone of it.
+- Undo restores a cloned copy of the removed activity.
+- This design preserves the original concrete type without adding type-specific logic to the command.
+- The GUI is not connected to this command yet; integration will happen after the undo/redo stack is implemented.
+
+Difficulties encountered:
+
+- Removing an activity is more delicate than adding one because undo needs the full original object.
+- Since activities are owned by `ActivityManager` through `std::unique_ptr`, the command cannot simply keep a raw pointer to the removed object.
+- The solution was to clone the activity before removing it and use that clone as the restoration prototype.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that the command is included in the qmake project.
+- Verified that the implementation remains independent from Qt Widgets.
+- Verified that the command relies on the existing polymorphic `clone()` behavior.
+
+Estimated time spent: 0.75h

@@ -31,6 +31,7 @@ SOURCES += \
     src/persistence/AgendaJsonStorage.cpp \
     src/gui/ActivityCreationDialog.cpp \
     src/gui/ActivityEditDialog.cpp \
+    src/commands/RemoveActivityCommand.cpp \
     src/commands/AddActivityCommand.cpp
     
 
@@ -56,6 +57,7 @@ HEADERS += \
     src/gui/ActivityCreationDialog.h \
     src/gui/ActivityEditDialog.h \
     src/commands/Command.h \
+    src/commands/RemoveActivityCommand.h \
     src/commands/AddActivityCommand.h 
 
 
