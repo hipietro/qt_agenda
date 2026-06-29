@@ -31,6 +31,7 @@ SOURCES += \
     src/persistence/AgendaJsonStorage.cpp \
     src/gui/ActivityCreationDialog.cpp \
     src/gui/ActivityEditDialog.cpp \
+    src/commands/AddActivityCommand.cpp
     
 
 HEADERS += \
@@ -54,7 +55,9 @@ HEADERS += \
     src/persistence/AgendaJsonStorage.h \
     src/gui/ActivityCreationDialog.h \
     src/gui/ActivityEditDialog.h \
-    src/commands/Command.h
+    src/commands/Command.h \
+    src/commands/AddActivityCommand.h 
+
 
 RESOURCES += \
     resources/resources.qrc

@@ -958,3 +958,38 @@ Validation:
 - Verified that the new interface is included in the qmake project.
 
 Estimated time spent: 0.5h
+
+### 2026-06-21 - AddActivityCommand
+
+Implemented the command used to add activities through the future undo/redo system.
+
+Added:
+
+- `AddActivityCommand`
+- command execution for adding an activity to `ActivityManager`
+- command undo logic for removing the added activity
+- activity id tracking
+- activity title tracking for command descriptions
+- protection against executing the command twice while the activity is already present
+- project integration through `agenda_qt.pro`
+
+Design notes:
+
+- The command stores a polymorphic prototype of the activity.
+- When executed, the command adds a cloned activity to the manager.
+- This design makes future redo possible because the command can recreate the activity after undo.
+- The GUI is not connected to this command yet; integration will happen after the undo/redo stack is implemented.
+
+Difficulties encountered:
+
+- Ownership had to be handled carefully because `ActivityManager` owns activities through `std::unique_ptr`.
+- Moving the original activity directly into the manager would make redo difficult.
+- The solution was to keep a cloneable prototype inside the command and add cloned instances during execution.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that the command is included in the qmake project.
+- Verified that the implementation does not require GUI changes yet.
+
+Estimated time spent: 0.75h
