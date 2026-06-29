@@ -339,3 +339,41 @@ This keeps template logic closer to the model and avoids duplicating type-specif
 Templates are currently stored only during the active application session.
 
 Persistence of templates in JSON is tracked as a separate future issue.
+
+## Input validation and user feedback
+
+### Form validation
+
+The application validates user input before creating or editing activities.
+
+Validation includes:
+
+- non-empty activity titles
+- event end time after start time
+- checklist activities with at least one item
+- recurrence end date after the activity primary date
+
+This makes the application more robust and prevents invalid model states from being saved.
+
+### Checklist safety checks
+
+Checklist editing includes additional safeguards.
+
+The user cannot remove the final remaining checklist item from the edit dialog. This prevents the checklist from temporarily reaching an invalid empty state.
+
+This improves the user experience because the interface blocks the invalid action immediately instead of only showing an error later when saving.
+
+### User feedback
+
+The GUI provides feedback through message boxes and status bar messages.
+
+Examples include:
+
+- invalid activity warnings
+- invalid checklist warnings
+- invalid recurrence warnings
+- save/load feedback
+- unsaved changes feedback
+- delete confirmations
+
+This makes the application easier to understand and reduces the risk of accidental data loss.

@@ -882,3 +882,53 @@ Validation:
 - Verified that newly saved templates can be reused during the same session.
 
 Estimated time spent: 2h
+
+### 2026-06-21 - Input validation and user feedback
+
+Improved input validation and user feedback across the activity workflow.
+
+Added:
+
+- validation for empty activity titles
+- validation for event end time before or equal to start time
+- validation for empty checklist creation
+- validation for empty checklist editing
+- validation for recurrence end date before or equal to the activity date
+- user feedback when trying to remove a checklist item without selecting one
+- protection against removing the last checklist item
+- updated empty-agenda message in the detail panel
+- clearer warning messages for invalid activity data
+
+Improved:
+
+- checklist editing now prevents the dialog from reaching an invalid empty state
+- recurrence validation now checks that "Until date" is after the activity primary date
+- feedback messages are more specific and easier to understand
+- the main empty-state message now references the implemented creation actions
+
+Difficulties encountered:
+
+- The edit dialog initially used `selectedActivityKind()`, which only exists in the creation dialog. This caused a compilation error because the edit dialog stores the fixed activity type in `m_activityKind`.
+- A missing closing brace in `ActivityEditDialog::validateForm()` caused multiple cascading compiler errors.
+- The first checklist validation only blocked saving, but the user could still remove all checklist items inside the dialog. This made the interface confusing even if the final save was rejected.
+- The recurrence validation had to be duplicated carefully in both creation and editing workflows because the two dialogs obtain the activity type differently.
+
+Resolutions:
+
+- Replaced `selectedActivityKind()` with `m_activityKind` inside the edit dialog.
+- Rewrote the full `ActivityEditDialog::validateForm()` function to restore the correct block structure.
+- Added a guard in the "Remove selected" checklist action to prevent deleting the final remaining item.
+- Kept validation in `validateForm()` as a second safety layer.
+- Added specific warning messages so the user understands why an action is rejected.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that empty titles are rejected.
+- Verified that invalid event times are rejected.
+- Verified that checklist activities cannot be saved without items.
+- Verified that the last checklist item cannot be removed from the edit dialog.
+- Verified that recurrence "Until date" must be after the activity primary date.
+- Verified that valid forms still save correctly.
+
+Estimated time spent: 1.5h

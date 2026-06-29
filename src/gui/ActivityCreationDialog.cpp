@@ -372,6 +372,47 @@ bool ActivityCreationDialog::validateForm() const
         QMessageBox::warning(nullptr, "Invalid event", "The event end time must be after the start time.");
         return false;
     }
+    if (selectedActivityKind() == ActivityKind::Checklist &&
+    checklistItemsFromText().isEmpty()) {
+        QMessageBox::warning(
+            nullptr,
+            "Invalid checklist",
+            "A checklist must contain at least one item."
+        );
+        return false;
+    }
+
+    if (m_repeatsCheck->isChecked() &&
+    selectedRecurrenceEndMode() == RecurrenceRule::EndMode::UntilDate) {
+    QDateTime primaryDate;
+
+    switch (selectedActivityKind()) {
+    case ActivityKind::Event:
+        primaryDate = m_eventStartEdit->dateTime();
+        break;
+
+    case ActivityKind::Deadline:
+        primaryDate = m_deadlineDueEdit->dateTime();
+        break;
+
+    case ActivityKind::Reminder:
+        primaryDate = m_reminderDateEdit->dateTime();
+        break;
+
+    case ActivityKind::Checklist:
+        primaryDate = m_checklistDueEdit->dateTime();
+        break;
+    }
+
+    if (m_recurrenceUntilEdit->dateTime() <= primaryDate) {
+        QMessageBox::warning(
+            nullptr,
+            "Invalid recurrence",
+            "The recurrence end date must be after the activity date."
+        );
+        return false;
+    }
+}
 
     return true;
 }

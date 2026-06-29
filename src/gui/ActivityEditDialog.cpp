@@ -354,6 +354,20 @@ void ActivityEditDialog::setupUi()
         QListWidgetItem* item = m_checklistItemsList->currentItem();
 
         if (!item) {
+            QMessageBox::information(
+                this,
+                "No item selected",
+                "Select a checklist item before removing it."
+            );
+            return;
+        }
+
+        if (m_checklistItemsList->count() <= 1) {
+            QMessageBox::warning(
+                this,
+                "Invalid checklist",
+                "A checklist must contain at least one item."
+            );
             return;
         }
 
@@ -439,6 +453,47 @@ bool ActivityEditDialog::validateForm() const
         QMessageBox::warning(nullptr, "Invalid event", "The event end time must be after the start time.");
         return false;
     }
+
+    if (m_activityKind == ActivityKind::Checklist &&
+        checklistItemsFromList().isEmpty()) {
+        QMessageBox::warning(
+            nullptr,
+            "Invalid checklist",
+            "A checklist must contain at least one item."
+        );
+
+if (m_repeatsCheck->isChecked() &&
+    selectedRecurrenceEndMode() == RecurrenceRule::EndMode::UntilDate) {
+    QDateTime primaryDate;
+
+    switch (m_activityKind) {
+    case ActivityKind::Event:
+        primaryDate = m_eventStartEdit->dateTime();
+        break;
+
+    case ActivityKind::Deadline:
+        primaryDate = m_deadlineDueEdit->dateTime();
+        break;
+
+    case ActivityKind::Reminder:
+        primaryDate = m_reminderDateEdit->dateTime();
+        break;
+
+    case ActivityKind::Checklist:
+        primaryDate = m_checklistDueEdit->dateTime();
+        break;
+    }
+
+    if (m_recurrenceUntilEdit->dateTime() <= primaryDate) {
+        QMessageBox::warning(
+            nullptr,
+            "Invalid recurrence",
+            "The recurrence end date must be after the activity date."
+        );
+        return false;
+    }
+    }
+}
 
     return true;
 }

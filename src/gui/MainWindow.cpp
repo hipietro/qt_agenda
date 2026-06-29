@@ -303,9 +303,9 @@ void MainWindow::refreshActivityList()
     } else {
         if (query.isEmpty()) {
             m_detailView->setPlainText(
-                "No activities are available.\n\n"
-                "When activity creation is implemented, new activities will appear here."
-            );
+            "No activities are available.\n\n"
+            "Use Add activity or From template to create a new activity."
+        );
         } else {
             m_detailView->setPlainText(
                 QString("No activities match \"%1\".\n\n"
