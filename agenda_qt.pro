@@ -54,6 +54,7 @@ HEADERS += \
     src/persistence/AgendaJsonStorage.h \
     src/gui/ActivityCreationDialog.h \
     src/gui/ActivityEditDialog.h \
+    src/commands/Command.h
 
 RESOURCES += \
     resources/resources.qrc

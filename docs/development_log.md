@@ -932,3 +932,29 @@ Validation:
 - Verified that valid forms still save correctly.
 
 Estimated time spent: 1.5h
+
+### 2026-06-21 - Base Command interface
+
+Implemented the base command interface for the future undo/redo system.
+
+Added:
+
+- `Command` abstract interface
+- `execute()` method
+- `undo()` method
+- `description()` method
+- project integration through `agenda_qt.pro`
+
+Design notes:
+
+- The command system is based on the Command pattern.
+- Each future modifying action will be represented as an executable and undoable object.
+- This keeps undo/redo logic separated from `MainWindow`.
+- The base interface is intentionally small because concrete commands will handle the specific details of adding, removing, updating and toggling activities.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that the new interface is included in the qmake project.
+
+Estimated time spent: 0.5h
