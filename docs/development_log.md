@@ -1071,3 +1071,36 @@ Validation:
 - Verified that the command relies on existing polymorphic cloning and manager replacement logic.
 
 Estimated time spent: 0.75h
+
+### 2026-06-21 - ToggleCompletionCommand
+
+Implemented the command used to toggle activity completion through the future undo/redo system.
+
+Added:
+
+- `ToggleCompletionCommand`
+- command execution for changing an activity from active to completed, or from completed to active
+- command undo logic for restoring the previous completion state
+- activity id tracking
+- activity title tracking for command descriptions
+- project integration through `agenda_qt.pro`
+
+Design notes:
+
+- The command stores both the previous completion state and the new completion state.
+- Undo restores the exact previous state instead of simply toggling again.
+- This is safer because it avoids inconsistent behavior if the activity state changes unexpectedly before undo.
+- The GUI is not connected to this command yet; integration will happen after the undo/redo stack is implemented.
+
+Difficulties encountered:
+
+- A simple toggle in undo would be fragile because it assumes no other operation changed the activity state.
+- The safer solution was to store explicit before/after boolean values.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that the command is included in the qmake project.
+- Verified that the implementation remains independent from Qt Widgets.
+
+Estimated time spent: 0.5h
