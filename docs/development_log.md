@@ -1031,3 +1031,43 @@ Validation:
 - Verified that the command relies on the existing polymorphic `clone()` behavior.
 
 Estimated time spent: 0.75h
+
+### 2026-06-21 - UpdateActivityCommand
+
+Implemented the command used to update activities through the future undo/redo system.
+
+Added:
+
+- `UpdateActivityCommand`
+- command execution for replacing an existing activity with an updated version
+- command undo logic for restoring the previous activity state
+- activity id tracking
+- activity title tracking for command descriptions
+- previous activity backup through polymorphic cloning
+- updated activity prototype through polymorphic cloning
+- project integration through `agenda_qt.pro`
+
+Design notes:
+
+- The command stores the updated activity as a prototype.
+- On first execution, the command clones and stores the previous state of the activity.
+- Undo restores the previous cloned state.
+- A later redo can execute the command again without losing the original previous state.
+- The command uses `ActivityManager::replaceActivity(...)`, keeping ownership centralized in the model layer.
+- The GUI is not connected to this command yet; integration will happen after the undo/redo stack is implemented.
+
+Difficulties encountered:
+
+- Update is more complex than add/remove because it needs two states: before and after.
+- The previous state must not be overwritten during redo.
+- Since activities are polymorphic and owned through `std::unique_ptr`, both the previous and updated states must be stored through `clone()`.
+- The solution was to store the previous state only on the first execution and reuse it for undo.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that the command is included in the qmake project.
+- Verified that the implementation remains independent from Qt Widgets.
+- Verified that the command relies on existing polymorphic cloning and manager replacement logic.
+
+Estimated time spent: 0.75h

@@ -32,7 +32,8 @@ SOURCES += \
     src/gui/ActivityCreationDialog.cpp \
     src/gui/ActivityEditDialog.cpp \
     src/commands/RemoveActivityCommand.cpp \
-    src/commands/AddActivityCommand.cpp
+    src/commands/AddActivityCommand.cpp \
+    src/commands/UpdateActivityCommand.cpp 
     
 
 HEADERS += \
@@ -58,6 +59,7 @@ HEADERS += \
     src/gui/ActivityEditDialog.h \
     src/commands/Command.h \
     src/commands/RemoveActivityCommand.h \
+    src/commands/UpdateActivityCommand.h \
     src/commands/AddActivityCommand.h 
 
 
