@@ -1104,3 +1104,49 @@ Validation:
 - Verified that the implementation remains independent from Qt Widgets.
 
 Estimated time spent: 0.5h
+
+### 2026-06-21 - CommandHistory undo/redo stacks
+
+Implemented the undo/redo stack manager.
+
+Added:
+
+- `CommandHistory`
+- undo stack
+- redo stack
+- command execution through `executeCommand(...)`
+- undo operation
+- redo operation
+- undo availability check
+- redo availability check
+- undo description
+- redo description
+- stack size helpers
+- clear operation
+- project integration through `agenda_qt.pro`
+
+Design notes:
+
+- `CommandHistory` owns commands through `std::unique_ptr`.
+- Executing a new command clears the redo stack.
+- Undo moves a command from the undo stack to the redo stack.
+- Redo moves a command from the redo stack back to the undo stack.
+- If undo or redo fails, the command is restored to its original stack to keep the history consistent.
+- The class is independent from Qt Widgets and does not depend on MainWindow.
+- GUI integration will be handled in the next issue.
+
+Difficulties encountered:
+
+- The main design concern was keeping ownership clear while moving commands between stacks.
+- Since commands are owned through `std::unique_ptr`, stack operations must use move semantics carefully.
+- Another important detail was failure handling: if undo or redo fails, the command must not be lost.
+- The solution was to temporarily move the command out of the stack, execute the operation, and restore it if the operation fails.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that the undo/redo stack manager is included in the qmake project.
+- Verified that the implementation remains independent from Qt Widgets.
+- Verified that commands are moved safely between undo and redo stacks.
+
+Estimated time spent: 0.75h

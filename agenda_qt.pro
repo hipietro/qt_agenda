@@ -34,6 +34,7 @@ SOURCES += \
     src/commands/RemoveActivityCommand.cpp \
     src/commands/AddActivityCommand.cpp \
     src/commands/ToggleCompletionCommand.cpp \
+    src/commands/CommandHistory.cpp \
     src/commands/UpdateActivityCommand.cpp 
     
 
@@ -62,6 +63,7 @@ HEADERS += \
     src/commands/RemoveActivityCommand.h \
     src/commands/UpdateActivityCommand.h \
     src/commands/ToggleCompletionCommand.h \
+    src/commands/CommandHistory.h \
     src/commands/AddActivityCommand.h 
 
 
