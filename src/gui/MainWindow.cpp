@@ -674,6 +674,7 @@ void MainWindow::saveAgenda()
 
     const bool saved = AgendaJsonStorage::saveToFile(
         *m_activityManager,
+        *m_templateManager,
         m_currentFilePath,
         &errorMessage
     );
@@ -727,6 +728,7 @@ void MainWindow::loadAgenda()
 
     const bool loaded = AgendaJsonStorage::loadFromFile(
         *m_activityManager,
+        *m_templateManager,
         filePath,
         &errorMessage
     );

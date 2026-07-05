@@ -4,15 +4,18 @@
 #include <QString>
 
 class ActivityManager;
+class ActivityTemplateManager;
 
 class AgendaJsonStorage
 {
 public:
     static bool saveToFile(const ActivityManager& manager,
+                           const ActivityTemplateManager& templateManager,
                            const QString& filePath,
                            QString* errorMessage = nullptr);
 
     static bool loadFromFile(ActivityManager& manager,
+                             ActivityTemplateManager& templateManager,
                              const QString& filePath,
                              QString* errorMessage = nullptr);
 

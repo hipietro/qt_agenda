@@ -1206,3 +1206,56 @@ Validation:
 - Verified that command history is cleared after loading a new agenda file.
 
 Estimated time spent: 2h
+
+### 2026-06-21 - Template JSON persistence
+
+Implemented JSON persistence for activity templates.
+
+Added:
+
+- JSON save support for activity templates
+- JSON load support for activity templates
+- template id persistence
+- template name persistence
+- template prototype persistence
+- reuse of `ActivityJsonSerializer` for template prototype activities
+- optional `templates` array in the agenda JSON file
+- backward compatibility with older JSON files that do not contain templates
+- safe loading strategy for activities and templates
+
+Design notes:
+
+- Templates are saved in the same JSON file as the agenda activities.
+- Each template stores its id, name and prototype activity.
+- The prototype activity is serialized using the existing activity serializer.
+- The `templates` field is optional so older saved files remain loadable.
+- Loaded data is validated before replacing the current managers.
+- This keeps the persistence layer safer because an invalid file does not partially overwrite the current application state.
+
+Difficulties encountered:
+
+- Template persistence required changing the storage interface because `AgendaJsonStorage` originally handled only `ActivityManager`.
+- The GUI already used `ActivityTemplateManager`, so save/load had to pass both managers to the persistence layer.
+- The main design decision was whether to create a separate file for templates or store them inside the agenda JSON.
+- The chosen solution stores templates in the agenda JSON because it keeps user data together and makes file management simpler.
+- Another important point was preserving compatibility with old JSON files that only contain activities.
+
+Resolutions:
+
+- Updated `AgendaJsonStorage::saveToFile(...)` to receive both `ActivityManager` and `ActivityTemplateManager`.
+- Updated `AgendaJsonStorage::loadFromFile(...)` to reconstruct both activities and templates.
+- Added the `templates` JSON array.
+- Reused `ActivityJsonSerializer::toJson(...)` and `ActivityJsonSerializer::fromJson(...)` for template prototypes.
+- Made the `templates` field optional during loading.
+- Updated MainWindow save/load calls to pass the template manager.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that a template can be created from the GUI.
+- Verified that templates are written to the agenda JSON file.
+- Verified that saved templates are loaded again from JSON.
+- Verified that a loaded template can be used to create a new activity.
+- Verified that older files without a templates array remain compatible.
+
+Estimated time spent: 1.5h

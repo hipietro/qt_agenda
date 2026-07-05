@@ -421,3 +421,43 @@ The undo/redo system is separated from `MainWindow`.
 `MainWindow` coordinates user interaction, while `CommandHistory` and the concrete command classes manage reversible operations.
 
 This improves separation of responsibilities and makes the project architecture more robust.
+
+## Persistent activity templates
+
+### Template persistence in JSON
+
+Activity templates are persisted in the same JSON file as the agenda activities.
+
+Each template stores:
+
+- template id
+- template name
+- prototype activity
+
+This allows user-created templates to remain available after closing and reopening the application.
+
+### Prototype serialization
+
+Template prototypes are saved using the existing activity JSON serializer.
+
+This means that template prototypes preserve the same type-specific data as normal activities, including:
+
+- event fields
+- deadline fields
+- reminder fields
+- checklist items
+- priority
+- category
+- recurrence settings
+
+### Backward-compatible loading
+
+The `templates` array is optional when loading an agenda file.
+
+This keeps older JSON files valid even if they were created before template persistence was added.
+
+### Safe loading
+
+Activities and templates are reconstructed and validated before replacing the current application state.
+
+This reduces the risk of corrupting the current agenda when loading an invalid or incomplete JSON file.
