@@ -377,3 +377,47 @@ Examples include:
 - delete confirmations
 
 This makes the application easier to understand and reduces the risk of accidental data loss.
+
+## Undo/redo command system
+
+### Command-based undo/redo
+
+The application supports undo and redo through a command-based architecture.
+
+User actions such as creating, deleting, editing and toggling completion are represented as command objects.
+
+This makes the undo/redo system extensible because new reversible actions can be added by implementing new command classes.
+
+### Supported undoable actions
+
+The undo/redo system currently supports:
+
+- adding activities
+- creating activities from templates
+- removing activities
+- editing activities
+- toggling activity completion
+
+### GUI integration
+
+Undo and redo are available directly from the GUI through:
+
+- dedicated buttons
+- Edit menu actions
+- keyboard shortcuts
+
+The interface enables or disables undo/redo controls depending on the current command history state.
+
+### Safe history handling
+
+The command history is cleared when a new agenda file is loaded.
+
+This prevents undo/redo operations from being applied to activities that may no longer exist in the newly loaded agenda.
+
+### Design value
+
+The undo/redo system is separated from `MainWindow`.
+
+`MainWindow` coordinates user interaction, while `CommandHistory` and the concrete command classes manage reversible operations.
+
+This improves separation of responsibilities and makes the project architecture more robust.

@@ -9,6 +9,10 @@
 #include "ActivityEditDialog.h"
 #include "model/ActivityTemplate.h"
 #include "model/ActivityTemplateManager.h"
+#include "commands/AddActivityCommand.h"
+#include "commands/RemoveActivityCommand.h"
+#include "commands/UpdateActivityCommand.h"
+#include "commands/ToggleCompletionCommand.h"
 
 #include <QComboBox>
 #include <QInputDialog>
@@ -31,6 +35,7 @@
 #include <QMenuBar>
 #include <QStatusBar>
 #include <QDialog>
+#include <QKeySequence>
 
 MainWindow::MainWindow(ActivityManager* activityManager,
                        ActivityTemplateManager* templateManager,
@@ -111,6 +116,12 @@ void MainWindow::setupUi()
     m_deleteButton = new QPushButton("Delete activity", leftPanel);
     m_deleteButton->setObjectName("dangerButton");
 
+    m_undoButton = new QPushButton("Undo", leftPanel);
+    m_undoButton->setObjectName("primaryButton");
+
+    m_redoButton = new QPushButton("Redo", leftPanel);
+    m_redoButton->setObjectName("primaryButton");
+
     QHBoxLayout* primaryActionLayout = new QHBoxLayout();
     primaryActionLayout->addWidget(m_addButton);
     primaryActionLayout->addWidget(m_editButton);
@@ -122,6 +133,10 @@ void MainWindow::setupUi()
     secondaryActionLayout->addWidget(m_toggleCompletedButton);
     secondaryActionLayout->addWidget(m_deleteButton);
 
+    QHBoxLayout* historyActionLayout = new QHBoxLayout();
+    historyActionLayout->addWidget(m_undoButton);
+    historyActionLayout->addWidget(m_redoButton);
+
     leftLayout->addWidget(searchLabel);
     leftLayout->addWidget(m_searchEdit);
     leftLayout->addWidget(typeLabel);
@@ -131,6 +146,7 @@ void MainWindow::setupUi()
     leftLayout->addLayout(primaryActionLayout);
     leftLayout->addLayout(templateActionLayout);
     leftLayout->addLayout(secondaryActionLayout);
+    leftLayout->addLayout(historyActionLayout);
 
     QWidget* rightPanel = new QWidget(splitter);
     rightPanel->setMinimumWidth(620);
@@ -194,6 +210,22 @@ void MainWindow::setupMenuBar()
     connect(saveAsTemplateAction, &QAction::triggered, this, [this]() {
         saveSelectedActivityAsTemplate();
     });
+
+    QMenu* editMenu = menuBar()->addMenu("Edit");
+
+    m_undoAction = editMenu->addAction("Undo");
+    m_redoAction = editMenu->addAction("Redo");
+
+    m_undoAction->setShortcut(QKeySequence::Undo);
+    m_redoAction->setShortcut(QKeySequence::Redo);
+
+    connect(m_undoAction, &QAction::triggered, this, [this]() {
+        undoLastCommand();
+    });
+
+    connect(m_redoAction, &QAction::triggered, this, [this]() {
+        redoLastCommand();
+    });
 }
 
 void MainWindow::connectSignals()
@@ -244,6 +276,14 @@ void MainWindow::connectSignals()
 
     connect(m_editButton, &QPushButton::clicked, this, [this]() {
         editSelectedActivity();
+    });
+
+    connect(m_undoButton, &QPushButton::clicked, this, [this]() {
+        undoLastCommand();
+    });
+
+    connect(m_redoButton, &QPushButton::clicked, this, [this]() {
+        redoLastCommand();
     });
 }
 
@@ -395,21 +435,41 @@ void MainWindow::updateActionButtons()
     const bool hasSelection = activity != nullptr;
 
     if (m_toggleCompletedButton) {
-        m_toggleCompletedButton->setEnabled(hasSelection);
+            m_toggleCompletedButton->setEnabled(hasSelection);
 
-        if (activity && activity->isCompleted()) {
-            m_toggleCompletedButton->setText("Mark active");
-        } else {
-            m_toggleCompletedButton->setText("Mark completed");
+            if (activity && activity->isCompleted()) {
+                m_toggleCompletedButton->setText("Mark active");
+            } else {
+                m_toggleCompletedButton->setText("Mark completed");
+            }
         }
+
+        if (m_editButton) {
+        m_editButton->setEnabled(hasSelection);
     }
 
-    if (m_editButton) {
-    m_editButton->setEnabled(hasSelection);
-}
+        if (m_deleteButton) {
+            m_deleteButton->setEnabled(hasSelection);
+        }
 
-    if (m_deleteButton) {
-        m_deleteButton->setEnabled(hasSelection);
+    if (m_undoButton) {
+        m_undoButton->setEnabled(m_commandHistory.canUndo());
+        m_undoButton->setToolTip(m_commandHistory.undoDescription());
+    }
+
+    if (m_redoButton) {
+        m_redoButton->setEnabled(m_commandHistory.canRedo());
+        m_redoButton->setToolTip(m_commandHistory.redoDescription());
+    }
+
+    if (m_undoAction) {
+        m_undoAction->setEnabled(m_commandHistory.canUndo());
+        m_undoAction->setText(m_commandHistory.undoDescription());
+    }
+
+    if (m_redoAction) {
+        m_redoAction->setEnabled(m_commandHistory.canRedo());
+        m_redoAction->setText(m_commandHistory.redoDescription());
     }
 }
 
@@ -540,7 +600,16 @@ void MainWindow::toggleSelectedActivityCompletion()
         return;
     }
 
-    activity->setCompleted(!activity->isCompleted());
+        auto command = std::make_unique<ToggleCompletionCommand>(
+        m_activityManager,
+        activityId
+    );
+
+    if (!m_commandHistory.executeCommand(std::move(command))) {
+        QMessageBox::warning(this, "Update activity failed", "The activity status could not be changed.");
+        return;
+    }
+
     setUnsavedChanges(true);
 
     refreshActivityList();
@@ -579,7 +648,16 @@ void MainWindow::deleteSelectedActivity()
         return;
     }
 
-    m_activityManager->removeActivity(activityId);
+    auto command = std::make_unique<RemoveActivityCommand>(
+        m_activityManager,
+        activityId
+    );
+
+    if (!m_commandHistory.executeCommand(std::move(command))) {
+        QMessageBox::warning(this, "Delete activity failed", "The activity could not be deleted.");
+        return;
+    }
+
     setUnsavedChanges(true);
 
     refreshActivityList();
@@ -661,6 +739,7 @@ void MainWindow::loadAgenda()
 
     m_currentFilePath = filePath;
     setUnsavedChanges(false);
+    m_commandHistory.clear();
 
     m_searchEdit->clear();
     m_typeCombo->setCurrentIndex(0);
@@ -739,7 +818,12 @@ void MainWindow::createActivity()
 
     const QString createdActivityId = activity->id();
 
-    if (!m_activityManager->addActivity(std::move(activity))) {
+    auto command = std::make_unique<AddActivityCommand>(
+        m_activityManager,
+        std::move(activity)
+    );
+
+    if (!m_commandHistory.executeCommand(std::move(command))) {
         QMessageBox::warning(this, "Create activity failed", "The activity could not be added.");
         return;
     }
@@ -801,7 +885,13 @@ void MainWindow::editSelectedActivity()
         return;
     }
 
-    if (!m_activityManager->replaceActivity(activityId, std::move(updatedActivity))) {
+    auto command = std::make_unique<UpdateActivityCommand>(
+        m_activityManager,
+        activityId,
+        std::move(updatedActivity)
+    );
+
+    if (!m_commandHistory.executeCommand(std::move(command))) {
         QMessageBox::warning(this, "Edit activity failed", "The activity could not be updated.");
         return;
     }
@@ -892,9 +982,14 @@ void MainWindow::createActivityFromTemplate()
         return;
     }
 
-    const QString createdActivityId = activity->id();
+   const QString createdActivityId = activity->id();
 
-    if (!m_activityManager->addActivity(std::move(activity))) {
+    auto command = std::make_unique<AddActivityCommand>(
+        m_activityManager,
+        std::move(activity)
+    );
+
+    if (!m_commandHistory.executeCommand(std::move(command))) {
         QMessageBox::warning(
             this,
             "Create activity failed",
@@ -999,4 +1094,46 @@ void MainWindow::saveSelectedActivityAsTemplate()
         QString("Template \"%1\" saved for this session").arg(templateName),
         3000
     );
+}
+
+void MainWindow::undoLastCommand()
+{
+    if (!m_commandHistory.canUndo()) {
+        statusBar()->showMessage("Nothing to undo", 2000);
+        updateActionButtons();
+        return;
+    }
+
+    if (!m_commandHistory.undo()) {
+        QMessageBox::warning(this, "Undo failed", "The last operation could not be undone.");
+        updateActionButtons();
+        return;
+    }
+
+    setUnsavedChanges(true);
+    refreshActivityList();
+    updateActionButtons();
+
+    statusBar()->showMessage("Undo completed", 3000);
+}
+
+void MainWindow::redoLastCommand()
+{
+    if (!m_commandHistory.canRedo()) {
+        statusBar()->showMessage("Nothing to redo", 2000);
+        updateActionButtons();
+        return;
+    }
+
+    if (!m_commandHistory.redo()) {
+        QMessageBox::warning(this, "Redo failed", "The last undone operation could not be repeated.");
+        updateActionButtons();
+        return;
+    }
+
+    setUnsavedChanges(true);
+    refreshActivityList();
+    updateActionButtons();
+
+    statusBar()->showMessage("Redo completed", 3000);
 }

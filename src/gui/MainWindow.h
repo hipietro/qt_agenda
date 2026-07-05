@@ -10,6 +10,7 @@
 #include "model/Activity.h"
 #include "model/ActivityKind.h"
 #include "model/Priority.h"
+#include "commands/CommandHistory.h"
 
 class ActivityManager;
 class ActivityTemplateManager;
@@ -19,6 +20,7 @@ class QLineEdit;
 class QListWidget;
 class QPushButton;
 class QTextEdit;
+class QAction;
 
 class MainWindow : public QMainWindow
 {
@@ -40,6 +42,8 @@ private:
     void updateWindowTitle();
     void setUnsavedChanges(bool hasUnsavedChanges);
     bool confirmDiscardUnsavedChanges();
+    void undoLastCommand();
+    void redoLastCommand();
 
     std::vector<const Activity*> collectVisibleActivities() const;
     const Activity* findActivityById(const QString& id) const;
@@ -62,6 +66,9 @@ private:
 
     ActivityManager* m_activityManager = nullptr;
     ActivityTemplateManager* m_templateManager = nullptr;
+
+    CommandHistory m_commandHistory;
+
     QLineEdit* m_searchEdit = nullptr;
     QComboBox* m_typeCombo = nullptr;
     QListWidget* m_activityList = nullptr;
@@ -73,9 +80,14 @@ private:
     QPushButton* m_deleteButton = nullptr;
     QPushButton* m_editButton = nullptr;
     QPushButton* m_templateButton = nullptr;
+    QPushButton* m_undoButton = nullptr;
+    QPushButton* m_redoButton = nullptr;
 
     QString m_currentFilePath;
     bool m_hasUnsavedChanges = false;
+
+    QAction* m_undoAction = nullptr;
+    QAction* m_redoAction = nullptr;
 };
 
 #endif

@@ -1150,3 +1150,59 @@ Validation:
 - Verified that commands are moved safely between undo and redo stacks.
 
 Estimated time spent: 0.75h
+
+### 2026-06-21 - Undo/redo GUI integration
+
+Integrated the undo/redo command system into the GUI.
+
+Added:
+
+- Undo button in the main window
+- Redo button in the main window
+- Edit menu actions for undo and redo
+- keyboard shortcuts for undo and redo
+- integration of `CommandHistory` with `MainWindow`
+- creation through `AddActivityCommand`
+- template-based creation through `AddActivityCommand`
+- deletion through `RemoveActivityCommand`
+- editing through `UpdateActivityCommand`
+- completion toggling through `ToggleCompletionCommand`
+- undo/redo availability updates in the GUI
+- undo/redo action descriptions
+- command history clearing after loading a new agenda file
+
+Design notes:
+
+- MainWindow no longer performs modifying operations directly for add, remove, update and completion toggle.
+- Instead, modifying actions are routed through concrete command objects.
+- `CommandHistory` manages ownership of executed and undone commands.
+- Undo and redo buttons are enabled only when the corresponding operation is available.
+- Loading a new JSON file clears the command history because the previous history no longer matches the current agenda state.
+
+Difficulties encountered:
+
+- The command classes compiled individually, but `AddActivityCommand` initially caused a linker error when connected to MainWindow.
+- The issue was caused by the implementation file not being correctly included in the qmake build or by the Makefile not being regenerated after editing `agenda_qt.pro`.
+- The resolution was to ensure `AddActivityCommand.cpp` was included in `SOURCES` and to rerun qmake before compiling.
+- Another delicate point was replacing direct MainWindow operations with command execution while preserving the existing GUI refresh and selection behavior.
+
+Resolutions:
+
+- Added all command source and header files to `agenda_qt.pro`.
+- Regenerated the Makefile with qmake after modifying the project file.
+- Replaced direct calls to `ActivityManager` with command execution where appropriate.
+- Kept the existing refresh, selection and status-bar feedback after each operation.
+- Cleared command history after loading a new file to avoid inconsistent undo/redo behavior.
+
+Validation:
+
+- Verified successful qmake/make compilation.
+- Verified that adding an activity can be undone and redone.
+- Verified that deleting an activity can be undone and redone.
+- Verified that editing an activity can be undone and redone.
+- Verified that toggling completion can be undone and redone.
+- Verified that redo is cleared after a new command is executed.
+- Verified that undo/redo buttons and menu actions update their enabled state correctly.
+- Verified that command history is cleared after loading a new agenda file.
+
+Estimated time spent: 2h
