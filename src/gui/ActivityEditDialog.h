@@ -25,6 +25,7 @@ class QStackedWidget;
 class QTextEdit;
 class QGroupBox;
 class QWidget;
+class CategoryManager;
 
 /*
  * Dialog usato per modificare un'attività esistente.
@@ -35,7 +36,9 @@ class QWidget;
 class ActivityEditDialog : public QDialog
 {
 public:
-    explicit ActivityEditDialog(const Activity& activity, QWidget* parent = nullptr);
+    explicit ActivityEditDialog(const Activity& activity,
+                                const CategoryManager* categoryManager = nullptr,
+                                QWidget* parent = nullptr);
 
     /*
      * Restituisce l'attività aggiornata trasferendone la proprietà al chiamante.
@@ -54,6 +57,8 @@ private:
     std::unique_ptr<Activity> createUpdatedActivityFromForm() const;
 
     Priority selectedPriority() const;
+    QString selectedCategoryText() const;
+    void populateCategoryCombo(const QString& currentCategory);
 
     void populateChecklistItems(const Activity& activity);
     QVector<ChecklistItem> checklistItemsFromList() const;
@@ -65,6 +70,8 @@ private:
     RecurrenceRule::Frequency selectedRecurrenceFrequency() const;
     RecurrenceRule::EndMode selectedRecurrenceEndMode() const;
 
+    const CategoryManager* m_categoryManager = nullptr;
+
     ActivityKind m_activityKind;
     QString m_originalId;
     QDateTime m_originalCreatedAt;
@@ -73,7 +80,7 @@ private:
     QLabel* m_typeLabel = nullptr;
     QLineEdit* m_titleEdit = nullptr;
     QTextEdit* m_descriptionEdit = nullptr;
-    QLineEdit* m_categoryEdit = nullptr;
+    QComboBox* m_categoryCombo = nullptr;
     QComboBox* m_priorityCombo = nullptr;
 
     QStackedWidget* m_typeStack = nullptr;

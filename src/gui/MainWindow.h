@@ -14,6 +14,7 @@
 
 class ActivityManager;
 class ActivityTemplateManager;
+class CategoryManager;
 class QComboBox;
 class QLabel;
 class QLineEdit;
@@ -28,6 +29,7 @@ class MainWindow : public QMainWindow
 public:
 explicit MainWindow(ActivityManager* activityManager,
                     ActivityTemplateManager* templateManager,
+                    CategoryManager* categoryManager,
                     QWidget* parent = nullptr);
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -41,6 +43,7 @@ private:
     void showActivityDetails(const Activity* activity);
     void updateActionButtons();
     void updateCategoryFilterOptions();
+    void synchronizeCategoryManagerFromActivities();
     void updateWindowTitle();
     void setUnsavedChanges(bool hasUnsavedChanges);
     bool confirmDiscardUnsavedChanges();
@@ -66,6 +69,7 @@ private:
     void editSelectedActivity();
     void createActivityFromTemplate();
     void saveSelectedActivityAsTemplate();
+    void manageCategories();
 
     bool saveAgenda();
     bool saveAgendaAs();
@@ -73,6 +77,7 @@ private:
 
     ActivityManager* m_activityManager = nullptr;
     ActivityTemplateManager* m_templateManager = nullptr;
+    CategoryManager* m_categoryManager = nullptr;
 
     CommandHistory m_commandHistory;
 

@@ -5,6 +5,8 @@
 #include "model/ActivityManager.h"
 #include "model/ActivityTemplate.h"
 #include "model/ActivityTemplateManager.h"
+#include "model/Category.h"
+#include "model/CategoryManager.h"
 
 #include <QFile>
 #include <QJsonArray>
@@ -18,6 +20,7 @@
 
 bool AgendaJsonStorage::saveToFile(const ActivityManager& manager,
                                    const ActivityTemplateManager& templateManager,
+                                   const CategoryManager& categoryManager,
                                    const QString& filePath,
                                    QString* errorMessage)
 {
@@ -68,6 +71,23 @@ bool AgendaJsonStorage::saveToFile(const ActivityManager& manager,
 
     root["templates"] = templatesArray;
 
+    QJsonArray categoriesArray;
+
+    for (const Category& category : categoryManager.categories()) {
+        if (category.name().trimmed().isEmpty()) {
+            continue;
+        }
+
+        QJsonObject categoryObject;
+        categoryObject["id"] = category.id();
+        categoryObject["name"] = category.name();
+        categoryObject["colorHex"] = category.colorHex();
+
+        categoriesArray.append(categoryObject);
+    }
+
+    root["categories"] = categoriesArray;
+
     const QJsonDocument document(root);
 
     QFile file(filePath);
@@ -89,6 +109,7 @@ bool AgendaJsonStorage::saveToFile(const ActivityManager& manager,
 
 bool AgendaJsonStorage::loadFromFile(ActivityManager& manager,
                                      ActivityTemplateManager& templateManager,
+                                     CategoryManager& categoryManager,
                                      const QString& filePath,
                                      QString* errorMessage)
 {
@@ -214,6 +235,38 @@ bool AgendaJsonStorage::loadFromFile(ActivityManager& manager,
         }
     }
 
+    std::vector<Category> loadedCategories;
+
+    if (root.contains("categories")) {
+        if (!root["categories"].isArray()) {
+            setError(errorMessage, "Invalid agenda file: categories must be an array.");
+            return false;
+        }
+
+        const QJsonArray categoriesArray = root["categories"].toArray();
+        loadedCategories.reserve(static_cast<std::size_t>(categoriesArray.size()));
+
+        for (const QJsonValue& value : categoriesArray) {
+            if (!value.isObject()) {
+                setError(errorMessage, "Invalid agenda file: every category must be a JSON object.");
+                return false;
+            }
+
+            const QJsonObject categoryObject = value.toObject();
+
+            const QString categoryId = categoryObject["id"].toString();
+            const QString categoryName = categoryObject["name"].toString();
+            const QString colorHex = categoryObject["colorHex"].toString("#607D8B");
+
+            if (categoryId.trimmed().isEmpty() || categoryName.trimmed().isEmpty()) {
+                setError(errorMessage, "Invalid agenda file: category id and name are required.");
+                return false;
+            }
+
+            loadedCategories.push_back(Category(categoryName, colorHex, categoryId));
+        }
+    }
+
     /*
      * Applico i dati caricati solo dopo aver validato tutto.
      * Così un file parzialmente invalido non corrompe lo stato corrente.
@@ -235,6 +288,18 @@ bool AgendaJsonStorage::loadFromFile(ActivityManager& manager,
             setError(errorMessage, "Invalid agenda file: duplicated template id or name found.");
             manager.clear();
             templateManager.clear();
+            return false;
+        }
+    }
+
+    categoryManager.clear();
+
+    for (const Category& category : loadedCategories) {
+        if (!categoryManager.addCategory(category)) {
+            setError(errorMessage, "Invalid agenda file: duplicated or invalid category found.");
+            manager.clear();
+            templateManager.clear();
+            categoryManager.clear();
             return false;
         }
     }

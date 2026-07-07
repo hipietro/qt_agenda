@@ -7,8 +7,11 @@
 #include "persistence/AgendaJsonStorage.h"
 #include "ActivityCreationDialog.h"
 #include "ActivityEditDialog.h"
+#include "CategoryManagementDialog.h"
 #include "model/ActivityTemplate.h"
 #include "model/ActivityTemplateManager.h"
+#include "model/Category.h"
+#include "model/CategoryManager.h"
 #include "commands/AddActivityCommand.h"
 #include "commands/RemoveActivityCommand.h"
 #include "commands/UpdateActivityCommand.h"
@@ -51,14 +54,17 @@
 
 MainWindow::MainWindow(ActivityManager* activityManager,
                        ActivityTemplateManager* templateManager,
+                       CategoryManager* categoryManager,
                        QWidget* parent)
     : QMainWindow(parent),
       m_activityManager(activityManager),
-      m_templateManager(templateManager)
+      m_templateManager(templateManager),
+      m_categoryManager(categoryManager)
 {
     setupUi();
     setupMenuBar();
     connectSignals();
+    synchronizeCategoryManagerFromActivities();
     refreshActivityList();
 }
 
@@ -324,6 +330,15 @@ void MainWindow::setupMenuBar()
 
     connect(saveAsTemplateAction, &QAction::triggered, this, [this]() {
         saveSelectedActivityAsTemplate();
+    });
+
+    QMenu* categoriesMenu = menuBar()->addMenu("Categories");
+
+    QAction* manageCategoriesAction = categoriesMenu->addAction("Manage categories...");
+    manageCategoriesAction->setShortcut(QKeySequence("Ctrl+Shift+C"));
+
+    connect(manageCategoriesAction, &QAction::triggered, this, [this]() {
+        manageCategories();
     });
 
     QMenu* editMenu = menuBar()->addMenu("Edit");
@@ -678,7 +693,7 @@ void MainWindow::applyActivityListItemVisualState(QListWidgetItem* item, const A
 
 void MainWindow::updateCategoryFilterOptions()
 {
-    if (!m_categoryCombo || !m_activityManager) {
+    if (!m_categoryCombo) {
         return;
     }
 
@@ -686,15 +701,27 @@ void MainWindow::updateCategoryFilterOptions()
 
     QStringList categories;
 
-    for (const Activity* activity : m_activityManager->activities()) {
-        if (!activity) {
-            continue;
+    if (m_categoryManager) {
+        for (const Category& category : m_categoryManager->categories()) {
+            const QString categoryName = category.name().trimmed();
+
+            if (!categoryName.isEmpty() && !categories.contains(categoryName, Qt::CaseInsensitive)) {
+                categories.append(categoryName);
+            }
         }
+    }
 
-        const QString category = activity->category().trimmed();
+    if (m_activityManager) {
+        for (const Activity* activity : m_activityManager->activities()) {
+            if (!activity) {
+                continue;
+            }
 
-        if (!category.isEmpty() && !categories.contains(category, Qt::CaseInsensitive)) {
-            categories.append(category);
+            const QString category = activity->category().trimmed();
+
+            if (!category.isEmpty() && !categories.contains(category, Qt::CaseInsensitive)) {
+                categories.append(category);
+            }
         }
     }
 
@@ -719,6 +746,25 @@ void MainWindow::updateCategoryFilterOptions()
     }
 
     m_categoryCombo->blockSignals(false);
+}
+
+void MainWindow::synchronizeCategoryManagerFromActivities()
+{
+    if (!m_categoryManager || !m_activityManager) {
+        return;
+    }
+
+    for (const Activity* activity : m_activityManager->activities()) {
+        if (!activity) {
+            continue;
+        }
+
+        const QString category = activity->category().trimmed();
+
+        if (!category.isEmpty() && !m_categoryManager->containsName(category)) {
+            m_categoryManager->addCategory(category);
+        }
+    }
 }
 
 std::vector<const Activity*> MainWindow::collectVisibleActivities() const
@@ -941,6 +987,7 @@ void MainWindow::toggleSelectedActivityCompletion()
     }
 
     setUnsavedChanges(true);
+    synchronizeCategoryManagerFromActivities();
 
     refreshActivityList();
 
@@ -989,6 +1036,7 @@ void MainWindow::deleteSelectedActivity()
     }
 
     setUnsavedChanges(true);
+    synchronizeCategoryManagerFromActivities();
 
     refreshActivityList();
 }
@@ -1008,20 +1056,54 @@ QString MainWindow::storageSummaryText() const
 {
     const int activityCount = m_activityManager ? m_activityManager->size() : 0;
     const int templateCount = m_templateManager ? m_templateManager->size() : 0;
+    const int categoryCount = m_categoryManager ? m_categoryManager->size() : 0;
 
     const QString activityWord = activityCount == 1 ? "activity" : "activities";
     const QString templateWord = templateCount == 1 ? "template" : "templates";
+    const QString categoryWord = categoryCount == 1 ? "category" : "categories";
 
-    return QString("%1 %2, %3 %4")
+    return QString("%1 %2, %3 %4, %5 %6")
         .arg(activityCount)
         .arg(activityWord)
         .arg(templateCount)
-        .arg(templateWord);
+        .arg(templateWord)
+        .arg(categoryCount)
+        .arg(categoryWord);
+}
+
+
+void MainWindow::manageCategories()
+{
+    if (!m_activityManager || !m_categoryManager) {
+        QMessageBox::warning(
+            this,
+            "Categories unavailable",
+            "Categories cannot be managed because the internal managers are not available."
+        );
+        return;
+    }
+
+    synchronizeCategoryManagerFromActivities();
+
+    CategoryManagementDialog dialog(m_categoryManager, m_activityManager, this);
+    dialog.exec();
+
+    if (dialog.activitiesChanged() || dialog.categoriesChanged()) {
+        setUnsavedChanges(true);
+    }
+
+    updateCategoryFilterOptions();
+    refreshActivityList();
+    updateActionButtons();
+
+    if (dialog.activitiesChanged() || dialog.categoriesChanged()) {
+        statusBar()->showMessage("Categories updated", 3000);
+    }
 }
 
 bool MainWindow::saveAgenda()
 {
-    if (!m_activityManager || !m_templateManager) {
+    if (!m_activityManager || !m_templateManager || !m_categoryManager) {
         QMessageBox::warning(
             this,
             "Save failed",
@@ -1037,9 +1119,12 @@ bool MainWindow::saveAgenda()
 
     QString errorMessage;
 
+    synchronizeCategoryManagerFromActivities();
+
     const bool saved = AgendaJsonStorage::saveToFile(
         *m_activityManager,
         *m_templateManager,
+        *m_categoryManager,
         m_currentFilePath,
         &errorMessage
     );
@@ -1095,7 +1180,7 @@ bool MainWindow::saveAgendaAs()
 
 void MainWindow::loadAgenda()
 {
-    if (!m_activityManager || !m_templateManager) {
+    if (!m_activityManager || !m_templateManager || !m_categoryManager) {
         QMessageBox::warning(
             this,
             "Load failed",
@@ -1125,6 +1210,7 @@ void MainWindow::loadAgenda()
     const bool loaded = AgendaJsonStorage::loadFromFile(
         *m_activityManager,
         *m_templateManager,
+        *m_categoryManager,
         filePath,
         &errorMessage
     );
@@ -1145,6 +1231,7 @@ void MainWindow::loadAgenda()
     m_currentFilePath = filePath;
     setUnsavedChanges(false);
     m_commandHistory.clear();
+    synchronizeCategoryManagerFromActivities();
 
     m_searchEdit->clear();
     m_typeCombo->setCurrentIndex(0);
@@ -1219,7 +1306,9 @@ void MainWindow::createActivity()
      * Il dialog costruisce l'attività concreta e la restituisce come Activity.
      * Ho scelto questo flusso per tenere la logica di creazione fuori dalla MainWindow.
      */
-    ActivityCreationDialog dialog(this);
+    synchronizeCategoryManagerFromActivities();
+
+    ActivityCreationDialog dialog(m_categoryManager, this);
 
     if (dialog.exec() != QDialog::Accepted) {
         return;
@@ -1244,6 +1333,7 @@ void MainWindow::createActivity()
     }
 
     setUnsavedChanges(true);
+    synchronizeCategoryManagerFromActivities();
 
     refreshActivityList();
 
@@ -1288,7 +1378,9 @@ void MainWindow::editSelectedActivity()
      * Il dialog modifica una copia logica dell'attività.
      * Quando l'utente conferma, sostituisco l'oggetto nel manager mantenendo lo stesso id.
      */
-    ActivityEditDialog dialog(*activity, this);
+    synchronizeCategoryManagerFromActivities();
+
+    ActivityEditDialog dialog(*activity, m_categoryManager, this);
 
     if (dialog.exec() != QDialog::Accepted) {
         return;
@@ -1312,6 +1404,7 @@ void MainWindow::editSelectedActivity()
     }
 
     setUnsavedChanges(true);
+    synchronizeCategoryManagerFromActivities();
 
     refreshActivityList();
 

@@ -4,6 +4,8 @@
 #include "model/DeadlineActivity.h"
 #include "model/EventActivity.h"
 #include "model/ReminderActivity.h"
+#include "model/Category.h"
+#include "model/CategoryManager.h"
 
 #include <QCheckBox>
 #include <QAbstractItemView>
@@ -18,6 +20,7 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QSpinBox>
+#include <QStringList>
 #include <QStackedWidget>
 #include <QTextEdit>
 #include <QVBoxLayout>
@@ -26,8 +29,12 @@
 #include <QVBoxLayout>
 #include <QLabel>
 
-ActivityCreationDialog::ActivityCreationDialog(QWidget* parent)
-    : QDialog(parent)
+#include <algorithm>
+
+ActivityCreationDialog::ActivityCreationDialog(const CategoryManager* categoryManager,
+                                                 QWidget* parent)
+    : QDialog(parent),
+      m_categoryManager(categoryManager)
 {
     setupUi();
     connectSignals();
@@ -94,9 +101,17 @@ void ActivityCreationDialog::setupUi()
     m_descriptionEdit->setMinimumWidth(340);
     m_descriptionEdit->setFixedHeight(82) ;
 
-    m_categoryEdit = new QLineEdit(commonGroup);
-    m_categoryEdit->setPlaceholderText("Optional category");
-    m_categoryEdit->setMinimumWidth(300)  ;
+    m_categoryCombo = new QComboBox(commonGroup);
+    m_categoryCombo->setEditable(true);
+    m_categoryCombo->setInsertPolicy(QComboBox::NoInsert);
+    m_categoryCombo->setMinimumWidth(300);
+    m_categoryCombo->setMinimumContentsLength(18);
+
+    if (m_categoryCombo->lineEdit()) {
+        m_categoryCombo->lineEdit()->setPlaceholderText("Optional category");
+    }
+
+    populateCategoryCombo();
 
     m_priorityCombo = new QComboBox(commonGroup);
     m_priorityCombo->addItem("Low", static_cast<int>(Priority::Low));
@@ -110,7 +125,7 @@ void ActivityCreationDialog::setupUi()
     commonLayout->addRow("Type", m_typeCombo);
     commonLayout->addRow("Title", m_titleEdit);
     commonLayout->addRow("Description", m_descriptionEdit);
-    commonLayout->addRow("Category", m_categoryEdit);
+    commonLayout->addRow("Category", m_categoryCombo);
     commonLayout->addRow("Priority", m_priorityCombo);
 
     QGroupBox* specificGroup = new QGroupBox("Type-specific fields", this);
@@ -421,7 +436,7 @@ std::unique_ptr<Activity> ActivityCreationDialog::createActivityFromForm() const
 {
     const QString title = m_titleEdit->text().trimmed();
     const QString description = m_descriptionEdit->toPlainText().trimmed();
-    const QString category = m_categoryEdit->text().trimmed();
+    const QString category = selectedCategoryText();
     const Priority priority = selectedPriority();
 
     std::unique_ptr<Activity> activity;
@@ -504,6 +519,46 @@ std::unique_ptr<Activity> ActivityCreationDialog::createActivityFromForm() const
     }
 
     return activity;
+}
+
+QString ActivityCreationDialog::selectedCategoryText() const
+{
+    if (!m_categoryCombo) {
+        return QString();
+    }
+
+    return m_categoryCombo->currentText().trimmed();
+}
+
+void ActivityCreationDialog::populateCategoryCombo()
+{
+    if (!m_categoryCombo) {
+        return;
+    }
+
+    m_categoryCombo->clear();
+
+    QStringList categories;
+
+    if (m_categoryManager) {
+        for (const Category& category : m_categoryManager->categories()) {
+            const QString name = category.name().trimmed();
+
+            if (!name.isEmpty() && !categories.contains(name, Qt::CaseInsensitive)) {
+                categories.append(name);
+            }
+        }
+    }
+
+    std::sort(categories.begin(), categories.end(), [](const QString& first, const QString& second) {
+        return QString::localeAwareCompare(first, second) < 0;
+    });
+
+    for (const QString& category : categories) {
+        m_categoryCombo->addItem(category);
+    }
+
+    m_categoryCombo->setCurrentText(QString());
 }
 
 Priority ActivityCreationDialog::selectedPriority() const

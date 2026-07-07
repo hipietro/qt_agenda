@@ -538,3 +538,38 @@ The checklist editing workflow was improved.
 Checklist items are shown in a scrollable area, and the add/remove controls are placed so they remain usable without overlapping the list.
 
 The edit dialog can scroll when needed while keeping the final action buttons accessible.
+
+## Category management
+
+### Dedicated category dialog
+
+The application includes a dedicated dialog for managing custom categories.
+
+The user can:
+
+- add a new category
+- rename an existing category
+- remove a category
+- clear a category from existing activities
+
+The dialog prevents empty category names and duplicated category names.
+
+### Category propagation
+
+When a category is renamed, the change is propagated to existing activities that use that category.
+
+This keeps the agenda data consistent and avoids leaving activities linked to obsolete category names.
+
+### Category selector in activity forms
+
+The activity creation and editing dialogs use an editable category selector.
+
+This allows the user to select an existing category from the list, while still being able to type a new category manually.
+
+When a new valid category is typed, it is automatically registered in the category manager.
+
+### Category persistence
+
+Categories are saved and loaded together with the agenda JSON file.
+
+This ensures that custom categories remain available after closing and reopening the application.

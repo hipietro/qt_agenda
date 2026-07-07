@@ -1418,3 +1418,66 @@ Validation:
 - Verified that loading a file still clears command history.
 
 Estimated time spent: 0.75h
+
+### 2026-07-07 - Category management dialog
+
+Added a dedicated category management workflow to the GUI.
+
+Added:
+
+- Categories menu in the main window
+- Manage categories action
+- dedicated category management dialog
+- category creation
+- category renaming
+- category removal
+- clearing a category from existing activities
+- duplicate category name prevention
+- empty category name prevention
+- propagation of category renaming to existing activities
+- editable category selector in Add activity
+- editable category selector in Edit activity
+- automatic registration of newly typed categories
+- category persistence in JSON files
+
+Design notes:
+
+- The model already contained `Category` and `CategoryManager`, but category management was not properly exposed in the GUI.
+- The new dialog makes category management explicit for the user.
+- Category renaming is propagated to existing activities so data stays consistent.
+- Removing a category does not delete activities; it only removes or clears the category association.
+- The activity creation and editing dialogs now use an editable combo box instead of a plain text field.
+- This allows the user to select an existing category while still being able to type a new one.
+- Newly typed valid categories are automatically added to the category manager.
+- Category data is saved and loaded together with the rest of the agenda state.
+
+Difficulties encountered:
+
+- The first version of the category dialog was useful for filtering and maintenance, but activity creation still used a free text field.
+- This made the category manager only partially useful because users could still create inconsistent category names manually.
+- The dialog, activity forms, filters and JSON persistence needed to stay synchronized.
+
+Resolutions:
+
+- Added a dedicated category management dialog.
+- Added category selection to activity creation and editing.
+- Kept the category selector editable to preserve flexibility.
+- Added automatic category registration when a new category is typed in an activity form.
+- Updated filtering options when categories change.
+- Added category persistence to the JSON storage layer.
+
+Validation:
+
+- Verified that categories can be added.
+- Verified that empty category names are rejected.
+- Verified that duplicated category names are rejected.
+- Verified that categories can be selected when creating an activity.
+- Verified that new categories typed during activity creation are saved in the category manager.
+- Verified that categories can be selected when editing an activity.
+- Verified that category renaming propagates to existing activities.
+- Verified that clearing a category removes it from matching activities.
+- Verified that removing a category does not delete activities.
+- Verified that category filters remain synchronized.
+- Verified that categories are saved and loaded from JSON.
+
+Estimated time spent: 3h

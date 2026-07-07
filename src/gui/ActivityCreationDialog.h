@@ -23,6 +23,7 @@ class QTextEdit;
 class QGroupBox;
 class QLabel;
 class QWidget;
+class CategoryManager;
 
 /*
  * Dialog usato per creare una nuova attività.
@@ -34,7 +35,8 @@ class QWidget;
 class ActivityCreationDialog : public QDialog
 {
 public:
-    explicit ActivityCreationDialog(QWidget* parent = nullptr);
+    explicit ActivityCreationDialog(const CategoryManager* categoryManager = nullptr,
+                                    QWidget* parent = nullptr);
 
     /*
      * Restituisce l'attività creata trasferendone la proprietà al chiamante.
@@ -59,6 +61,8 @@ private:
 
     Priority selectedPriority() const;
     ActivityKind selectedActivityKind() const;
+    QString selectedCategoryText() const;
+    void populateCategoryCombo();
 
     QVector<ChecklistItem> checklistItemsFromText() const;
 
@@ -67,10 +71,12 @@ private:
     RecurrenceRule::Frequency selectedRecurrenceFrequency() const;
     RecurrenceRule::EndMode selectedRecurrenceEndMode() const;
 
+    const CategoryManager* m_categoryManager = nullptr;
+
     QComboBox* m_typeCombo = nullptr;
     QLineEdit* m_titleEdit = nullptr;
     QTextEdit* m_descriptionEdit = nullptr;
-    QLineEdit* m_categoryEdit = nullptr;
+    QComboBox* m_categoryCombo = nullptr;
     QComboBox* m_priorityCombo = nullptr;
 
     QGroupBox* m_recurrenceGroup = nullptr;

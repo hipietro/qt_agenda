@@ -16,11 +16,10 @@
 #include "model/RecurrenceRule.h"
 
 static void populateDemoData(ActivityManager& manager,
-                             ActivityTemplateManager& templateManager)
+                             ActivityTemplateManager& templateManager,
+                             CategoryManager& categoryManager)
 {
     const QDateTime now = QDateTime::currentDateTime();
-
-    CategoryManager categoryManager;
 
     categoryManager.addCategory("University", "#3F51B5");
     categoryManager.addCategory("Health", "#4CAF50");
@@ -149,10 +148,11 @@ int main(int argc, char *argv[])
 
     ActivityManager manager;
     ActivityTemplateManager templateManager;
+    CategoryManager categoryManager;
 
-    populateDemoData(manager, templateManager);
+    populateDemoData(manager, templateManager, categoryManager);
 
-    MainWindow window(&manager, &templateManager);
+    MainWindow window(&manager, &templateManager, &categoryManager);
     window.show();
 
     return app.exec();
