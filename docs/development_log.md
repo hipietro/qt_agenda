@@ -1371,3 +1371,50 @@ Validation:
 - Verified that Cancel and Save changes remain accessible.
 
 Estimated time spent: 2h
+
+### 2026-07-07 - Save/load user feedback improvements
+
+Improved user feedback for save and load operations.
+
+Added:
+
+- clearer save confirmation messages
+- clearer load confirmation messages
+- displayed file name after save/load
+- displayed number of activities involved in save/load
+- displayed number of templates involved in save/load
+- clearer error messages when saving fails
+- clearer error messages when loading fails
+- improved Save As behavior when saving fails
+
+Design notes:
+
+- Save and load operations already worked correctly, but the user feedback was too generic.
+- The status bar now gives more useful information about the operation that was completed.
+- The file name is shown so the user can immediately understand which agenda file was affected.
+- Activity and template counts are shown because both are now part of the persisted agenda state.
+- Error messages remain explicit so invalid JSON files or file system errors are easier to diagnose.
+
+Difficulties encountered:
+
+- The main issue was keeping the feedback useful without making the interface noisy.
+- Since templates are now persisted together with activities, feedback needed to account for both managers.
+- Save As needed careful handling because the current file path should only be updated after a successful save.
+
+Resolutions:
+
+- Added helper logic to format file names and save/load summaries.
+- Updated save and load status-bar messages.
+- Updated error dialogs for failed save/load operations.
+- Preserved the existing unsaved changes and command history behavior.
+
+Validation:
+
+- Verified that Save As shows a clear success message.
+- Verified that Save shows a clear success message.
+- Verified that Load shows a clear success message.
+- Verified that messages include file name, activity count and template count.
+- Verified that failed save/load operations still show error messages.
+- Verified that loading a file still clears command history.
+
+Estimated time spent: 0.75h

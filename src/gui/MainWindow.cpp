@@ -37,6 +37,7 @@
 #include <QVariant>
 #include <QWidget>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QFont>
 #include <QFrame>
 #include <QGroupBox>
@@ -992,11 +993,46 @@ void MainWindow::deleteSelectedActivity()
     refreshActivityList();
 }
 
-void MainWindow::saveAgenda()
+QString MainWindow::fileDisplayName(const QString& filePath) const
 {
+    const QFileInfo fileInfo(filePath);
+
+    if (!fileInfo.fileName().trimmed().isEmpty()) {
+        return fileInfo.fileName();
+    }
+
+    return filePath;
+}
+
+QString MainWindow::storageSummaryText() const
+{
+    const int activityCount = m_activityManager ? m_activityManager->size() : 0;
+    const int templateCount = m_templateManager ? m_templateManager->size() : 0;
+
+    const QString activityWord = activityCount == 1 ? "activity" : "activities";
+    const QString templateWord = templateCount == 1 ? "template" : "templates";
+
+    return QString("%1 %2, %3 %4")
+        .arg(activityCount)
+        .arg(activityWord)
+        .arg(templateCount)
+        .arg(templateWord);
+}
+
+bool MainWindow::saveAgenda()
+{
+    if (!m_activityManager || !m_templateManager) {
+        QMessageBox::warning(
+            this,
+            "Save failed",
+            "The agenda cannot be saved because the internal managers are not available."
+        );
+        statusBar()->showMessage("Save failed: internal data is not available", 4000);
+        return false;
+    }
+
     if (m_currentFilePath.trimmed().isEmpty()) {
-        saveAgendaAs();
-        return;
+        return saveAgendaAs();
     }
 
     QString errorMessage;
@@ -1008,18 +1044,31 @@ void MainWindow::saveAgenda()
         &errorMessage
     );
 
+    const QString displayName = fileDisplayName(m_currentFilePath);
+
     if (!saved) {
-        QMessageBox::warning(this, "Save failed", errorMessage);
-        statusBar()->showMessage("Save failed", 3000);
-        return;
+        QMessageBox::warning(
+            this,
+            "Save failed",
+            QString("Could not save the agenda file.\n\nFile: %1\nPath: %2\n\nReason: %3")
+                .arg(displayName, m_currentFilePath, errorMessage)
+        );
+        statusBar()->showMessage(QString("Save failed: %1").arg(displayName), 4000);
+        return false;
     }
 
     setUnsavedChanges(false);
-    statusBar()->showMessage(QString("Saved to %1").arg(m_currentFilePath), 3000);
     updateWindowTitle();
+
+    statusBar()->showMessage(
+        QString("Saved %1 (%2)").arg(displayName, storageSummaryText()),
+        5000
+    );
+
+    return true;
 }
 
-void MainWindow::saveAgendaAs()
+bool MainWindow::saveAgendaAs()
 {
     const QString filePath = QFileDialog::getSaveFileName(
         this,
@@ -1029,15 +1078,33 @@ void MainWindow::saveAgendaAs()
     );
 
     if (filePath.trimmed().isEmpty()) {
-        return;
+        return false;
     }
 
+    const QString previousFilePath = m_currentFilePath;
     m_currentFilePath = filePath;
-    saveAgenda();
+
+    if (!saveAgenda()) {
+        m_currentFilePath = previousFilePath;
+        updateWindowTitle();
+        return false;
+    }
+
+    return true;
 }
 
 void MainWindow::loadAgenda()
 {
+    if (!m_activityManager || !m_templateManager) {
+        QMessageBox::warning(
+            this,
+            "Load failed",
+            "The agenda cannot be loaded because the internal managers are not available."
+        );
+        statusBar()->showMessage("Load failed: internal data is not available", 4000);
+        return;
+    }
+
     if (!confirmDiscardUnsavedChanges()) {
         return;
     }
@@ -1062,9 +1129,16 @@ void MainWindow::loadAgenda()
         &errorMessage
     );
 
+    const QString displayName = fileDisplayName(filePath);
+
     if (!loaded) {
-        QMessageBox::warning(this, "Load failed", errorMessage);
-        statusBar()->showMessage("Load failed", 3000);
+        QMessageBox::warning(
+            this,
+            "Load failed",
+            QString("Could not load the agenda file.\n\nFile: %1\nPath: %2\n\nReason: %3")
+                .arg(displayName, filePath, errorMessage)
+        );
+        statusBar()->showMessage(QString("Load failed: %1").arg(displayName), 4000);
         return;
     }
 
@@ -1083,8 +1157,12 @@ void MainWindow::loadAgenda()
 
     refreshActivityList();
     updateWindowTitle();
+    updateActionButtons();
 
-    statusBar()->showMessage(QString("Loaded from %1").arg(m_currentFilePath), 3000);
+    statusBar()->showMessage(
+        QString("Loaded %1 (%2)").arg(displayName, storageSummaryText()),
+        5000
+    );
 }
 
 void MainWindow::updateWindowTitle()

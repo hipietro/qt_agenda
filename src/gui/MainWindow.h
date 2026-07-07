@@ -57,6 +57,8 @@ private:
     QString statusText(const Activity* activity) const;
     QString priorityText(Priority priority) const;
     QString recurrenceText(const Activity* activity) const;
+    QString fileDisplayName(const QString& filePath) const;
+    QString storageSummaryText() const;
 
     void toggleSelectedActivityCompletion();
     void deleteSelectedActivity();
@@ -65,8 +67,8 @@ private:
     void createActivityFromTemplate();
     void saveSelectedActivityAsTemplate();
 
-    void saveAgenda();
-    void saveAgendaAs();
+    bool saveAgenda();
+    bool saveAgendaAs();
     void loadAgenda();
 
     ActivityManager* m_activityManager = nullptr;
