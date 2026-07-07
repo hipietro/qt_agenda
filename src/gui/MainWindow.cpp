@@ -18,6 +18,7 @@
 #include <QInputDialog>
 #include <QAction>
 #include <QDateTime>
+#include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
@@ -25,17 +26,23 @@
 #include <QListWidgetItem>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QSplitter>
+#include <QStringList>
 #include <QTextEdit>
 #include <QVBoxLayout>
 #include <QVariant>
 #include <QWidget>
 #include <QFileDialog>
+#include <QFrame>
+#include <QGroupBox>
 #include <QMenu>
 #include <QMenuBar>
 #include <QStatusBar>
 #include <QDialog>
 #include <QKeySequence>
+
+#include <algorithm>
 
 MainWindow::MainWindow(ActivityManager* activityManager,
                        ActivityTemplateManager* templateManager,
@@ -62,10 +69,13 @@ void MainWindow::closeEvent(QCloseEvent* event)
 void MainWindow::setupUi()
 {
     setWindowTitle("Agenda Qt");
-    resize(1200, 750);
+    resize(1020, 630);
+    setMinimumSize(780, 480);
 
     QWidget* centralWidget = new QWidget(this);
     QVBoxLayout* mainLayout = new QVBoxLayout(centralWidget);
+    mainLayout->setContentsMargins(12, 12, 12, 12);
+    mainLayout->setSpacing(8);
 
     QLabel* titleLabel = new QLabel("Agenda Qt", centralWidget);
     titleLabel->setObjectName("appTitleLabel");
@@ -77,11 +87,20 @@ void MainWindow::setupUi()
     mainLayout->addWidget(subtitleLabel);
 
     QSplitter* splitter = new QSplitter(centralWidget);
+    splitter->setChildrenCollapsible(false);
 
-    QWidget* leftPanel = new QWidget(splitter);
-    leftPanel->setMinimumWidth(360);
+    QScrollArea* leftScrollArea = new QScrollArea(splitter);
+    leftScrollArea->setWidgetResizable(true);
+    leftScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    leftScrollArea->setFrameShape(QFrame::NoFrame);
+    leftScrollArea->setMinimumWidth(360);
+
+    QWidget* leftPanel = new QWidget(leftScrollArea);
+    leftPanel->setMinimumWidth(340);
 
     QVBoxLayout* leftLayout = new QVBoxLayout(leftPanel);
+    leftLayout->setContentsMargins(0, 0, 6, 0);
+    leftLayout->setSpacing(8);
 
     QLabel* searchLabel = new QLabel("Search", leftPanel);
     m_searchEdit = new QLineEdit(leftPanel);
@@ -95,13 +114,92 @@ void MainWindow::setupUi()
     m_typeCombo->addItem("Reminders", static_cast<int>(ActivityKind::Reminder));
     m_typeCombo->addItem("Checklists", static_cast<int>(ActivityKind::Checklist));
 
+    QPushButton* filterToggleButton = new QPushButton("Show filters and sorting", leftPanel);
+    filterToggleButton->setCheckable(true);
+    filterToggleButton->setObjectName("filterToggleButton");
+
+    m_priorityCombo = new QComboBox(leftPanel);
+    m_priorityCombo->addItem("All priorities", -1);
+    m_priorityCombo->addItem("Low", static_cast<int>(Priority::Low));
+    m_priorityCombo->addItem("Medium", static_cast<int>(Priority::Medium));
+    m_priorityCombo->addItem("High", static_cast<int>(Priority::High));
+    m_priorityCombo->addItem("Critical", static_cast<int>(Priority::Critical));
+
+    m_categoryCombo = new QComboBox(leftPanel);
+    m_categoryCombo->addItem("All categories", QString());
+
+    m_completionCombo = new QComboBox(leftPanel);
+    m_completionCombo->addItem("All statuses", 0);
+    m_completionCombo->addItem("Active only", 1);
+    m_completionCombo->addItem("Completed only", 2);
+
+    m_recurrenceCombo = new QComboBox(leftPanel);
+    m_recurrenceCombo->addItem("All recurrence", 0);
+    m_recurrenceCombo->addItem("Recurring only", 1);
+    m_recurrenceCombo->addItem("Non-recurring only", 2);
+
+    m_overdueCombo = new QComboBox(leftPanel);
+    m_overdueCombo->addItem("All due states", 0);
+    m_overdueCombo->addItem("Overdue only", 1);
+    m_overdueCombo->addItem("Not overdue only", 2);
+
+    m_sortCombo = new QComboBox(leftPanel);
+    m_sortCombo->addItem("Date ascending", "date_asc");
+    m_sortCombo->addItem("Date descending", "date_desc");
+    m_sortCombo->addItem("Title A-Z", "title_asc");
+    m_sortCombo->addItem("Title Z-A", "title_desc");
+    m_sortCombo->addItem("Priority high first", "priority_desc");
+    m_sortCombo->addItem("Priority low first", "priority_asc");
+    m_sortCombo->addItem("Active first", "completion_asc");
+    m_sortCombo->addItem("Completed first", "completion_desc");
+    m_sortCombo->addItem("Recently created", "created_desc");
+    m_sortCombo->addItem("Recently updated", "updated_desc");
+
+    QGroupBox* filterPanel = new QGroupBox("Filters and sorting", leftPanel);
+    filterPanel->setObjectName("filterPanel");
+    filterPanel->setVisible(false);
+
+    QGridLayout* filterGridLayout = new QGridLayout(filterPanel);
+    filterGridLayout->setContentsMargins(10, 10, 10, 10);
+    filterGridLayout->setHorizontalSpacing(10);
+    filterGridLayout->setVerticalSpacing(8);
+
+    auto createFilterCell = [leftPanel](const QString& labelText, QComboBox* comboBox) {
+        QWidget* cell = new QWidget(leftPanel);
+        QVBoxLayout* cellLayout = new QVBoxLayout(cell);
+        cellLayout->setContentsMargins(0, 0, 0, 0);
+        cellLayout->setSpacing(3);
+
+        QLabel* label = new QLabel(labelText, cell);
+        label->setObjectName("filterFieldLabel");
+
+        cellLayout->addWidget(label);
+        cellLayout->addWidget(comboBox);
+        return cell;
+    };
+
+    filterGridLayout->addWidget(createFilterCell("Priority", m_priorityCombo), 0, 0);
+    filterGridLayout->addWidget(createFilterCell("Category", m_categoryCombo), 0, 1);
+    filterGridLayout->addWidget(createFilterCell("Status", m_completionCombo), 1, 0);
+    filterGridLayout->addWidget(createFilterCell("Recurrence", m_recurrenceCombo), 1, 1);
+    filterGridLayout->addWidget(createFilterCell("Due state", m_overdueCombo), 2, 0);
+    filterGridLayout->addWidget(createFilterCell("Sort by", m_sortCombo), 2, 1);
+    filterGridLayout->setColumnStretch(0, 1);
+    filterGridLayout->setColumnStretch(1, 1);
+
+    connect(filterToggleButton, &QPushButton::toggled, this, [filterToggleButton, filterPanel](bool checked) {
+        filterPanel->setVisible(checked);
+        filterToggleButton->setText(checked ? "Hide filters and sorting" : "Show filters and sorting");
+    });
+
     m_resultCountLabel = new QLabel(leftPanel);
     m_resultCountLabel->setObjectName("resultCountLabel");
 
     m_activityList = new QListWidget(leftPanel);
     m_activityList->setSpacing(4);
+    m_activityList->setMinimumHeight(150);
 
-   m_addButton = new QPushButton("Add activity", leftPanel);
+    m_addButton = new QPushButton("Add activity", leftPanel);
     m_addButton->setObjectName("primaryButton");
 
     m_editButton = new QPushButton("Edit activity", leftPanel);
@@ -122,51 +220,63 @@ void MainWindow::setupUi()
     m_redoButton = new QPushButton("Redo", leftPanel);
     m_redoButton->setObjectName("primaryButton");
 
-    QHBoxLayout* primaryActionLayout = new QHBoxLayout();
-    primaryActionLayout->addWidget(m_addButton);
-    primaryActionLayout->addWidget(m_editButton);
+    QVBoxLayout* actionLayout = new QVBoxLayout();
+    actionLayout->setSpacing(10);
+    actionLayout->setContentsMargins(0, 6, 0, 0);
 
-    QHBoxLayout* templateActionLayout = new QHBoxLayout();
-    templateActionLayout->addWidget(m_templateButton);
+    m_addButton->setObjectName("accentButton");
+    actionLayout->addWidget(m_addButton);
+    actionLayout->addSpacing(6);
 
-    QHBoxLayout* secondaryActionLayout = new QHBoxLayout();
-    secondaryActionLayout->addWidget(m_toggleCompletedButton);
-    secondaryActionLayout->addWidget(m_deleteButton);
-
-    QHBoxLayout* historyActionLayout = new QHBoxLayout();
-    historyActionLayout->addWidget(m_undoButton);
-    historyActionLayout->addWidget(m_redoButton);
+    QGridLayout* actionGridLayout = new QGridLayout();
+    actionGridLayout->setContentsMargins(0, 0, 0, 0);
+    actionGridLayout->setHorizontalSpacing(10);
+    actionGridLayout->setVerticalSpacing(10);
+    actionGridLayout->addWidget(m_editButton, 0, 0);
+    actionGridLayout->addWidget(m_templateButton, 0, 1);
+    actionGridLayout->addWidget(m_toggleCompletedButton, 1, 0);
+    actionGridLayout->addWidget(m_deleteButton, 1, 1);
+    actionGridLayout->addWidget(m_undoButton, 2, 0);
+    actionGridLayout->addWidget(m_redoButton, 2, 1);
+    actionGridLayout->setColumnStretch(0, 1);
+    actionGridLayout->setColumnStretch(1, 1);
+    actionLayout->addLayout(actionGridLayout);
 
     leftLayout->addWidget(searchLabel);
     leftLayout->addWidget(m_searchEdit);
     leftLayout->addWidget(typeLabel);
     leftLayout->addWidget(m_typeCombo);
+    leftLayout->addWidget(filterToggleButton);
+    leftLayout->addWidget(filterPanel);
     leftLayout->addWidget(m_resultCountLabel);
-    leftLayout->addWidget(m_activityList);
-    leftLayout->addLayout(primaryActionLayout);
-    leftLayout->addLayout(templateActionLayout);
-    leftLayout->addLayout(secondaryActionLayout);
-    leftLayout->addLayout(historyActionLayout);
+    leftLayout->addWidget(m_activityList, 1);
+    leftLayout->addLayout(actionLayout);
 
     QWidget* rightPanel = new QWidget(splitter);
-    rightPanel->setMinimumWidth(620);
+    rightPanel->setMinimumWidth(280);
 
     QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
+    rightLayout->setContentsMargins(0, 0, 0, 0);
+    rightLayout->setSpacing(8);
 
     QLabel* detailLabel = new QLabel("Activity details", rightPanel);
+    detailLabel->setObjectName("sectionLabel");
 
     m_detailView = new QTextEdit(rightPanel);
     m_detailView->setReadOnly(true);
 
     rightLayout->addWidget(detailLabel);
-    rightLayout->addWidget(m_detailView);
+    rightLayout->addWidget(m_detailView, 1);
 
-    splitter->addWidget(leftPanel);
+    leftScrollArea->setWidget(leftPanel);
+
+    splitter->addWidget(leftScrollArea);
     splitter->addWidget(rightPanel);
-    splitter->setStretchFactor(0, 1);
-    splitter->setStretchFactor(1, 2);
+    splitter->setStretchFactor(0, 12);
+    splitter->setStretchFactor(1, 8);
+    splitter->setSizes({590, 360});
 
-    mainLayout->addWidget(splitter);
+    mainLayout->addWidget(splitter, 1);
 
     setCentralWidget(centralWidget);
 }
@@ -238,6 +348,30 @@ void MainWindow::connectSignals()
         refreshActivityList();
     });
 
+    connect(m_priorityCombo, &QComboBox::currentIndexChanged, this, [this](int) {
+        refreshActivityList();
+    });
+
+    connect(m_categoryCombo, &QComboBox::currentIndexChanged, this, [this](int) {
+        refreshActivityList();
+    });
+
+    connect(m_completionCombo, &QComboBox::currentIndexChanged, this, [this](int) {
+        refreshActivityList();
+    });
+
+    connect(m_recurrenceCombo, &QComboBox::currentIndexChanged, this, [this](int) {
+        refreshActivityList();
+    });
+
+    connect(m_overdueCombo, &QComboBox::currentIndexChanged, this, [this](int) {
+        refreshActivityList();
+    });
+
+    connect(m_sortCombo, &QComboBox::currentIndexChanged, this, [this](int) {
+        refreshActivityList();
+    });
+
     connect(m_activityList, &QListWidget::currentRowChanged, this, [this](int currentRow) {
         if (currentRow < 0) {
             showActivityDetails(nullptr);
@@ -291,6 +425,8 @@ void MainWindow::refreshActivityList()
 {
     const QString previousSelectedId = selectedActivityId();
 
+    updateCategoryFilterOptions();
+
     m_activityList->clear();
 
     const std::vector<const Activity*> visibleActivities = collectVisibleActivities();
@@ -321,17 +457,17 @@ void MainWindow::refreshActivityList()
     }
 
     const QString query = m_searchEdit->text().trimmed();
-    const QString typeFilter = m_typeCombo->currentText();
+    const QString sortText = m_sortCombo ? m_sortCombo->currentText() : "Default";
 
     if (query.isEmpty()) {
-        m_resultCountLabel->setText(QString("Activities shown: %1 | Filter: %2")
+        m_resultCountLabel->setText(QString("Activities shown: %1 | Sort: %2")
                                     .arg(visibleActivities.size())
-                                    .arg(typeFilter));
+                                    .arg(sortText));
     } else {
-        m_resultCountLabel->setText(QString("Search results: %1 | Query: \"%2\" | Filter: %3")
+        m_resultCountLabel->setText(QString("Search results: %1 | Query: \"%2\" | Sort: %3")
                                     .arg(visibleActivities.size())
                                     .arg(query)
-                                    .arg(typeFilter));
+                                    .arg(sortText));
     }
 
     if (m_activityList->count() > 0) {
@@ -349,7 +485,7 @@ void MainWindow::refreshActivityList()
         } else {
             m_detailView->setPlainText(
                 QString("No activities match \"%1\".\n\n"
-                        "Try changing the search text or the activity type filter.")
+                        "Try changing the search text or the active filters.")
                         .arg(query)
             );
         }
@@ -473,6 +609,51 @@ void MainWindow::updateActionButtons()
     }
 }
 
+void MainWindow::updateCategoryFilterOptions()
+{
+    if (!m_categoryCombo || !m_activityManager) {
+        return;
+    }
+
+    const QString previousCategory = m_categoryCombo->currentData().toString();
+
+    QStringList categories;
+
+    for (const Activity* activity : m_activityManager->activities()) {
+        if (!activity) {
+            continue;
+        }
+
+        const QString category = activity->category().trimmed();
+
+        if (!category.isEmpty() && !categories.contains(category, Qt::CaseInsensitive)) {
+            categories.append(category);
+        }
+    }
+
+    std::sort(categories.begin(), categories.end(), [](const QString& first, const QString& second) {
+        return QString::localeAwareCompare(first, second) < 0;
+    });
+
+    m_categoryCombo->blockSignals(true);
+    m_categoryCombo->clear();
+    m_categoryCombo->addItem("All categories", QString());
+
+    for (const QString& category : categories) {
+        m_categoryCombo->addItem(category, category);
+    }
+
+    const int previousIndex = m_categoryCombo->findData(previousCategory);
+
+    if (previousIndex >= 0) {
+        m_categoryCombo->setCurrentIndex(previousIndex);
+    } else {
+        m_categoryCombo->setCurrentIndex(0);
+    }
+
+    m_categoryCombo->blockSignals(false);
+}
+
 std::vector<const Activity*> MainWindow::collectVisibleActivities() const
 {
     if (!m_activityManager) {
@@ -480,13 +661,95 @@ std::vector<const Activity*> MainWindow::collectVisibleActivities() const
     }
 
     ActivityFilter::Criteria criteria;
-    criteria.sortKey = ActivityFilter::SortKey::PrimaryDate;
-    criteria.sortOrder = ActivityFilter::SortOrder::Ascending;
 
-    const int selectedKindValue = m_typeCombo->currentData().toInt();
+    if (m_typeCombo) {
+        const int selectedKindValue = m_typeCombo->currentData().toInt();
 
-    if (selectedKindValue >= 0) {
-        criteria.kind = static_cast<ActivityKind>(selectedKindValue);
+        if (selectedKindValue >= 0) {
+            criteria.kind = static_cast<ActivityKind>(selectedKindValue);
+        }
+    }
+
+    if (m_priorityCombo) {
+        const int selectedPriorityValue = m_priorityCombo->currentData().toInt();
+
+        if (selectedPriorityValue >= 0) {
+            criteria.priority = static_cast<Priority>(selectedPriorityValue);
+        }
+    }
+
+    if (m_categoryCombo) {
+        const QString selectedCategory = m_categoryCombo->currentData().toString().trimmed();
+
+        if (!selectedCategory.isEmpty()) {
+            criteria.category = selectedCategory;
+        }
+    }
+
+    if (m_completionCombo) {
+        const int completionValue = m_completionCombo->currentData().toInt();
+
+        if (completionValue == 1) {
+            criteria.completion = ActivityFilter::CompletionFilter::ActiveOnly;
+        } else if (completionValue == 2) {
+            criteria.completion = ActivityFilter::CompletionFilter::CompletedOnly;
+        }
+    }
+
+    if (m_recurrenceCombo) {
+        const int recurrenceValue = m_recurrenceCombo->currentData().toInt();
+
+        if (recurrenceValue == 1) {
+            criteria.recurring = true;
+        } else if (recurrenceValue == 2) {
+            criteria.recurring = false;
+        }
+    }
+
+    if (m_overdueCombo) {
+        const int overdueValue = m_overdueCombo->currentData().toInt();
+
+        if (overdueValue == 1) {
+            criteria.overdue = ActivityFilter::OverdueFilter::OverdueOnly;
+        } else if (overdueValue == 2) {
+            criteria.overdue = ActivityFilter::OverdueFilter::NotOverdueOnly;
+        }
+    }
+
+    const QString sortValue = m_sortCombo
+            ? m_sortCombo->currentData().toString()
+            : "date_asc";
+
+    if (sortValue == "date_desc") {
+        criteria.sortKey = ActivityFilter::SortKey::PrimaryDate;
+        criteria.sortOrder = ActivityFilter::SortOrder::Descending;
+    } else if (sortValue == "title_asc") {
+        criteria.sortKey = ActivityFilter::SortKey::Title;
+        criteria.sortOrder = ActivityFilter::SortOrder::Ascending;
+    } else if (sortValue == "title_desc") {
+        criteria.sortKey = ActivityFilter::SortKey::Title;
+        criteria.sortOrder = ActivityFilter::SortOrder::Descending;
+    } else if (sortValue == "priority_desc") {
+        criteria.sortKey = ActivityFilter::SortKey::Priority;
+        criteria.sortOrder = ActivityFilter::SortOrder::Descending;
+    } else if (sortValue == "priority_asc") {
+        criteria.sortKey = ActivityFilter::SortKey::Priority;
+        criteria.sortOrder = ActivityFilter::SortOrder::Ascending;
+    } else if (sortValue == "completion_asc") {
+        criteria.sortKey = ActivityFilter::SortKey::Completion;
+        criteria.sortOrder = ActivityFilter::SortOrder::Ascending;
+    } else if (sortValue == "completion_desc") {
+        criteria.sortKey = ActivityFilter::SortKey::Completion;
+        criteria.sortOrder = ActivityFilter::SortOrder::Descending;
+    } else if (sortValue == "created_desc") {
+        criteria.sortKey = ActivityFilter::SortKey::CreatedAt;
+        criteria.sortOrder = ActivityFilter::SortOrder::Descending;
+    } else if (sortValue == "updated_desc") {
+        criteria.sortKey = ActivityFilter::SortKey::UpdatedAt;
+        criteria.sortOrder = ActivityFilter::SortOrder::Descending;
+    } else {
+        criteria.sortKey = ActivityFilter::SortKey::PrimaryDate;
+        criteria.sortOrder = ActivityFilter::SortOrder::Ascending;
     }
 
     std::vector<const Activity*> filteredActivities =
@@ -745,6 +1008,12 @@ void MainWindow::loadAgenda()
 
     m_searchEdit->clear();
     m_typeCombo->setCurrentIndex(0);
+    m_priorityCombo->setCurrentIndex(0);
+    m_categoryCombo->setCurrentIndex(0);
+    m_completionCombo->setCurrentIndex(0);
+    m_recurrenceCombo->setCurrentIndex(0);
+    m_overdueCombo->setCurrentIndex(0);
+    m_sortCombo->setCurrentIndex(0);
 
     refreshActivityList();
     updateWindowTitle();

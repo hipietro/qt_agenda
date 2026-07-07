@@ -117,43 +117,70 @@ void ActivityFilter::sortActivities(std::vector<const Activity*>& activities,
                       return first != nullptr;
                   }
 
-                  bool result = false;
+                  int comparison = 0;
 
                   switch (sortKey) {
                   case SortKey::Title:
-                      result = normalizedText(first->title()) < normalizedText(second->title());
+                      comparison = QString::compare(
+                          normalizedText(first->title()),
+                          normalizedText(second->title())
+                      );
                       break;
 
                   case SortKey::PrimaryDate:
-                      result = first->primaryDate() < second->primaryDate();
+                      if (first->primaryDate() < second->primaryDate()) {
+                          comparison = -1;
+                      } else if (second->primaryDate() < first->primaryDate()) {
+                          comparison = 1;
+                      }
                       break;
 
                   case SortKey::Priority:
-                      result = priorityRank(first->priority()) < priorityRank(second->priority());
+                      comparison = priorityRank(first->priority()) - priorityRank(second->priority());
                       break;
 
                   case SortKey::Completion:
-                      result = first->isCompleted() < second->isCompleted();
+                      comparison = static_cast<int>(first->isCompleted()) -
+                                   static_cast<int>(second->isCompleted());
                       break;
 
                   case SortKey::CreatedAt:
-                      result = first->createdAt() < second->createdAt();
+                      if (first->createdAt() < second->createdAt()) {
+                          comparison = -1;
+                      } else if (second->createdAt() < first->createdAt()) {
+                          comparison = 1;
+                      }
                       break;
 
                   case SortKey::UpdatedAt:
-                      result = first->updatedAt() < second->updatedAt();
+                      if (first->updatedAt() < second->updatedAt()) {
+                          comparison = -1;
+                      } else if (second->updatedAt() < first->updatedAt()) {
+                          comparison = 1;
+                      }
                       break;
 
                   case SortKey::None:
-                      result = false;
+                      comparison = 0;
                       break;
                   }
 
-                  if (sortOrder == SortOrder::Descending) {
-                      return !result && first != second;
+                  if (comparison == 0) {
+                      comparison = QString::compare(
+                          normalizedText(first->title()),
+                          normalizedText(second->title())
+                      );
                   }
 
-                  return result;
+                  if (comparison == 0) {
+                      comparison = QString::compare(first->id(), second->id());
+                  }
+
+                  if (sortOrder == SortOrder::Descending) {
+                      return comparison > 0;
+                  }
+
+                  return comparison < 0;
               });
 }
 

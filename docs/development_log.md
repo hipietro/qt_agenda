@@ -1259,3 +1259,61 @@ Validation:
 - Verified that older files without a templates array remain compatible.
 
 Estimated time spent: 1.5h
+
+### 2026-07-07 - Filtering, sorting and layout refinement
+
+Improved the main window filtering and sorting workflow.
+
+Added:
+
+- priority filter
+- category filter
+- completion status filter
+- recurrence filter
+- overdue/due-state filter
+- sorting combo box
+- dynamic category filter options
+- collapsible filters panel
+- scrollable left-side control panel
+- improved spacing for action buttons
+- more usable layout for small screens
+
+Design notes:
+
+- Filtering logic remains delegated to `ActivityFilter`.
+- MainWindow only collects the filter values from the GUI and builds the filter criteria.
+- The filters panel is collapsible so it does not constantly take space away from the activity list.
+- The left panel is scrollable to keep the interface usable when the window is small.
+- The activity list is treated as the central element of the window because it is the main navigation area.
+- Details remain visible on the right, but with less excessive empty space.
+- `Add activity` is visually emphasized as the primary action.
+- Undo and redo are kept close to each other because they are related history actions.
+
+Difficulties encountered:
+
+- The first filter layout made the left panel too tall and gave too much importance to filters.
+- The activity list became too small and difficult to navigate.
+- On smaller window sizes, filters and buttons became compressed and almost unusable.
+- The right detail panel initially occupied too much space compared to the information it displayed.
+- Some generated patch files had path issues and required applying patches with the correct path handling.
+
+Resolutions:
+
+- Reorganized filters into a collapsible panel.
+- Added a scrollable left panel so controls remain accessible on smaller screens.
+- Reduced the minimum window size.
+- Adjusted splitter proportions to give more space to the activity list.
+- Reworked button layout so `Add activity` is the main action and undo/redo are aligned together.
+- Improved spacing between action buttons.
+
+Validation:
+
+- Verified that the GUI remains usable with filters hidden.
+- Verified that the GUI remains usable with filters shown.
+- Verified that the window can be resized smaller without making controls unusable.
+- Verified that the activity list remains navigable.
+- Verified that priority, category, status, recurrence and due-state filters work.
+- Verified that sorting works together with filters and search.
+- Verified that action buttons remain accessible in the scrollable left panel.
+
+Estimated time spent: 3h

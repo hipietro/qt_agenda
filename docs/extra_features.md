@@ -461,3 +461,42 @@ This keeps older JSON files valid even if they were created before template pers
 Activities and templates are reconstructed and validated before replacing the current application state.
 
 This reduces the risk of corrupting the current agenda when loading an invalid or incomplete JSON file.
+
+## Advanced filtering and sorting GUI
+
+### Main window filters
+
+The main window exposes several filtering options directly in the GUI:
+
+- activity type
+- priority
+- category
+- completion status
+- recurrence state
+- overdue/due state
+
+These filters allow the user to narrow the activity list without changing the underlying data.
+
+### Sorting controls
+
+The activity list can be sorted by different criteria, including date, title, priority, completion state and creation/update time.
+
+Sorting is integrated with the existing filtering and search workflow.
+
+### Collapsible filter panel
+
+Filters are placed inside a collapsible panel.
+
+This keeps the interface cleaner because filters are available when needed but do not permanently reduce the space available for the activity list.
+
+### Scrollable left panel
+
+The left control panel is scrollable.
+
+This improves usability on smaller screens and prevents controls from becoming compressed when the window is resized.
+
+### Layout refinement
+
+The main window layout was adjusted to make the activity list the central navigation area.
+
+The details panel remains available on the right, while the action buttons are grouped more clearly below the list.

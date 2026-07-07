@@ -39,6 +39,7 @@ private:
     void refreshActivityList();
     void showActivityDetails(const Activity* activity);
     void updateActionButtons();
+    void updateCategoryFilterOptions();
     void updateWindowTitle();
     void setUnsavedChanges(bool hasUnsavedChanges);
     bool confirmDiscardUnsavedChanges();
@@ -71,6 +72,12 @@ private:
 
     QLineEdit* m_searchEdit = nullptr;
     QComboBox* m_typeCombo = nullptr;
+    QComboBox* m_priorityCombo = nullptr;
+    QComboBox* m_categoryCombo = nullptr;
+    QComboBox* m_completionCombo = nullptr;
+    QComboBox* m_recurrenceCombo = nullptr;
+    QComboBox* m_overdueCombo = nullptr;
+    QComboBox* m_sortCombo = nullptr;
     QListWidget* m_activityList = nullptr;
     QTextEdit* m_detailView = nullptr;
     QLabel* m_resultCountLabel = nullptr;

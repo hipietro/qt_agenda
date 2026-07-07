@@ -11,13 +11,35 @@ QWidget {
     font-size: 14px;
 }
 
+QScrollArea {
+    background-color: #f5f5f5;
+    border: none;
+}
+
+QScrollBar:vertical {
+    background-color: #f0f0f0;
+    width: 10px;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #c8c8c8;
+    border-radius: 5px;
+    min-height: 28px;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0;
+}
+
 QLabel {
     color: #222222;
     font-size: 14px;
 }
 
 QLabel#appTitleLabel {
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 700;
     color: #1f1f1f;
 }
@@ -31,8 +53,20 @@ QLabel#appSubtitleLabel {
 QLabel#resultCountLabel {
     color: #444444;
     font-weight: 600;
-    margin-top: 6px;
-    margin-bottom: 4px;
+    margin-top: 4px;
+    margin-bottom: 2px;
+}
+
+QLabel#sectionLabel,
+QLabel#filterFieldLabel {
+    color: #333333;
+    font-weight: 600;
+}
+
+QLabel#sectionLabel {
+    color: #333333;
+    font-weight: 600;
+    margin-top: 8px;
 }
 
 /* Tengo il group box leggero: serve a separare le sezioni,
@@ -43,8 +77,8 @@ QGroupBox {
     font-weight: 600;
     border: 1px solid #d8d8d8;
     border-radius: 8px;
-    margin-top: 10px;
-    padding-top: 14px;
+    margin-top: 6px;
+    padding-top: 10px;
 }
 
 QGroupBox::title {
@@ -53,6 +87,10 @@ QGroupBox::title {
     padding: 0 5px;
     color: #222222;
     background-color: #f5f5f5;
+}
+
+QGroupBox#filterPanel {
+    background-color: #f7f7f7;
 }
 
 QLineEdit,
@@ -65,8 +103,8 @@ QAbstractSpinBox {
     color: #222222;
     border: 1px solid #bdbdbd;
     border-radius: 5px;
-    padding: 5px 8px;
-    min-height: 24px;
+    padding: 4px 8px;
+    min-height: 22px;
     selection-background-color: #3F51B5;
     selection-color: #ffffff;
 }
@@ -182,12 +220,24 @@ QPushButton {
     color: #222222;
     border: 1px solid #bdbdbd;
     border-radius: 6px;
-    padding: 7px 11px;
+    padding: 7px 10px;
     min-height: 26px;
 }
 
 QPushButton:hover {
     background-color: #eeeeee;
+}
+
+QPushButton#filterToggleButton {
+    background-color: #ffffff;
+    color: #222222;
+    border: 1px solid #cfcfcf;
+    text-align: left;
+}
+
+QPushButton#filterToggleButton:checked {
+    background-color: #eef2ff;
+    border: 1px solid #3F51B5;
 }
 
 QPushButton:pressed {
@@ -198,6 +248,19 @@ QPushButton:disabled {
     background-color: #e0e0e0;
     color: #888888;
     border: 1px solid #cfcfcf;
+}
+
+
+QPushButton#accentButton {
+    background-color: #3F51B5;
+    color: #ffffff;
+    border: 1px solid #303F9F;
+    font-weight: 600;
+    min-height: 34px;
+}
+
+QPushButton#accentButton:hover {
+    background-color: #303F9F;
 }
 
 QPushButton#primaryButton {
