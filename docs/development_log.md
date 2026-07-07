@@ -1561,3 +1561,36 @@ Validation:
 - Verified that the file can be used to demonstrate filters, sorting, visual feedback, category management and templates.
 
 Estimated time spent: 1h
+
+### 2026-07-07 - Docker build validation
+
+Validated the project build inside the official course Docker environment.
+
+Environment:
+
+- Docker base image: Ubuntu 24.04
+- Qt version: Qt 6
+- Build system: qmake
+- Compiler toolchain: GCC / Make
+
+Validation steps:
+
+- built the Docker image using the course Dockerfile
+- mounted the project directory inside the container
+- created a clean `build_docker` directory
+- generated the Makefile using `qmake6`
+- compiled the project using `make -j$(nproc)`
+
+Result:
+
+- qmake completed successfully
+- make completed successfully
+- the project compiled inside the Docker environment
+
+Design notes:
+
+- This validation confirms that the project does not depend on the local macOS Qt installation.
+- The project can be built in the standard Linux environment used for the course.
+- The GUI was not required to run inside Docker because graphical forwarding is environment-dependent and not necessary for build validation.
+
+Estimated time spent: 0.5h
