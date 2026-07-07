@@ -679,8 +679,8 @@ void MainWindow::applyActivityListItemVisualState(QListWidgetItem* item, const A
         item->setBackground(QBrush(QColor("#f1f1f1")));
     } else if (activity->isOverdue(QDateTime::currentDateTime())) {
         itemFont.setBold(true);
-        item->setForeground(QBrush(QColor("#8A1C1C")));
-        item->setBackground(QBrush(QColor("#FFF0F0")));
+        item->setForeground(QBrush(QColor("#C62828")));
+        item->setBackground(QBrush(QColor("#FFE5E5")));
     } else if (activity->priority() == Priority::Critical) {
         item->setForeground(QBrush(QColor("#5A2A00")));
         item->setBackground(QBrush(QColor("#FFF6E6")));

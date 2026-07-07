@@ -1481,3 +1481,83 @@ Validation:
 - Verified that categories are saved and loaded from JSON.
 
 Estimated time spent: 3h
+
+### 2026-07-07 - Sample agenda JSON file
+
+Added a sample agenda JSON file for testing and demonstration.
+
+Added:
+
+- sample agenda file under `examples/sample_agenda.json`
+- sample categories
+- sample activities for every concrete activity type
+- sample event activity
+- sample deadline activity
+- sample reminder activity
+- sample checklist activity
+- sample completed activity
+- sample overdue activity
+- sample recurring activity
+- sample templates
+
+Design notes:
+
+- The sample file makes it easier to test the application without manually creating data every time.
+- It also provides a useful demo file for showing the project to the professor.
+- The sample data covers the main features of the application: polymorphic activity types, categories, priorities, completion state, overdue state, recurrence, checklist items and templates.
+- The file follows the same JSON structure used by the persistence layer.
+
+Validation:
+
+- Verified that the JSON file is syntactically valid.
+- Verified that the file uses the current agenda schema.
+- Verified that it includes activities, categories and templates.
+- Verified that it can be used to demonstrate filters, sorting, visual feedback and category management.
+
+Estimated time spent: 0.5h
+
+### 2026-07-07 - Sample agenda JSON file and overdue readability refinement
+
+Added and refined a sample agenda JSON file for testing and demonstration.
+
+Added:
+
+- sample agenda file under `examples/sample_agenda.json`
+- 16 sample activities
+- sample categories
+- sample activities for every concrete activity type
+- sample event activities
+- sample deadline activities
+- sample reminder activities
+- sample checklist activities
+- sample completed activities
+- sample overdue activities
+- sample recurring activities
+- sample high and critical priority activities
+- sample templates
+
+Refined:
+
+- overdue activity text color
+- overdue activity background color
+- readability of visually highlighted activity items
+
+Design notes:
+
+- The sample file makes it easier to test and demonstrate the application without manually creating data.
+- The sample data covers the main features of the application: polymorphic activity types, categories, priorities, completion state, overdue state, recurrence, checklist items and templates.
+- The overdue state is calculated dynamically using the current system date, not with a hardcoded day.
+- The sample file contains fixed activity dates only because a JSON demo file needs concrete dates.
+- Overdue visual feedback was adjusted to make highlighted activities easier to read.
+
+Validation:
+
+- Verified that the JSON file is syntactically valid.
+- Verified that the file uses the current agenda schema.
+- Verified that it includes activities, categories and templates.
+- Verified that all concrete activity types are represented.
+- Verified that overdue and completed activity visual feedback can be demonstrated.
+- Verified that overdue items are more readable after the color adjustment.
+- Verified that the file can be used to demonstrate filters, sorting, visual feedback, category management and templates.
+
+Estimated time spent: 1h

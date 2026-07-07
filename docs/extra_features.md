@@ -573,3 +573,44 @@ When a new valid category is typed, it is automatically registered in the catego
 Categories are saved and loaded together with the agenda JSON file.
 
 This ensures that custom categories remain available after closing and reopening the application.
+
+## Sample agenda file
+
+The project includes a sample JSON agenda file under:
+
+`examples/sample_agenda.json`
+
+The sample file is useful for testing and demonstration because it already contains:
+
+- multiple categories
+- all concrete activity types
+- completed activities
+- overdue activities
+- high and critical priority activities
+- recurring activities
+- checklist items
+- saved templates
+
+This allows the application to be demonstrated without manually creating data before each test.
+
+## Sample agenda file
+
+The project includes a sample JSON agenda file under:
+
+`examples/sample_agenda.json`
+
+The sample file is useful for testing and demonstration because it already contains:
+
+- multiple categories
+- 16 sample activities
+- all concrete activity types
+- completed activities
+- overdue activities
+- high and critical priority activities
+- recurring activities
+- checklist items
+- saved templates
+
+This allows the application to be demonstrated without manually creating data before each test.
+
+The overdue state is not hardcoded. It is calculated by comparing each activity date with the current date read from the operating system.

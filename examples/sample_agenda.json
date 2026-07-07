@@ -1,0 +1,375 @@
+{
+    "version": 1,
+    "categories": [
+        {
+            "id": "cat-university",
+            "name": "University",
+            "colorHex": "#3F51B5"
+        },
+        {
+            "id": "cat-study",
+            "name": "Study",
+            "colorHex": "#009688"
+        },
+        {
+            "id": "cat-work",
+            "name": "Work",
+            "colorHex": "#607D8B"
+        },
+        {
+            "id": "cat-health",
+            "name": "Health",
+            "colorHex": "#4CAF50"
+        },
+        {
+            "id": "cat-personal",
+            "name": "Personal",
+            "colorHex": "#FF9800"
+        },
+        {
+            "id": "cat-project",
+            "name": "Project",
+            "colorHex": "#9C27B0"
+        }
+    ],
+    "activities": [
+        {
+            "id": "act-oop-final-deadline",
+            "type": "deadline",
+            "title": "Submit final OOP project",
+            "description": "Prepare the final repository version and make sure the project builds before submission.",
+            "category": "University",
+            "priority": "critical",
+            "completed": false,
+            "createdAt": "2026-07-07T09:00:00",
+            "updatedAt": "2026-07-07T09:00:00",
+            "dueDate": "2026-07-15T23:59:00",
+            "context": "Object-Oriented Programming course",
+            "hardDeadline": true
+        },
+        {
+            "id": "act-report-draft-overdue",
+            "type": "deadline",
+            "title": "Update project report draft",
+            "description": "Add the latest GUI improvements, category management and validation notes to the Italian report.",
+            "category": "Project",
+            "priority": "high",
+            "completed": false,
+            "createdAt": "2026-07-01T11:30:00",
+            "updatedAt": "2026-07-01T11:30:00",
+            "dueDate": "2026-07-05T18:00:00",
+            "context": "Final project documentation",
+            "hardDeadline": false
+        },
+        {
+            "id": "act-oop-review-meeting",
+            "type": "event",
+            "title": "OOP project review",
+            "description": "Review architecture, polymorphism, persistence and GUI workflow before the final delivery.",
+            "category": "University",
+            "priority": "high",
+            "completed": false,
+            "createdAt": "2026-07-07T09:10:00",
+            "updatedAt": "2026-07-07T09:10:00",
+            "startDateTime": "2026-07-17T10:00:00",
+            "endDateTime": "2026-07-17T11:00:00",
+            "location": "University lab",
+            "participants": [
+                "Student",
+                "Teaching assistant"
+            ]
+        },
+        {
+            "id": "act-exam-checklist",
+            "type": "checklist",
+            "title": "Prepare OOP exam discussion",
+            "description": "Collect the main points to explain during the project presentation.",
+            "category": "Study",
+            "priority": "medium",
+            "completed": false,
+            "createdAt": "2026-07-07T09:20:00",
+            "updatedAt": "2026-07-07T09:20:00",
+            "targetDate": "2026-07-14T18:00:00",
+            "items": [
+                {
+                    "text": "Explain the Activity inheritance hierarchy",
+                    "completed": true
+                },
+                {
+                    "text": "Explain JSON persistence",
+                    "completed": true
+                },
+                {
+                    "text": "Show filtering and sorting",
+                    "completed": false
+                },
+                {
+                    "text": "Show category management",
+                    "completed": false
+                }
+            ]
+        },
+        {
+            "id": "act-evening-workout",
+            "type": "reminder",
+            "title": "Evening workout",
+            "description": "Short indoor training session after studying.",
+            "category": "Health",
+            "priority": "low",
+            "completed": false,
+            "createdAt": "2026-07-07T09:30:00",
+            "updatedAt": "2026-07-07T09:30:00",
+            "reminderDateTime": "2026-07-08T19:30:00",
+            "advanceMinutes": 30,
+            "reminderNote": "Prepare water bottle and training clothes.",
+            "recurrence": {
+                "frequency": "daily",
+                "interval": 1,
+                "endMode": "after_occurrences",
+                "maxOccurrences": 10
+            }
+        },
+        {
+            "id": "act-backup-agenda",
+            "type": "reminder",
+            "title": "Backup agenda JSON file",
+            "description": "Save a copy of the agenda file before testing new features.",
+            "category": "Project",
+            "priority": "medium",
+            "completed": true,
+            "createdAt": "2026-07-06T16:00:00",
+            "updatedAt": "2026-07-06T16:30:00",
+            "reminderDateTime": "2026-07-06T16:30:00",
+            "advanceMinutes": 15,
+            "reminderNote": "Keep a backup before applying patches."
+        },
+        {
+            "id": "act-database-study-session",
+            "type": "event",
+            "title": "Database exam study session",
+            "description": "Review normalization, functional dependencies and SQL exercises before the exam.",
+            "category": "Study",
+            "priority": "high",
+            "completed": false,
+            "createdAt": "2026-07-07T10:00:00",
+            "updatedAt": "2026-07-07T10:00:00",
+            "startDateTime": "2026-07-09T14:00:00",
+            "endDateTime": "2026-07-09T16:30:00",
+            "location": "Library",
+            "participants": [
+                "Study group"
+            ]
+        },
+        {
+            "id": "act-polish-readme-screenshots",
+            "type": "deadline",
+            "title": "Add screenshots to README",
+            "description": "Capture the main window, filters, category dialog and edit dialog for the GitHub README.",
+            "category": "Project",
+            "priority": "medium",
+            "completed": false,
+            "createdAt": "2026-07-07T10:10:00",
+            "updatedAt": "2026-07-07T10:10:00",
+            "dueDate": "2026-07-12T20:00:00",
+            "context": "Portfolio documentation",
+            "hardDeadline": false
+        },
+        {
+            "id": "act-docker-build-check",
+            "type": "reminder",
+            "title": "Run Docker build validation",
+            "description": "Check that the project still compiles in the professor's Docker environment.",
+            "category": "Project",
+            "priority": "critical",
+            "completed": false,
+            "createdAt": "2026-07-07T10:20:00",
+            "updatedAt": "2026-07-07T10:20:00",
+            "reminderDateTime": "2026-07-10T09:30:00",
+            "advanceMinutes": 60,
+            "reminderNote": "Run qmake and make inside the Docker container."
+        },
+        {
+            "id": "act-oral-exam-preparation",
+            "type": "checklist",
+            "title": "Prepare oral exam answers",
+            "description": "Build short answers with formulas and a clear spoken explanation.",
+            "category": "Study",
+            "priority": "high",
+            "completed": false,
+            "createdAt": "2026-07-07T10:30:00",
+            "updatedAt": "2026-07-07T10:30:00",
+            "targetDate": "2026-07-11T18:00:00",
+            "items": [
+                {
+                    "text": "Review main definitions",
+                    "completed": true
+                },
+                {
+                    "text": "Prepare formula sheet",
+                    "completed": false
+                },
+                {
+                    "text": "Practice 5-minute answers",
+                    "completed": false
+                },
+                {
+                    "text": "Repeat difficult derivations",
+                    "completed": false
+                }
+            ]
+        },
+        {
+            "id": "act-group-project-sync",
+            "type": "event",
+            "title": "Group project sync",
+            "description": "Discuss final project tasks and divide remaining documentation work.",
+            "category": "University",
+            "priority": "medium",
+            "completed": false,
+            "createdAt": "2026-07-07T10:40:00",
+            "updatedAt": "2026-07-07T10:40:00",
+            "startDateTime": "2026-07-13T11:00:00",
+            "endDateTime": "2026-07-13T12:00:00",
+            "location": "Online meeting",
+            "participants": [
+                "Project teammate"
+            ]
+        },
+        {
+            "id": "act-pay-university-fee",
+            "type": "deadline",
+            "title": "Pay university fee",
+            "description": "Check the student portal and complete the payment if it is still pending.",
+            "category": "Personal",
+            "priority": "critical",
+            "completed": false,
+            "createdAt": "2026-07-03T12:00:00",
+            "updatedAt": "2026-07-03T12:00:00",
+            "dueDate": "2026-07-06T12:00:00",
+            "context": "Student administration",
+            "hardDeadline": true
+        },
+        {
+            "id": "act-call-family-completed",
+            "type": "reminder",
+            "title": "Call family",
+            "description": "Short personal reminder already completed, useful to test completed reminder styling.",
+            "category": "Personal",
+            "priority": "low",
+            "completed": true,
+            "createdAt": "2026-07-05T18:00:00",
+            "updatedAt": "2026-07-05T19:15:00",
+            "reminderDateTime": "2026-07-05T19:00:00",
+            "advanceMinutes": 10,
+            "reminderNote": "Weekly catch-up call."
+        },
+        {
+            "id": "act-final-demo-checklist",
+            "type": "checklist",
+            "title": "Final demo checklist",
+            "description": "Quick list of things to verify before showing the app.",
+            "category": "Project",
+            "priority": "critical",
+            "completed": false,
+            "createdAt": "2026-07-07T11:00:00",
+            "updatedAt": "2026-07-07T11:00:00",
+            "targetDate": "2026-07-14T17:00:00",
+            "items": [
+                {
+                    "text": "Load sample agenda",
+                    "completed": true
+                },
+                {
+                    "text": "Show filters and sorting",
+                    "completed": true
+                },
+                {
+                    "text": "Open category management",
+                    "completed": false
+                },
+                {
+                    "text": "Create activity from template",
+                    "completed": false
+                },
+                {
+                    "text": "Demonstrate undo and redo",
+                    "completed": false
+                }
+            ]
+        },
+        {
+            "id": "act-library-booking-done",
+            "type": "event",
+            "title": "Book study room",
+            "description": "Completed event used to verify that completed events are still visible but de-emphasized.",
+            "category": "Study",
+            "priority": "medium",
+            "completed": true,
+            "createdAt": "2026-07-04T09:00:00",
+            "updatedAt": "2026-07-04T09:20:00",
+            "startDateTime": "2026-07-04T10:00:00",
+            "endDateTime": "2026-07-04T12:00:00",
+            "location": "University library",
+            "participants": []
+        },
+        {
+            "id": "act-weekly-folder-cleanup",
+            "type": "reminder",
+            "title": "Clean project folder",
+            "description": "Remove temporary build files and keep only useful source files and documentation.",
+            "category": "Project",
+            "priority": "low",
+            "completed": false,
+            "createdAt": "2026-07-07T11:10:00",
+            "updatedAt": "2026-07-07T11:10:00",
+            "reminderDateTime": "2026-07-16T18:00:00",
+            "advanceMinutes": 30,
+            "reminderNote": "Check build folders, temporary zips and screenshots.",
+            "recurrence": {
+                "frequency": "weekly",
+                "interval": 1,
+                "endMode": "after_occurrences",
+                "maxOccurrences": 4
+            }
+        }
+    ],
+    "templates": [
+        {
+            "id": "tpl-study-session",
+            "name": "Study session",
+            "prototype": {
+                "id": "tpl-prototype-study-session",
+                "type": "event",
+                "title": "Study session",
+                "description": "Focused study block for an exam or project topic.",
+                "category": "Study",
+                "priority": "medium",
+                "completed": false,
+                "createdAt": "2026-07-07T08:00:00",
+                "updatedAt": "2026-07-07T08:00:00",
+                "startDateTime": "2026-07-08T15:00:00",
+                "endDateTime": "2026-07-08T17:00:00",
+                "location": "Library",
+                "participants": []
+            }
+        },
+        {
+            "id": "tpl-assignment-deadline",
+            "name": "Assignment deadline",
+            "prototype": {
+                "id": "tpl-prototype-assignment-deadline",
+                "type": "deadline",
+                "title": "Assignment deadline",
+                "description": "Generic university assignment deadline.",
+                "category": "University",
+                "priority": "high",
+                "completed": false,
+                "createdAt": "2026-07-07T08:05:00",
+                "updatedAt": "2026-07-07T08:05:00",
+                "dueDate": "2026-07-20T23:59:00",
+                "context": "University assignment",
+                "hardDeadline": true
+            }
+        }
+    ]
+}
