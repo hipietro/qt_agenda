@@ -4,6 +4,7 @@ build/
 build-*/
 debug/
 release/
+build_docker/
 
 # Object files and binaries
 *.o
