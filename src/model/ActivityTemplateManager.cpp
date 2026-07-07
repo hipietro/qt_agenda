@@ -1,3 +1,5 @@
+// Template collection operations and clone-based creation.
+
 #include "ActivityTemplateManager.h"
 
 #include <algorithm>

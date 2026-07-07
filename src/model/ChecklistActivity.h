@@ -1,3 +1,6 @@
+// Concrete activity for checklist-based tasks.
+// The item list is stored in the model, not in the GUI widgets.
+
 #ifndef CHECKLISTACTIVITY_H
 #define CHECKLISTACTIVITY_H
 

@@ -1,3 +1,5 @@
+// Concrete activity for events with start/end time, location and participants.
+
 #ifndef EVENTACTIVITY_H
 #define EVENTACTIVITY_H
 

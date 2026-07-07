@@ -1,3 +1,5 @@
+// Toggle completion command implementation.
+
 #include "ToggleCompletionCommand.h"
 
 #include "model/Activity.h"

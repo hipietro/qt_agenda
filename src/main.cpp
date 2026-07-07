@@ -1,3 +1,6 @@
+// Application entry point. It wires the managers together and starts the main window.
+// Demo data is only loaded when no saved agenda is available.
+
 #include <QApplication>
 #include <QDateTime>
 #include <QFile>

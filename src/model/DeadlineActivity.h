@@ -1,3 +1,5 @@
+// Concrete activity for deadlines. It can optionally be marked as mandatory.
+
 #ifndef DEADLINEACTIVITY_H
 #define DEADLINEACTIVITY_H
 

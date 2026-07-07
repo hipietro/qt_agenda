@@ -1,3 +1,5 @@
+// Dialog used to edit an existing activity without changing its concrete type.
+
 #ifndef ACTIVITYEDITDIALOG_H
 #define ACTIVITYEDITDIALOG_H
 

@@ -1,3 +1,5 @@
+// Agenda JSON load/save implementation. It keeps the file schema in one place.
+
 #include "AgendaJsonStorage.h"
 
 #include "ActivityJsonSerializer.h"

@@ -1,3 +1,5 @@
+// Main application window. It coordinates GUI actions but keeps data logic in the managers.
+
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 

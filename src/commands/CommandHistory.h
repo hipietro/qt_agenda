@@ -1,3 +1,5 @@
+// Undo/redo stack used by the main window.
+
 #ifndef COMMANDHISTORY_H
 #define COMMANDHISTORY_H
 

@@ -1,3 +1,5 @@
+// Undoable command for adding an activity.
+
 #ifndef ADDACTIVITYCOMMAND_H
 #define ADDACTIVITYCOMMAND_H
 

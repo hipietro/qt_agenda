@@ -1,3 +1,5 @@
+// Update command implementation. Keeps both old and new versions.
+
 #include "UpdateActivityCommand.h"
 
 #include "model/Activity.h"

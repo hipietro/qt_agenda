@@ -1,3 +1,5 @@
+// Category validation, lookup and rename/remove helpers.
+
 #include "CategoryManager.h"
 
 #include <QRegularExpression>

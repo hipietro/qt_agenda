@@ -1,3 +1,5 @@
+// Stores reusable activity templates.
+
 #ifndef ACTIVITYTEMPLATEMANAGER_H
 #define ACTIVITYTEMPLATEMANAGER_H
 

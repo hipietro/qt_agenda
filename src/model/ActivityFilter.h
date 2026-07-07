@@ -1,3 +1,5 @@
+// Filter and sorting criteria applied to the activity list.
+
 #ifndef ACTIVITYFILTER_H
 #define ACTIVITYFILTER_H
 

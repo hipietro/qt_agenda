@@ -1,3 +1,5 @@
+// Priority values used by activities, filters and list styling.
+
 #ifndef PRIORITY_H
 #define PRIORITY_H
 

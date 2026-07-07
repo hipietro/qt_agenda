@@ -1,3 +1,6 @@
+// Base abstraction for every agenda item.
+// The rest of the app can work with Activity pointers without knowing the concrete type.
+
 #ifndef ACTIVITY_H
 #define ACTIVITY_H
 
@@ -56,8 +59,6 @@ public:
     virtual QString summary() const = 0;
     virtual std::unique_ptr<Activity> clone() const = 0;
     std::unique_ptr<Activity> cloneWithNewId() const;
-
-
 
 protected:
     void touch();

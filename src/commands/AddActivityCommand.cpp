@@ -1,3 +1,5 @@
+// Add command implementation. Stores enough data to undo the insertion.
+
 #include "AddActivityCommand.h"
 
 #include "model/Activity.h"

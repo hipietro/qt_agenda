@@ -1,3 +1,5 @@
+// Activity collection operations. Most GUI changes pass through this manager.
+
 #include "ActivityManager.h"
 
 #include <algorithm>
@@ -163,4 +165,4 @@ std::vector<std::unique_ptr<Activity>>::const_iterator ActivityManager::findIter
                         [&id](const std::unique_ptr<Activity>& activity) {
                             return activity && activity->id() == id;
                         });
-} 
+}

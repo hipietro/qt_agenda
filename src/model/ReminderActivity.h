@@ -1,3 +1,5 @@
+// Concrete activity for reminders, including a configurable alert offset.
+
 #ifndef REMINDERACTIVITY_H
 #define REMINDERACTIVITY_H
 

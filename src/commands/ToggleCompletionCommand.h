@@ -1,3 +1,5 @@
+// Undoable command for changing an activity completion state.
+
 #ifndef TOGGLECOMPLETIONCOMMAND_H
 #define TOGGLECOMPLETIONCOMMAND_H
 

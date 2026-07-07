@@ -1594,3 +1594,55 @@ Design notes:
 - The GUI was not required to run inside Docker because graphical forwarding is environment-dependent and not necessary for build validation.
 
 Estimated time spent: 0.5h
+
+### 2026-07-07 - Final code cleanup, architecture review and source comments
+
+Performed a final cleanup and architecture review before preparing the final documentation.
+
+Reviewed:
+
+- project file organization
+- qmake project file
+- GUI dialogs
+- model classes
+- command system
+- persistence layer
+- category management workflow
+- template workflow
+- validation behavior
+- general formatting and readability
+
+Improved:
+
+- include organization
+- spacing and indentation in selected files
+- readability of GUI code
+- source comments in header and implementation files
+- checklist validation in the edit dialog
+- recurrence validation in the edit dialog
+- dirty-state handling when saving a new template
+- category synchronization when creating an activity from a template
+- minor formatting issues in model and persistence code
+
+Design notes:
+
+- The cleanup did not change the general architecture of the project.
+- The model, GUI, commands and persistence layers remain separated.
+- The model classes still do not depend on Qt Widgets.
+- Comments were added to explain the role of each source file without overloading the code with obvious line-by-line comments.
+- The cleanup focused on readability, small correctness fixes and final polish.
+
+Validation:
+
+- Verified that the project still builds successfully.
+- Verified that the application opens correctly.
+- Verified that activity creation still works.
+- Verified that activity editing still works.
+- Verified that checklist validation works correctly.
+- Verified that recurrence validation works correctly.
+- Verified that category management still works.
+- Verified that filters still work.
+- Verified that save/load still works.
+- Verified that template creation and creation from template still work.
+
+Estimated time spent: 2h

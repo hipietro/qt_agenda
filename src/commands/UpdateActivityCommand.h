@@ -1,3 +1,5 @@
+// Undoable command for replacing an existing activity with an edited version.
+
 #ifndef UPDATEACTIVITYCOMMAND_H
 #define UPDATEACTIVITYCOMMAND_H
 

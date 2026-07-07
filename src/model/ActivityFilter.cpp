@@ -1,3 +1,5 @@
+// Filtering and sorting implementation used by the main list.
+
 #include "ActivityFilter.h"
 
 #include <algorithm>

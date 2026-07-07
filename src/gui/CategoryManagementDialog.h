@@ -1,3 +1,5 @@
+// Dialog for maintaining the custom category list.
+
 #ifndef CATEGORYMANAGEMENTDIALOG_H
 #define CATEGORYMANAGEMENTDIALOG_H
 

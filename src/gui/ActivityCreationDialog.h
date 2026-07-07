@@ -1,3 +1,5 @@
+// Dialog used to collect data for a new activity.
+
 #ifndef ACTIVITYCREATIONDIALOG_H
 #define ACTIVITYCREATIONDIALOG_H
 

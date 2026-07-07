@@ -1,3 +1,5 @@
+// Remove command implementation. The removed activity is kept so undo can restore it.
+
 #include "RemoveActivityCommand.h"
 
 #include "model/Activity.h"

@@ -1,3 +1,5 @@
+// Shared Activity behavior: common fields, recurrence handling and generated ids.
+
 #include "Activity.h"
 
 #include <QUuid>

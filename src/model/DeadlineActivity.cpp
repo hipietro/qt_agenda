@@ -1,3 +1,5 @@
+// Deadline-specific date handling and overdue logic.
+
 #include "DeadlineActivity.h"
 
 DeadlineActivity::DeadlineActivity(const QString& title,

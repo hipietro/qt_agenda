@@ -1,38 +1,39 @@
+// Activity creation dialog implementation. It builds the right concrete Activity type from user input.
+
 #include "ActivityCreationDialog.h"
 
+#include "model/Category.h"
+#include "model/CategoryManager.h"
 #include "model/ChecklistActivity.h"
 #include "model/DeadlineActivity.h"
 #include "model/EventActivity.h"
 #include "model/ReminderActivity.h"
-#include "model/Category.h"
-#include "model/CategoryManager.h"
 
-#include <QCheckBox>
 #include <QAbstractItemView>
-#include <QPushButton>
-#include <QSizePolicy>
+#include <QCheckBox>
 #include <QComboBox>
 #include <QDateTime>
 #include <QDateTimeEdit>
 #include <QDialogButtonBox>
 #include <QFormLayout>
+#include <QGridLayout>
 #include <QGroupBox>
+#include <QHBoxLayout>
+#include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
+#include <QPushButton>
+#include <QSizePolicy>
 #include <QSpinBox>
 #include <QStringList>
 #include <QStackedWidget>
 #include <QTextEdit>
 #include <QVBoxLayout>
-#include <QGridLayout>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QLabel>
 
 #include <algorithm>
 
 ActivityCreationDialog::ActivityCreationDialog(const CategoryManager* categoryManager,
-                                                 QWidget* parent)
+                                                   QWidget* parent)
     : QDialog(parent),
       m_categoryManager(categoryManager)
 {
@@ -94,12 +95,12 @@ void ActivityCreationDialog::setupUi()
 
     m_titleEdit = new QLineEdit(commonGroup);
     m_titleEdit->setPlaceholderText("Activity title");
-    m_titleEdit->setMinimumWidth(300)  ;
+    m_titleEdit->setMinimumWidth(300);
 
     m_descriptionEdit = new QTextEdit(commonGroup);
     m_descriptionEdit->setPlaceholderText("Optional description");
     m_descriptionEdit->setMinimumWidth(340);
-    m_descriptionEdit->setFixedHeight(82) ;
+    m_descriptionEdit->setFixedHeight(82);
 
     m_categoryCombo = new QComboBox(commonGroup);
     m_categoryCombo->setEditable(true);
@@ -147,20 +148,20 @@ void ActivityCreationDialog::setupUi()
     m_eventStartEdit = new QDateTimeEdit(now.addDays(1), eventPage);
     m_eventStartEdit->setCalendarPopup(true);
     m_eventStartEdit->setDisplayFormat("yyyy-MM-dd HH:mm");
-    m_eventStartEdit->setMinimumWidth(180)  ;
+    m_eventStartEdit->setMinimumWidth(180);
 
     m_eventEndEdit = new QDateTimeEdit(now.addDays(1).addSecs(3600), eventPage);
     m_eventEndEdit->setCalendarPopup(true);
     m_eventEndEdit->setDisplayFormat("yyyy-MM-dd HH:mm");
-    m_eventEndEdit->setMinimumWidth(180)  ;
+    m_eventEndEdit->setMinimumWidth(180);
 
     m_eventLocationEdit = new QLineEdit(eventPage);
     m_eventLocationEdit->setPlaceholderText("Optional location");
-    m_eventLocationEdit->setMinimumWidth(300)  ;
+    m_eventLocationEdit->setMinimumWidth(300);
 
     m_eventParticipantsEdit = new QLineEdit(eventPage);
     m_eventParticipantsEdit->setPlaceholderText("Comma-separated participants");
-    m_eventParticipantsEdit->setMinimumWidth(300)  ;
+    m_eventParticipantsEdit->setMinimumWidth(300);
 
     eventLayout->addRow("Start", m_eventStartEdit);
     eventLayout->addRow("End", m_eventEndEdit);
@@ -177,11 +178,11 @@ void ActivityCreationDialog::setupUi()
     m_deadlineDueEdit = new QDateTimeEdit(now.addDays(7), deadlinePage);
     m_deadlineDueEdit->setCalendarPopup(true);
     m_deadlineDueEdit->setDisplayFormat("yyyy-MM-dd HH:mm");
-    m_deadlineDueEdit->setMinimumWidth(180)  ;
+    m_deadlineDueEdit->setMinimumWidth(180);
 
     m_deadlineContextEdit = new QLineEdit(deadlinePage);
     m_deadlineContextEdit->setPlaceholderText("Optional context");
-    m_deadlineContextEdit->setMinimumWidth(300)  ;
+    m_deadlineContextEdit->setMinimumWidth(300);
 
     m_deadlineHardCheck = new QCheckBox("Hard deadline", deadlinePage);
     m_deadlineHardCheck->setChecked(true);
@@ -200,7 +201,7 @@ void ActivityCreationDialog::setupUi()
     m_reminderDateEdit = new QDateTimeEdit(now.addDays(1), reminderPage);
     m_reminderDateEdit->setCalendarPopup(true);
     m_reminderDateEdit->setDisplayFormat("yyyy-MM-dd HH:mm");
-    m_reminderDateEdit->setMinimumWidth(180)  ;
+    m_reminderDateEdit->setMinimumWidth(180);
 
     m_reminderAdvanceSpin = new QSpinBox(reminderPage);
     m_reminderAdvanceSpin->setRange(0, 10080);
@@ -209,7 +210,7 @@ void ActivityCreationDialog::setupUi()
 
     m_reminderNoteEdit = new QLineEdit(reminderPage);
     m_reminderNoteEdit->setPlaceholderText("Optional reminder note");
-    m_reminderNoteEdit->setMinimumWidth(300)  ;
+    m_reminderNoteEdit->setMinimumWidth(300);
 
     reminderLayout->addRow("Reminder time", m_reminderDateEdit);
     reminderLayout->addRow("Advance", m_reminderAdvanceSpin);
@@ -225,12 +226,12 @@ void ActivityCreationDialog::setupUi()
     m_checklistDueEdit = new QDateTimeEdit(now.addDays(3), checklistPage);
     m_checklistDueEdit->setCalendarPopup(true);
     m_checklistDueEdit->setDisplayFormat("yyyy-MM-dd HH:mm");
-    m_checklistDueEdit->setMinimumWidth(180)  ;
+    m_checklistDueEdit->setMinimumWidth(180);
 
     m_checklistItemsEdit = new QTextEdit(checklistPage);
     m_checklistItemsEdit->setPlaceholderText("One checklist item per line");
     m_checklistItemsEdit->setMinimumWidth(340);
-    m_checklistItemsEdit->setFixedHeight(115) ;
+    m_checklistItemsEdit->setFixedHeight(115);
 
     checklistLayout->addRow("Target date", m_checklistDueEdit);
     checklistLayout->addRow("Items", m_checklistItemsEdit);
@@ -242,11 +243,11 @@ void ActivityCreationDialog::setupUi()
 
     specificLayout->addWidget(m_typeStack);
 
-   /*
-    * La ricorrenza resta compatta e mostra solo i campi necessari.
-    * Ho scelto questa struttura perché "Repeat every 2 week(s)" è più chiaro
-    * di un campo generico chiamato "Interval".
-    */
+    /*
+     * La ricorrenza resta compatta e mostra solo i campi necessari.
+     * Ho scelto questa struttura perché "Repeat every 2 week(s)" è più chiaro
+     * di un campo generico chiamato "Interval".
+     */
     m_recurrenceGroup = new QGroupBox("Recurrence", this);
     QVBoxLayout* recurrenceLayout = new QVBoxLayout(m_recurrenceGroup);
     recurrenceLayout->setContentsMargins(12, 12, 12, 12);
@@ -350,7 +351,7 @@ void ActivityCreationDialog::connectSignals()
     });
 
     connect(m_repeatsCheck, &QCheckBox::toggled, this, [this]() {
-    updateRecurrenceControls();
+        updateRecurrenceControls();
     });
 
     connect(m_recurrenceEndModeCombo, &QComboBox::currentIndexChanged, this, [this]() {
@@ -378,17 +379,15 @@ bool ActivityCreationDialog::validateForm() const
         return false;
     }
 
-    /*
-     * Per gli eventi controllo che la fine sia successiva all'inizio.
-     * È una validazione minima ma evita un dato incoerente già in creazione.
-     */
+    // Eventi senza durata o con fine prima dell'inizio creerebbero dati poco credibili.
     if (selectedActivityKind() == ActivityKind::Event &&
         m_eventEndEdit->dateTime() <= m_eventStartEdit->dateTime()) {
         QMessageBox::warning(nullptr, "Invalid event", "The event end time must be after the start time.");
         return false;
     }
+
     if (selectedActivityKind() == ActivityKind::Checklist &&
-    checklistItemsFromText().isEmpty()) {
+        checklistItemsFromText().isEmpty()) {
         QMessageBox::warning(
             nullptr,
             "Invalid checklist",
@@ -398,36 +397,36 @@ bool ActivityCreationDialog::validateForm() const
     }
 
     if (m_repeatsCheck->isChecked() &&
-    selectedRecurrenceEndMode() == RecurrenceRule::EndMode::UntilDate) {
-    QDateTime primaryDate;
+        selectedRecurrenceEndMode() == RecurrenceRule::EndMode::UntilDate) {
+        QDateTime primaryDate;
 
-    switch (selectedActivityKind()) {
-    case ActivityKind::Event:
-        primaryDate = m_eventStartEdit->dateTime();
-        break;
+        switch (selectedActivityKind()) {
+        case ActivityKind::Event:
+            primaryDate = m_eventStartEdit->dateTime();
+            break;
 
-    case ActivityKind::Deadline:
-        primaryDate = m_deadlineDueEdit->dateTime();
-        break;
+        case ActivityKind::Deadline:
+            primaryDate = m_deadlineDueEdit->dateTime();
+            break;
 
-    case ActivityKind::Reminder:
-        primaryDate = m_reminderDateEdit->dateTime();
-        break;
+        case ActivityKind::Reminder:
+            primaryDate = m_reminderDateEdit->dateTime();
+            break;
 
-    case ActivityKind::Checklist:
-        primaryDate = m_checklistDueEdit->dateTime();
-        break;
+        case ActivityKind::Checklist:
+            primaryDate = m_checklistDueEdit->dateTime();
+            break;
+        }
+
+        if (m_recurrenceUntilEdit->dateTime() <= primaryDate) {
+            QMessageBox::warning(
+                nullptr,
+                "Invalid recurrence",
+                "The recurrence end date must be after the activity date."
+            );
+            return false;
+        }
     }
-
-    if (m_recurrenceUntilEdit->dateTime() <= primaryDate) {
-        QMessageBox::warning(
-            nullptr,
-            "Invalid recurrence",
-            "The recurrence end date must be after the activity date."
-        );
-        return false;
-    }
-}
 
     return true;
 }

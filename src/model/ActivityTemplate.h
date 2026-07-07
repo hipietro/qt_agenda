@@ -1,3 +1,5 @@
+// Saved prototype for quickly creating similar activities later.
+
 #ifndef ACTIVITYTEMPLATE_H
 #define ACTIVITYTEMPLATE_H
 

@@ -1,3 +1,5 @@
+// File-level JSON storage for activities, templates and categories.
+
 #ifndef AGENDAJSONSTORAGE_H
 #define AGENDAJSONSTORAGE_H
 

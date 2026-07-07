@@ -1,3 +1,5 @@
+// Undoable command for removing an activity.
+
 #ifndef REMOVEACTIVITYCOMMAND_H
 #define REMOVEACTIVITYCOMMAND_H
 

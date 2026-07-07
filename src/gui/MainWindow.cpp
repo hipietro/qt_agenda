@@ -1,54 +1,56 @@
+// MainWindow implementation: menus, list refresh, details panel and user actions.
+
 #include "MainWindow.h"
 
-#include "model/ActivityFilter.h"
-#include "model/ActivityManager.h"
-#include "model/SearchEngine.h"
-#include "model/ChecklistActivity.h"
-#include "persistence/AgendaJsonStorage.h"
 #include "ActivityCreationDialog.h"
 #include "ActivityEditDialog.h"
 #include "CategoryManagementDialog.h"
+#include "commands/AddActivityCommand.h"
+#include "commands/RemoveActivityCommand.h"
+#include "commands/ToggleCompletionCommand.h"
+#include "commands/UpdateActivityCommand.h"
+#include "model/ActivityFilter.h"
+#include "model/ActivityManager.h"
 #include "model/ActivityTemplate.h"
 #include "model/ActivityTemplateManager.h"
 #include "model/Category.h"
 #include "model/CategoryManager.h"
-#include "commands/AddActivityCommand.h"
-#include "commands/RemoveActivityCommand.h"
-#include "commands/UpdateActivityCommand.h"
-#include "commands/ToggleCompletionCommand.h"
+#include "model/ChecklistActivity.h"
+#include "model/SearchEngine.h"
+#include "persistence/AgendaJsonStorage.h"
 
-#include <QComboBox>
-#include <QInputDialog>
 #include <QAction>
 #include <QBrush>
 #include <QColor>
+#include <QComboBox>
 #include <QDateTime>
+#include <QDialog>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QFont>
+#include <QFrame>
 #include <QGridLayout>
+#include <QGroupBox>
 #include <QHBoxLayout>
+#include <QInputDialog>
+#include <QKeySequence>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QListWidgetItem>
+#include <QMenu>
+#include <QMenuBar>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSize>
 #include <QSplitter>
+#include <QStatusBar>
 #include <QStringList>
 #include <QTextEdit>
-#include <QVBoxLayout>
 #include <QVariant>
+#include <QVBoxLayout>
 #include <QWidget>
-#include <QFileDialog>
-#include <QFileInfo>
-#include <QFont>
-#include <QFrame>
-#include <QGroupBox>
-#include <QMenu>
-#include <QMenuBar>
-#include <QStatusBar>
-#include <QDialog>
-#include <QKeySequence>
 
 #include <algorithm>
 
@@ -415,9 +417,9 @@ void MainWindow::connectSignals()
     connect(m_addButton, &QPushButton::clicked, this, [this]() {
         createActivity();
     });
-    
+
     connect(m_templateButton, &QPushButton::clicked, this, [this]() {
-        createActivityFromTemplate(); 
+        createActivityFromTemplate();
     });
 
     connect(m_toggleCompletedButton, &QPushButton::clicked, this, [this]() {
@@ -495,9 +497,9 @@ void MainWindow::refreshActivityList()
     } else {
         if (query.isEmpty()) {
             m_detailView->setPlainText(
-            "No activities are available.\n\n"
-            "Use Add activity or From template to create a new activity."
-        );
+                "No activities are available.\n\n"
+                "Use Add activity or From template to create a new activity."
+            );
         } else {
             m_detailView->setPlainText(
                 QString("No activities match \"%1\".\n\n"
@@ -550,8 +552,7 @@ void MainWindow::showActivityDetails(const Activity* activity)
     }
 
     /* Se l'attività è una checklist mostro anche i singoli item.
-       Ho scelto di farlo qui perché la detail view deve essere utile
-       anche prima di implementare il dialog di modifica. */
+       Così si capisce lo stato della lista senza dover aprire la modifica. */
     if (activity->kind() == ActivityKind::Checklist) {
         const ChecklistActivity& checklist =
             static_cast<const ChecklistActivity&>(*activity);
@@ -576,33 +577,31 @@ void MainWindow::updateActionButtons()
     if (m_addButton) {
         m_addButton->setEnabled(m_activityManager != nullptr);
     }
+
     if (m_templateButton) {
         m_templateButton->setEnabled(m_activityManager != nullptr &&
-                                    m_templateManager != nullptr &&
-                                    !m_templateManager->isEmpty());
+                                     m_templateManager != nullptr &&
+                                     !m_templateManager->isEmpty());
     }
+
     const QString activityId = selectedActivityId();
     const Activity* activity = activityId.isEmpty() ? nullptr : findActivityById(activityId);
-
     const bool hasSelection = activity != nullptr;
 
     if (m_toggleCompletedButton) {
-            m_toggleCompletedButton->setEnabled(hasSelection);
+        m_toggleCompletedButton->setEnabled(hasSelection);
+        m_toggleCompletedButton->setText(
+            activity && activity->isCompleted() ? "Mark active" : "Mark completed"
+        );
+    }
 
-            if (activity && activity->isCompleted()) {
-                m_toggleCompletedButton->setText("Mark active");
-            } else {
-                m_toggleCompletedButton->setText("Mark completed");
-            }
-        }
-
-        if (m_editButton) {
+    if (m_editButton) {
         m_editButton->setEnabled(hasSelection);
     }
 
-        if (m_deleteButton) {
-            m_deleteButton->setEnabled(hasSelection);
-        }
+    if (m_deleteButton) {
+        m_deleteButton->setEnabled(hasSelection);
+    }
 
     if (m_undoButton) {
         m_undoButton->setEnabled(m_commandHistory.canUndo());
@@ -624,7 +623,6 @@ void MainWindow::updateActionButtons()
         m_redoAction->setText(m_commandHistory.redoDescription());
     }
 }
-
 QString MainWindow::activityListItemText(const Activity* activity) const
 {
     if (!activity) {
@@ -976,7 +974,7 @@ void MainWindow::toggleSelectedActivityCompletion()
         return;
     }
 
-        auto command = std::make_unique<ToggleCompletionCommand>(
+    auto command = std::make_unique<ToggleCompletionCommand>(
         m_activityManager,
         activityId
     );
@@ -1070,7 +1068,6 @@ QString MainWindow::storageSummaryText() const
         .arg(categoryCount)
         .arg(categoryWord);
 }
-
 
 void MainWindow::manageCategories()
 {
@@ -1490,7 +1487,7 @@ void MainWindow::createActivityFromTemplate()
         return;
     }
 
-   const QString createdActivityId = activity->id();
+    const QString createdActivityId = activity->id();
 
     auto command = std::make_unique<AddActivityCommand>(
         m_activityManager,
@@ -1507,6 +1504,7 @@ void MainWindow::createActivityFromTemplate()
     }
 
     setUnsavedChanges(true);
+    synchronizeCategoryManagerFromActivities();
     refreshActivityList();
 
     for (int row = 0; row < m_activityList->count(); ++row) {
@@ -1596,10 +1594,11 @@ void MainWindow::saveSelectedActivityAsTemplate()
         return;
     }
 
+    setUnsavedChanges(true);
     updateActionButtons();
 
     statusBar()->showMessage(
-        QString("Template \"%1\" saved for this session").arg(templateName),
+        QString("Template \"%1\" saved").arg(templateName),
         3000
     );
 }

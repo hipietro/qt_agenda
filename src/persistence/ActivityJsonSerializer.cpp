@@ -1,3 +1,5 @@
+// JSON serializer for all concrete activity types.
+
 #include "ActivityJsonSerializer.h"
 
 #include "model/ChecklistActivity.h"
@@ -51,7 +53,7 @@ QJsonObject ActivityJsonSerializer::toJson(const Activity& activity)
     case ActivityKind::Checklist: {
         const ChecklistActivity& checklist = static_cast<const ChecklistActivity&>(activity);
 
-        json["targetDate"] = checklist.primaryDate().toString(Qt::ISODate); 
+        json["targetDate"] = checklist.primaryDate().toString(Qt::ISODate);
         QJsonArray itemsArray;
 
         for (const ChecklistItem& item : checklist.items()) {

@@ -1,3 +1,5 @@
+// Search implementation. Normalization is kept here so the GUI stays simple.
+
 #include "SearchEngine.h"
 
 #include <QChar>

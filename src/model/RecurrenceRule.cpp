@@ -1,3 +1,5 @@
+// Recurrence calculation and validation helpers.
+
 #include "RecurrenceRule.h"
 
 RecurrenceRule::RecurrenceRule(Frequency frequency,

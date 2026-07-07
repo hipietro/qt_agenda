@@ -1,3 +1,5 @@
+// Simple category value used to organize and filter activities.
+
 #ifndef CATEGORY_H
 #define CATEGORY_H
 

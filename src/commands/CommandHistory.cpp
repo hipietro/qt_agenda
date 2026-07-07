@@ -1,3 +1,5 @@
+// Command history implementation. New commands clear the redo branch.
+
 #include "CommandHistory.h"
 
 bool CommandHistory::executeCommand(std::unique_ptr<Command> command)

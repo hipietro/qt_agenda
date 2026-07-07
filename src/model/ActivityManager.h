@@ -1,3 +1,5 @@
+// Owns the activity collection and exposes safe operations used by GUI and commands.
+
 #ifndef ACTIVITYMANAGER_H
 #define ACTIVITYMANAGER_H
 
@@ -31,10 +33,8 @@ public:
     int replaceCategory(const QString& oldCategory, const QString& newCategory);
     int clearCategory(const QString& category);
 
-
     std::vector<const Activity*> activities() const;
 
-    
     int size() const;
     bool isEmpty() const;
     void clear();

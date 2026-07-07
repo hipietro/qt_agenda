@@ -1,3 +1,5 @@
+// ActivityTemplate implementation. The prototype is cloned when reused.
+
 #include "ActivityTemplate.h"
 
 #include <QUuid>

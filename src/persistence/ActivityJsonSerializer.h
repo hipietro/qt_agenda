@@ -1,3 +1,5 @@
+// Converts polymorphic activities to and from the JSON representation.
+
 #ifndef ACTIVITYJSONSERIALIZER_H
 #define ACTIVITYJSONSERIALIZER_H
 

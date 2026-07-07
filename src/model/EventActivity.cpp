@@ -1,3 +1,5 @@
+// Event-specific validation and display logic.
+
 #include "EventActivity.h"
 
 EventActivity::EventActivity(const QString& title,

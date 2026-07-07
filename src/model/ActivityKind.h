@@ -1,3 +1,5 @@
+// Small enum used to identify the concrete activity family when needed by UI or JSON.
+
 #ifndef ACTIVITYKIND_H
 #define ACTIVITYKIND_H
 

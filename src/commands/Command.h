@@ -1,3 +1,5 @@
+// Base interface for undoable commands.
+
 #ifndef COMMAND_H
 #define COMMAND_H
 

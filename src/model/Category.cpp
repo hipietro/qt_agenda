@@ -1,3 +1,5 @@
+// Category value implementation.
+
 #include "Category.h"
 
 #include <QUuid>

@@ -1,12 +1,15 @@
+// Activity edit dialog implementation. Existing values are loaded first, then rebuilt on save.
+
 #include "ActivityEditDialog.h"
 
+#include "model/Category.h"
+#include "model/CategoryManager.h"
 #include "model/ChecklistActivity.h"
 #include "model/DeadlineActivity.h"
 #include "model/EventActivity.h"
 #include "model/ReminderActivity.h"
-#include "model/Category.h"
-#include "model/CategoryManager.h"
 
+#include <QAbstractItemView>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDateTime>
@@ -14,9 +17,13 @@
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QFrame>
+#include <QGridLayout>
 #include <QGroupBox>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListWidget>
+#include <QListWidgetItem>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QScrollArea>
@@ -25,12 +32,6 @@
 #include <QStackedWidget>
 #include <QTextEdit>
 #include <QVBoxLayout>
-#include <QAbstractItemView>
-#include <QHBoxLayout>
-#include <QListWidget>
-#include <QListWidgetItem>
-#include <QGridLayout>
-
 
 #include <algorithm>
 
@@ -277,10 +278,10 @@ void ActivityEditDialog::setupUi()
     specificLayout->addWidget(m_typeStack);
 
     /*
-    * La ricorrenza resta compatta e mostra solo i campi necessari.
-    * Ho scelto questa struttura perché "Repeat every 2 week(s)" è più chiaro
-    * di un campo generico chiamato "Interval".
-    */
+     * La ricorrenza resta compatta e mostra solo i campi necessari.
+     * Ho scelto questa struttura perché "Repeat every 2 week(s)" è più chiaro
+     * di un campo generico chiamato "Interval".
+     */
     m_recurrenceGroup = new QGroupBox("Recurrence", contentWidget);
     QVBoxLayout* recurrenceLayout = new QVBoxLayout(m_recurrenceGroup);
     recurrenceLayout->setContentsMargins(12, 12, 12, 12);
@@ -333,7 +334,7 @@ void ActivityEditDialog::setupUi()
     m_recurrenceEndDetailsLabel = new QLabel(m_recurrenceEndDetailsWidget);
 
     m_recurrenceUntilEdit = new QDateTimeEdit(QDateTime::currentDateTime().addMonths(1),
-                                            m_recurrenceEndDetailsWidget);
+                                                m_recurrenceEndDetailsWidget);
     m_recurrenceUntilEdit->setCalendarPopup(true);
     m_recurrenceUntilEdit->setDisplayFormat("yyyy-MM-dd HH:mm");
     m_recurrenceUntilEdit->setMinimumWidth(200);
@@ -500,39 +501,40 @@ bool ActivityEditDialog::validateForm() const
             "Invalid checklist",
             "A checklist must contain at least one item."
         );
-
-if (m_repeatsCheck->isChecked() &&
-    selectedRecurrenceEndMode() == RecurrenceRule::EndMode::UntilDate) {
-    QDateTime primaryDate;
-
-    switch (m_activityKind) {
-    case ActivityKind::Event:
-        primaryDate = m_eventStartEdit->dateTime();
-        break;
-
-    case ActivityKind::Deadline:
-        primaryDate = m_deadlineDueEdit->dateTime();
-        break;
-
-    case ActivityKind::Reminder:
-        primaryDate = m_reminderDateEdit->dateTime();
-        break;
-
-    case ActivityKind::Checklist:
-        primaryDate = m_checklistDueEdit->dateTime();
-        break;
-    }
-
-    if (m_recurrenceUntilEdit->dateTime() <= primaryDate) {
-        QMessageBox::warning(
-            nullptr,
-            "Invalid recurrence",
-            "The recurrence end date must be after the activity date."
-        );
         return false;
     }
+
+    if (m_repeatsCheck->isChecked() &&
+        selectedRecurrenceEndMode() == RecurrenceRule::EndMode::UntilDate) {
+        QDateTime primaryDate;
+
+        switch (m_activityKind) {
+        case ActivityKind::Event:
+            primaryDate = m_eventStartEdit->dateTime();
+            break;
+
+        case ActivityKind::Deadline:
+            primaryDate = m_deadlineDueEdit->dateTime();
+            break;
+
+        case ActivityKind::Reminder:
+            primaryDate = m_reminderDateEdit->dateTime();
+            break;
+
+        case ActivityKind::Checklist:
+            primaryDate = m_checklistDueEdit->dateTime();
+            break;
+        }
+
+        if (m_recurrenceUntilEdit->dateTime() <= primaryDate) {
+            QMessageBox::warning(
+                nullptr,
+                "Invalid recurrence",
+                "The recurrence end date must be after the activity date."
+            );
+            return false;
+        }
     }
-}
 
     return true;
 }

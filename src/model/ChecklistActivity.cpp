@@ -1,3 +1,5 @@
+// Checklist item management and completion logic.
+
 #include "ChecklistActivity.h"
 
 ChecklistActivity::ChecklistActivity(const QString& title,

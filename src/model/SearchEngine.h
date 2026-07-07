@@ -1,3 +1,5 @@
+// Search helper with normalized matching and simple fuzzy suggestions.
+
 #ifndef SEARCHENGINE_H
 #define SEARCHENGINE_H
 

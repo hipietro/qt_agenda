@@ -1,3 +1,5 @@
+// Category management dialog implementation. Changes are applied through CategoryManager.
+
 #include "CategoryManagementDialog.h"
 
 #include "model/Activity.h"
@@ -9,14 +11,14 @@
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
 #include <QInputDialog>
-#include <QLineEdit>
 #include <QLabel>
+#include <QLineEdit>
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QVBoxLayout>
 #include <QVariant>
+#include <QVBoxLayout>
 
 #include <algorithm>
 #include <vector>
@@ -370,12 +372,13 @@ void CategoryManagementDialog::removeSelectedCategory()
         return;
     }
 
-    const int updatedActivities = m_activityManager->clearCategory(categoryName);
-
     if (!m_categoryManager->removeCategoryById(categoryId)) {
         QMessageBox::warning(this, "Remove failed", "The selected category could not be removed.");
+        refreshCategoryList();
         return;
     }
+
+    const int updatedActivities = m_activityManager->clearCategory(categoryName);
 
     m_categoriesChanged = true;
 
@@ -385,7 +388,6 @@ void CategoryManagementDialog::removeSelectedCategory()
 
     refreshCategoryList();
 }
-
 QString CategoryManagementDialog::selectedCategoryId() const
 {
     if (!m_categoryList || !m_categoryList->currentItem()) {

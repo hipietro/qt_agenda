@@ -1,3 +1,5 @@
+// Recurrence settings for repeated activities. Kept independent from GUI code.
+
 #ifndef RECURRENCERULE_H
 #define RECURRENCERULE_H
 

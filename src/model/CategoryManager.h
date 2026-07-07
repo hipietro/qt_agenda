@@ -1,3 +1,5 @@
+// Manages custom categories and keeps category names consistent.
+
 #ifndef CATEGORYMANAGER_H
 #define CATEGORYMANAGER_H
 

@@ -1,3 +1,5 @@
+// Reminder-specific summary and overdue behavior.
+
 #include "ReminderActivity.h"
 
 ReminderActivity::ReminderActivity(const QString& title,
