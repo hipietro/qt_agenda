@@ -17,6 +17,8 @@
 #include <QComboBox>
 #include <QInputDialog>
 #include <QAction>
+#include <QBrush>
+#include <QColor>
 #include <QDateTime>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -27,6 +29,7 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QSize>
 #include <QSplitter>
 #include <QStringList>
 #include <QTextEdit>
@@ -34,6 +37,7 @@
 #include <QVariant>
 #include <QWidget>
 #include <QFileDialog>
+#include <QFont>
 #include <QFrame>
 #include <QGroupBox>
 #include <QMenu>
@@ -438,15 +442,11 @@ void MainWindow::refreshActivityList()
             continue;
         }
 
-        const QString itemText = QString("%1\n%2 | %3 | %4")
-                .arg(activity->title())
-                .arg(activityKindToString(activity->kind()))
-                .arg(activity->primaryDate().toString("yyyy-MM-dd HH:mm"))
-                .arg(statusText(activity));
-
-        QListWidgetItem* item = new QListWidgetItem(itemText);
+        QListWidgetItem* item = new QListWidgetItem(activityListItemText(activity));
         item->setData(Qt::UserRole, activity->id());
         item->setToolTip(activity->summary());
+        item->setSizeHint(QSize(0, 68));
+        applyActivityListItemVisualState(item, activity);
 
         const int newRow = m_activityList->count();
         m_activityList->addItem(item);
@@ -607,6 +607,72 @@ void MainWindow::updateActionButtons()
         m_redoAction->setEnabled(m_commandHistory.canRedo());
         m_redoAction->setText(m_commandHistory.redoDescription());
     }
+}
+
+QString MainWindow::activityListItemText(const Activity* activity) const
+{
+    if (!activity) {
+        return QString();
+    }
+
+    const bool completed = activity->isCompleted();
+    const bool overdue = !completed && activity->isOverdue(QDateTime::currentDateTime());
+
+    QString titlePrefix;
+
+    if (completed) {
+        titlePrefix = "[DONE] ";
+    } else if (overdue) {
+        titlePrefix = "[OVERDUE] ";
+    }
+
+    const QString categoryText = activity->category().trimmed().isEmpty()
+            ? "No category"
+            : activity->category().trimmed();
+
+    const QString recurrenceSuffix = activity->hasRecurrence()
+            ? " | Repeating"
+            : QString();
+
+    return QString("%1%2\n%3 | %4 | Priority: %5 | %6\nCategory: %7%8")
+            .arg(titlePrefix)
+            .arg(activity->title())
+            .arg(activityKindToString(activity->kind()))
+            .arg(activity->primaryDate().toString("yyyy-MM-dd HH:mm"))
+            .arg(priorityText(activity->priority()))
+            .arg(statusText(activity))
+            .arg(categoryText)
+            .arg(recurrenceSuffix);
+}
+
+void MainWindow::applyActivityListItemVisualState(QListWidgetItem* item, const Activity* activity) const
+{
+    if (!item || !activity) {
+        return;
+    }
+
+    QFont itemFont = item->font();
+
+    if (activity->priority() == Priority::High || activity->priority() == Priority::Critical) {
+        itemFont.setBold(true);
+    }
+
+    if (activity->isCompleted()) {
+        itemFont.setStrikeOut(true);
+        item->setForeground(QBrush(QColor("#6f6f6f")));
+        item->setBackground(QBrush(QColor("#f1f1f1")));
+    } else if (activity->isOverdue(QDateTime::currentDateTime())) {
+        itemFont.setBold(true);
+        item->setForeground(QBrush(QColor("#8A1C1C")));
+        item->setBackground(QBrush(QColor("#FFF0F0")));
+    } else if (activity->priority() == Priority::Critical) {
+        item->setForeground(QBrush(QColor("#5A2A00")));
+        item->setBackground(QBrush(QColor("#FFF6E6")));
+    } else {
+        item->setForeground(QBrush(QColor("#222222")));
+    }
+
+    item->setFont(itemFont);
 }
 
 void MainWindow::updateCategoryFilterOptions()

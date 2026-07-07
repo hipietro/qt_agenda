@@ -194,7 +194,7 @@ QListWidget {
 }
 
 QListWidget::item {
-    padding: 8px;
+    padding: 9px 10px;
     border-bottom: 1px solid #eeeeee;
 }
 

@@ -1317,3 +1317,57 @@ Validation:
 - Verified that action buttons remain accessible in the scrollable left panel.
 
 Estimated time spent: 3h
+
+### 2026-07-07 - Activity list visual feedback and checklist edit usability
+
+Improved activity list readability and fixed checklist editing usability.
+
+Added:
+
+- richer activity list items
+- clearer title/type/date/status information in each list item
+- priority information directly in the activity list
+- visual distinction for completed activities
+- visual distinction for overdue activities
+- stronger emphasis for high and critical priority activities
+- recurrence indication in the activity list
+- improved checklist edit dialog layout
+- scrollable checklist items area while editing
+- fixed overlap between checklist item list and action buttons
+- scrollable edit dialog content when needed
+
+Design notes:
+
+- The activity list is the main navigation area of the application, so each item should give enough information without forcing the user to always open the detail panel.
+- Completed activities are visually de-emphasized.
+- Overdue activities are visually highlighted because they require attention.
+- High and critical priority activities are emphasized to make important tasks easier to notice.
+- The checklist edit dialog was adjusted because checklist item editing must remain usable even when the checklist contains several items.
+- Dialog action buttons remain accessible while the form content can scroll.
+
+Difficulties encountered:
+
+- The first version of the improved activity list was more informative, but it revealed an existing usability issue in the checklist edit dialog.
+- When editing a checklist with multiple items, the checklist list area was not comfortably scrollable and the add/remove controls could overlap or become hard to use.
+- This was especially problematic on smaller screens.
+
+Resolutions:
+
+- Improved the visual structure of list items.
+- Added visual states for completed and overdue activities.
+- Adjusted checklist editing so the item list has usable scroll behavior.
+- Reorganized checklist item controls to avoid overlap.
+- Made the edit dialog content scrollable while keeping confirmation buttons accessible.
+
+Validation:
+
+- Verified that normal activities remain readable in the list.
+- Verified that completed activities are visually distinguishable.
+- Verified that overdue activities are visually distinguishable.
+- Verified that high and critical priority activities stand out.
+- Verified that recurring activities show recurrence information.
+- Verified that checklist items can be edited with scrolling.
+- Verified that Add item and Remove selected remain usable.
+- Verified that Cancel and Save changes remain accessible.
+
+Estimated time spent: 2h

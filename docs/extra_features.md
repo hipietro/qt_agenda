@@ -500,3 +500,41 @@ This improves usability on smaller screens and prevents controls from becoming c
 The main window layout was adjusted to make the activity list the central navigation area.
 
 The details panel remains available on the right, while the action buttons are grouped more clearly below the list.
+
+## Improved activity list visual feedback
+
+### Richer activity list items
+
+Activity list items display more useful information directly in the main list.
+
+Each item shows key information such as:
+
+- activity title
+- activity type
+- primary date
+- priority
+- completion status
+- category when available
+- recurrence state when applicable
+
+This makes the list more useful as a navigation and overview area.
+
+### Completed and overdue activity states
+
+Completed activities are visually de-emphasized.
+
+Overdue activities are visually highlighted so that the user can quickly identify tasks or deadlines requiring attention.
+
+### Priority emphasis
+
+High and critical priority activities are visually emphasized.
+
+This helps the user distinguish important activities without opening the detail panel.
+
+### Checklist edit usability
+
+The checklist editing workflow was improved.
+
+Checklist items are shown in a scrollable area, and the add/remove controls are placed so they remain usable without overlapping the list.
+
+The edit dialog can scroll when needed while keeping the final action buttons accessible.

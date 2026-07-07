@@ -11,11 +11,13 @@
 #include <QDateTimeEdit>
 #include <QDialogButtonBox>
 #include <QFormLayout>
+#include <QFrame>
 #include <QGroupBox>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QSpinBox>
 #include <QStackedWidget>
 #include <QTextEdit>
@@ -62,14 +64,28 @@ void ActivityEditDialog::accept()
 void ActivityEditDialog::setupUi()
 {
     setWindowTitle("Edit activity");
-    resize(720, 620);
-    setMinimumSize(680, 560);
+    resize(760, 640);
+    setMinimumSize(680, 500);
 
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(14, 14, 14, 14);
     mainLayout->setSpacing(10);
 
-    QGroupBox* commonGroup = new QGroupBox("Common fields", this);
+    /*
+     * Tengo i pulsanti finali sempre visibili e rendo scrollabile il contenuto.
+     * In questo modo le checklist lunghe non comprimono i campi e non si
+     * sovrappongono ai pulsanti di aggiunta/rimozione.
+     */
+    QScrollArea* contentScrollArea = new QScrollArea(this);
+    contentScrollArea->setWidgetResizable(true);
+    contentScrollArea->setFrameShape(QFrame::NoFrame);
+
+    QWidget* contentWidget = new QWidget(contentScrollArea);
+    QVBoxLayout* contentLayout = new QVBoxLayout(contentWidget);
+    contentLayout->setContentsMargins(0, 0, 0, 0);
+    contentLayout->setSpacing(10);
+
+    QGroupBox* commonGroup = new QGroupBox("Common fields", contentWidget);
     QFormLayout* commonLayout = new QFormLayout(commonGroup);
     commonLayout->setLabelAlignment(Qt::AlignRight | Qt::AlignVCenter);
     commonLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
@@ -106,7 +122,7 @@ void ActivityEditDialog::setupUi()
     commonLayout->addRow("Category", m_categoryEdit);
     commonLayout->addRow("Priority", m_priorityCombo);
 
-    QGroupBox* specificGroup = new QGroupBox("Type-specific fields", this);
+    QGroupBox* specificGroup = new QGroupBox("Type-specific fields", contentWidget);
     QVBoxLayout* specificLayout = new QVBoxLayout(specificGroup);
     specificLayout->setContentsMargins(12, 12, 12, 12);
 
@@ -199,11 +215,11 @@ void ActivityEditDialog::setupUi()
     m_checklistDueEdit->setDisplayFormat("yyyy-MM-dd HH:mm");
     m_checklistDueEdit->setMinimumWidth(220);
 
-        /*
-    * Per la modifica della checklist uso una QListWidget con checkbox.
-    * Ho scelto questa soluzione perché è più sicura del formato testuale [x]/[ ],
-    * evita errori di scrittura e rende immediato lo stato completato/non completato.
-    */
+    /*
+     * Per la modifica della checklist uso una QListWidget con checkbox.
+     * Ho scelto questa soluzione perché è più sicura del formato testuale [x]/[ ],
+     * evita errori di scrittura e rende immediato lo stato completato/non completato.
+     */
     QWidget* checklistItemsWidget = new QWidget(checklistPage);
     QVBoxLayout* checklistItemsLayout = new QVBoxLayout(checklistItemsWidget);
     checklistItemsLayout->setContentsMargins(0, 0, 0, 0);
@@ -211,7 +227,8 @@ void ActivityEditDialog::setupUi()
 
     m_checklistItemsList = new QListWidget(checklistItemsWidget);
     m_checklistItemsList->setMinimumWidth(340);
-    m_checklistItemsList->setMinimumHeight(130);
+    m_checklistItemsList->setMinimumHeight(170);
+    m_checklistItemsList->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     m_checklistItemsList->setEditTriggers(QAbstractItemView::DoubleClicked |
                                         QAbstractItemView::EditKeyPressed);
 
@@ -225,11 +242,13 @@ void ActivityEditDialog::setupUi()
     m_removeChecklistItemButton->setObjectName("dangerButton");
 
     QHBoxLayout* checklistButtonLayout = new QHBoxLayout();
-    checklistButtonLayout->addWidget(m_checklistNewItemEdit);
+    checklistButtonLayout->setSpacing(8);
+    checklistButtonLayout->addStretch(1);
     checklistButtonLayout->addWidget(m_addChecklistItemButton);
     checklistButtonLayout->addWidget(m_removeChecklistItemButton);
 
     checklistItemsLayout->addWidget(m_checklistItemsList);
+    checklistItemsLayout->addWidget(m_checklistNewItemEdit);
     checklistItemsLayout->addLayout(checklistButtonLayout);
 
     checklistLayout->addRow("Target date", m_checklistDueEdit);
@@ -247,7 +266,7 @@ void ActivityEditDialog::setupUi()
     * Ho scelto questa struttura perché "Repeat every 2 week(s)" è più chiaro
     * di un campo generico chiamato "Interval".
     */
-    m_recurrenceGroup = new QGroupBox("Recurrence", this);
+    m_recurrenceGroup = new QGroupBox("Recurrence", contentWidget);
     QVBoxLayout* recurrenceLayout = new QVBoxLayout(m_recurrenceGroup);
     recurrenceLayout->setContentsMargins(12, 12, 12, 12);
     recurrenceLayout->setSpacing(8);
@@ -382,9 +401,14 @@ void ActivityEditDialog::setupUi()
         updateRecurrenceControls();
     });
 
-    mainLayout->addWidget(commonGroup);
-    mainLayout->addWidget(specificGroup);
-    mainLayout->addWidget(m_recurrenceGroup);
+    contentLayout->addWidget(commonGroup);
+    contentLayout->addWidget(specificGroup);
+    contentLayout->addWidget(m_recurrenceGroup);
+    contentLayout->addStretch(1);
+
+    contentScrollArea->setWidget(contentWidget);
+
+    mainLayout->addWidget(contentScrollArea, 1);
     mainLayout->addWidget(m_buttonBox);
 
     updateRecurrenceControls();

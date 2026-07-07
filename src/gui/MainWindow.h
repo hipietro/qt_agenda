@@ -18,6 +18,7 @@ class QComboBox;
 class QLabel;
 class QLineEdit;
 class QListWidget;
+class QListWidgetItem;
 class QPushButton;
 class QTextEdit;
 class QAction;
@@ -49,6 +50,9 @@ private:
     std::vector<const Activity*> collectVisibleActivities() const;
     const Activity* findActivityById(const QString& id) const;
     QString selectedActivityId() const;
+
+    QString activityListItemText(const Activity* activity) const;
+    void applyActivityListItemVisualState(QListWidgetItem* item, const Activity* activity) const;
 
     QString statusText(const Activity* activity) const;
     QString priorityText(Priority priority) const;
