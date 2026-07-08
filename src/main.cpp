@@ -4,6 +4,7 @@
 #include <QApplication>
 #include <QDateTime>
 #include <QFile>
+#include <QIcon>
 
 #include <memory>
 
@@ -142,6 +143,7 @@ static void populateDemoData(ActivityManager& manager,
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+    app.setWindowIcon(QIcon(":/icons/app_icon.svg"));
 
     QFile styleFile(":/style.qss");
 

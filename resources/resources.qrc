@@ -2,5 +2,6 @@
     <qresource prefix="/">
         <file>style.qss</file>
         <file>icons/dropdown_arrow.svg</file>
+        <file>icons/app_icon.svg</file>
     </qresource>
 </RCC>

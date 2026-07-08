@@ -90,15 +90,6 @@ void MainWindow::setupUi()
     mainLayout->setContentsMargins(12, 12, 12, 12);
     mainLayout->setSpacing(8);
 
-    QLabel* titleLabel = new QLabel("Agenda Qt", centralWidget);
-    titleLabel->setObjectName("appTitleLabel");
-
-    QLabel* subtitleLabel = new QLabel("Manage activities with search, filters and basic actions", centralWidget);
-    subtitleLabel->setObjectName("appSubtitleLabel");
-
-    mainLayout->addWidget(titleLabel);
-    mainLayout->addWidget(subtitleLabel);
-
     QSplitter* splitter = new QSplitter(centralWidget);
     splitter->setChildrenCollapsible(false);
 
