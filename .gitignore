@@ -40,3 +40,6 @@ docs/relation/*.toc
 
 # VS Code local settings
 .vscode/
+
+consegna_agenda_qt/
+consegna_agenda_qt_Acampora.zip
