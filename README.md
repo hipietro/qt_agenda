@@ -11,7 +11,7 @@ It was developed as an Object-Oriented Programming project and focuses on a clea
 The application manages different kinds of personal activities: events, deadlines, reminders and checklists. Each activity type is represented by a concrete subclass of a common abstract base class.
 
 ---
-##⚠️Project status: 
+⚠️Project status: 
 Paused waiting for academic evaluation.
 ---
 
