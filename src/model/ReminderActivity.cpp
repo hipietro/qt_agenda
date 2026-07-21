@@ -1,6 +1,7 @@
 // Reminder-specific summary and overdue behavior.
 
 #include "ReminderActivity.h"
+#include "ActivityVisitor.h"
 
 ReminderActivity::ReminderActivity(const QString& title,
                                    const QDateTime& reminderDateTime,
@@ -51,6 +52,11 @@ void ReminderActivity::setReminderNote(const QString& reminderNote)
 {
     m_reminderNote = reminderNote;
     touch();
+}
+
+void ReminderActivity::accept(ActivityVisitor& visitor) const
+{
+    visitor.visit(*this);
 }
 
 QDateTime ReminderActivity::primaryDate() const
