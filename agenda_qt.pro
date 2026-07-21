@@ -42,6 +42,7 @@ SOURCES += \
 HEADERS += \
     src/model/Priority.h \
     src/model/ActivityKind.h \
+    src/model/ActivityVisitor.h \
     src/model/Activity.h \
     src/model/EventActivity.h \
     src/model/DeadlineActivity.h \
