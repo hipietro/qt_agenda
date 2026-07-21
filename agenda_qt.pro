@@ -27,6 +27,8 @@ SOURCES += \
     src/model/ActivityTemplateManager.cpp \
     src/model/CategoryManager.cpp \
     src/gui/MainWindow.cpp \
+    src/gui/ActivityListItemVisitor.cpp \
+    src/gui/ActivityListPresentationController.cpp \
     src/persistence/ActivityJsonSerializer.cpp \
     src/persistence/AgendaJsonStorage.cpp \
     src/gui/ActivityCreationDialog.cpp \
@@ -37,7 +39,6 @@ SOURCES += \
     src/commands/ToggleCompletionCommand.cpp \
     src/commands/CommandHistory.cpp \
     src/commands/UpdateActivityCommand.cpp
-
 
 HEADERS += \
     src/model/Priority.h \
@@ -57,6 +58,8 @@ HEADERS += \
     src/model/ActivityTemplateManager.h \
     src/model/CategoryManager.h \
     src/gui/MainWindow.h \
+    src/gui/ActivityListItemVisitor.h \
+    src/gui/ActivityListPresentationController.h \
     src/persistence/ActivityJsonSerializer.h \
     src/persistence/AgendaJsonStorage.h \
     src/gui/ActivityCreationDialog.h \
@@ -68,7 +71,6 @@ HEADERS += \
     src/commands/ToggleCompletionCommand.h \
     src/commands/CommandHistory.h \
     src/commands/AddActivityCommand.h
-
 
 RESOURCES += \
     resources/resources.qrc

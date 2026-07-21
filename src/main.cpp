@@ -5,9 +5,11 @@
 #include <QDateTime>
 #include <QFile>
 #include <QIcon>
+#include <QListWidget>
 
 #include <memory>
 
+#include "gui/ActivityListPresentationController.h"
 #include "gui/MainWindow.h"
 
 #include "model/ActivityManager.h"
@@ -20,8 +22,8 @@
 #include "model/RecurrenceRule.h"
 
 static void populateDemoData(ActivityManager& manager,
-                             ActivityTemplateManager& templateManager,
-                             CategoryManager& categoryManager)
+                              ActivityTemplateManager& templateManager,
+                              CategoryManager& categoryManager)
 {
     const QDateTime now = QDateTime::currentDateTime();
 
@@ -158,6 +160,9 @@ int main(int argc, char *argv[])
     populateDemoData(manager, templateManager, categoryManager);
 
     MainWindow window(&manager, &templateManager, &categoryManager);
+    QListWidget* activityList = window.findChild<QListWidget*>();
+    new ActivityListPresentationController(activityList, &manager, &window);
+
     window.show();
 
     return app.exec();
