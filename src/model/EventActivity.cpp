@@ -1,6 +1,7 @@
 // Event-specific validation and display logic.
 
 #include "EventActivity.h"
+#include "ActivityVisitor.h"
 
 EventActivity::EventActivity(const QString& title,
                              const QDateTime& startDateTime,
@@ -66,6 +67,11 @@ void EventActivity::setParticipants(const QStringList& participants)
     touch();
 }
 
+void EventActivity::accept(ActivityVisitor& visitor) const
+{
+    visitor.visit(*this);
+}
+
 ActivityKind EventActivity::kind() const
 {
     return ActivityKind::Event;
@@ -75,7 +81,6 @@ QDateTime EventActivity::primaryDate() const
 {
     return m_startDateTime;
 }
-
 
 bool EventActivity::isOverdue(const QDateTime& now) const
 {
