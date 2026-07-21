@@ -6,9 +6,11 @@
 #include <QFile>
 #include <QIcon>
 #include <QListWidget>
+#include <QTextEdit>
 
 #include <memory>
 
+#include "gui/ActivityDetailPresentationController.h"
 #include "gui/ActivityListPresentationController.h"
 #include "gui/MainWindow.h"
 
@@ -161,7 +163,14 @@ int main(int argc, char *argv[])
 
     MainWindow window(&manager, &templateManager, &categoryManager);
     QListWidget* activityList = window.findChild<QListWidget*>();
+    QTextEdit* legacyDetailView = window.findChild<QTextEdit*>();
+
     new ActivityListPresentationController(activityList, &manager, &window);
+    new ActivityDetailPresentationController(
+        activityList,
+        legacyDetailView,
+        &manager,
+        &window);
 
     window.show();
 
