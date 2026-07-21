@@ -6,6 +6,7 @@
 #include "model/ActivityVisitor.h"
 
 #include <QString>
+#include <QtGlobal>
 
 class Activity;
 class QDateTime;
