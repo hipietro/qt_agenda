@@ -9,16 +9,16 @@ class ReminderActivity : public Activity
 {
 public:
     ReminderActivity(const QString& title,
-                    const QDateTime& reminderDateTime,
-                    int advanceMinutes = 0,
-                    const QString& reminderNote = QString(),
-                    const QString& description = QString(),
-                    const QString& category = QString(),
-                    Priority priority = Priority::Medium,
-                    bool completed = false,
-                    const QString& id = QString(),
-                    const QDateTime& createdAt = QDateTime::currentDateTime(),
-                    const QDateTime& updatedAt = QDateTime::currentDateTime());
+                     const QDateTime& reminderDateTime,
+                     int advanceMinutes = 0,
+                     const QString& reminderNote = QString(),
+                     const QString& description = QString(),
+                     const QString& category = QString(),
+                     Priority priority = Priority::Medium,
+                     bool completed = false,
+                     const QString& id = QString(),
+                     const QDateTime& createdAt = QDateTime::currentDateTime(),
+                     const QDateTime& updatedAt = QDateTime::currentDateTime());
 
     QDateTime reminderDateTime() const;
     void setReminderDateTime(const QDateTime& reminderDateTime);
@@ -29,6 +29,7 @@ public:
     QString reminderNote() const;
     void setReminderNote(const QString& reminderNote);
 
+    void accept(ActivityVisitor& visitor) const override;
     QDateTime primaryDate() const override;
     bool isOverdue(const QDateTime& now) const override;
     QString summary() const override;

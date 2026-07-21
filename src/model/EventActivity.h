@@ -11,17 +11,17 @@ class EventActivity : public Activity
 {
 public:
     EventActivity(const QString& title,
-                const QDateTime& startDateTime,
-                const QDateTime& endDateTime,
-                const QString& location = QString(),
-                const QStringList& participants = QStringList(),
-                const QString& description = QString(),
-                const QString& category = QString(),
-                Priority priority = Priority::Medium,
-                bool completed = false,
-                const QString& id = QString(),
-                const QDateTime& createdAt = QDateTime::currentDateTime(),
-                const QDateTime& updatedAt = QDateTime::currentDateTime());
+                  const QDateTime& startDateTime,
+                  const QDateTime& endDateTime,
+                  const QString& location = QString(),
+                  const QStringList& participants = QStringList(),
+                  const QString& description = QString(),
+                  const QString& category = QString(),
+                  Priority priority = Priority::Medium,
+                  bool completed = false,
+                  const QString& id = QString(),
+                  const QDateTime& createdAt = QDateTime::currentDateTime(),
+                  const QDateTime& updatedAt = QDateTime::currentDateTime());
 
     QDateTime startDateTime() const;
     void setStartDateTime(const QDateTime& startDateTime);
@@ -35,6 +35,7 @@ public:
     QStringList participants() const;
     void setParticipants(const QStringList& participants);
 
+    void accept(ActivityVisitor& visitor) const override;
     QDateTime primaryDate() const override;
     bool isOverdue(const QDateTime& now) const override;
     QString summary() const override;

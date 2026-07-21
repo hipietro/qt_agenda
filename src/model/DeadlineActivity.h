@@ -9,16 +9,16 @@ class DeadlineActivity : public Activity
 {
 public:
     DeadlineActivity(const QString& title,
-                    const QDateTime& dueDate,
-                    const QString& context = QString(),
-                    bool hardDeadline = true,
-                    const QString& description = QString(),
-                    const QString& category = QString(),
-                    Priority priority = Priority::Medium,
-                    bool completed = false,
-                    const QString& id = QString(),
-                    const QDateTime& createdAt = QDateTime::currentDateTime(),
-                    const QDateTime& updatedAt = QDateTime::currentDateTime());
+                     const QDateTime& dueDate,
+                     const QString& context = QString(),
+                     bool hardDeadline = true,
+                     const QString& description = QString(),
+                     const QString& category = QString(),
+                     Priority priority = Priority::Medium,
+                     bool completed = false,
+                     const QString& id = QString(),
+                     const QDateTime& createdAt = QDateTime::currentDateTime(),
+                     const QDateTime& updatedAt = QDateTime::currentDateTime());
 
     QDateTime dueDate() const;
     void setDueDate(const QDateTime& dueDate);
@@ -29,6 +29,7 @@ public:
     bool isHardDeadline() const;
     void setHardDeadline(bool hardDeadline);
 
+    void accept(ActivityVisitor& visitor) const override;
     QDateTime primaryDate() const override;
     bool isOverdue(const QDateTime& now) const override;
     QString summary() const override;

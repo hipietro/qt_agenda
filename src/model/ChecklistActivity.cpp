@@ -1,6 +1,7 @@
 // Checklist item management and completion logic.
 
 #include "ChecklistActivity.h"
+#include "ActivityVisitor.h"
 
 ChecklistActivity::ChecklistActivity(const QString& title,
                                      const QDateTime& dueDate,
@@ -100,6 +101,11 @@ double ChecklistActivity::progressPercentage() const
 bool ChecklistActivity::isCompleted() const
 {
     return Activity::isCompleted() || allSubtasksCompleted();
+}
+
+void ChecklistActivity::accept(ActivityVisitor& visitor) const
+{
+    visitor.visit(*this);
 }
 
 QDateTime ChecklistActivity::primaryDate() const

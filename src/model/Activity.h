@@ -13,6 +13,8 @@
 #include "ActivityKind.h"
 #include "RecurrenceRule.h"
 
+class ActivityVisitor;
+
 class Activity
 {
 public:
@@ -52,6 +54,8 @@ public:
     void setRecurrenceRule(const RecurrenceRule& recurrenceRule);
     void clearRecurrenceRule();
     QDateTime nextOccurrenceAfter(const QDateTime& after) const;
+
+    virtual void accept(ActivityVisitor& visitor) const = 0;
 
     virtual ActivityKind kind() const = 0;
     virtual QDateTime primaryDate() const = 0;

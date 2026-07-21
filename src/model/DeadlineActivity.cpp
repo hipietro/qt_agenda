@@ -1,6 +1,7 @@
 // Deadline-specific date handling and overdue logic.
 
 #include "DeadlineActivity.h"
+#include "ActivityVisitor.h"
 
 DeadlineActivity::DeadlineActivity(const QString& title,
                                    const QDateTime& dueDate,
@@ -51,6 +52,11 @@ void DeadlineActivity::setHardDeadline(bool hardDeadline)
 {
     m_hardDeadline = hardDeadline;
     touch();
+}
+
+void DeadlineActivity::accept(ActivityVisitor& visitor) const
+{
+    visitor.visit(*this);
 }
 
 QDateTime DeadlineActivity::primaryDate() const
