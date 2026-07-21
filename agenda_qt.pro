@@ -29,6 +29,8 @@ SOURCES += \
     src/gui/MainWindow.cpp \
     src/gui/ActivityListItemVisitor.cpp \
     src/gui/ActivityListPresentationController.cpp \
+    src/gui/ActivityDetailVisitor.cpp \
+    src/gui/ActivityDetailPresentationController.cpp \
     src/persistence/ActivityJsonSerializer.cpp \
     src/persistence/AgendaJsonStorage.cpp \
     src/gui/ActivityCreationDialog.cpp \
@@ -60,6 +62,8 @@ HEADERS += \
     src/gui/MainWindow.h \
     src/gui/ActivityListItemVisitor.h \
     src/gui/ActivityListPresentationController.h \
+    src/gui/ActivityDetailVisitor.h \
+    src/gui/ActivityDetailPresentationController.h \
     src/persistence/ActivityJsonSerializer.h \
     src/persistence/AgendaJsonStorage.h \
     src/gui/ActivityCreationDialog.h \
