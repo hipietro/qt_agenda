@@ -5,10 +5,10 @@
 
 #include "model/ActivityVisitor.h"
 
+#include <QDateTime>
 #include <QString>
 
 class Activity;
-class QLabel;
 class QVBoxLayout;
 class QWidget;
 
