@@ -81,14 +81,22 @@ void ActivityListPresentationController::renderRow(int row)
         return;
     }
 
-    card->setProperty("selected", item == m_list->currentItem());
-    item->setToolTip(visitor.toolTip());
-    item->setSizeHint(QSize(0, std::max(92, card->sizeHint().height() + 4)));
-
     if (QWidget* previousCard = m_list->itemWidget(item)) {
         m_list->removeItemWidget(item);
         previousCard->deleteLater();
     }
+
+    // The QListWidgetItem is only a container for the custom card.
+    // Keeping its original text would paint it underneath the widget.
+    item->setText(QString());
+    item->setToolTip(visitor.toolTip());
+
+    card->setProperty("selected", item == m_list->currentItem());
+    card->ensurePolished();
+    card->adjustSize();
+
+    const int cardHeight = std::max(card->minimumHeight(), card->sizeHint().height());
+    item->setSizeHint(QSize(0, cardHeight + 10));
 
     m_list->setItemWidget(item, card);
     setCardSelected(card, item == m_list->currentItem());
