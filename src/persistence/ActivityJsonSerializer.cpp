@@ -2,6 +2,7 @@
 
 #include "ActivityJsonSerializer.h"
 
+#include "ActivityJsonSerializationVisitor.h"
 #include "model/ChecklistActivity.h"
 #include "model/DeadlineActivity.h"
 #include "model/EventActivity.h"
@@ -12,63 +13,9 @@
 
 QJsonObject ActivityJsonSerializer::toJson(const Activity& activity)
 {
-    QJsonObject json = commonFieldsToJson(activity);
-
-    switch (activity.kind()) {
-    case ActivityKind::Event: {
-        const EventActivity& event = static_cast<const EventActivity&>(activity);
-
-        json["startDateTime"] = event.startDateTime().toString(Qt::ISODate);
-        json["endDateTime"] = event.endDateTime().toString(Qt::ISODate);
-        json["location"] = event.location();
-
-        QJsonArray participantsArray;
-
-        for (const QString& participant : event.participants()) {
-            participantsArray.append(participant);
-        }
-
-        json["participants"] = participantsArray;
-        break;
-    }
-
-    case ActivityKind::Deadline: {
-        const DeadlineActivity& deadline = static_cast<const DeadlineActivity&>(activity);
-
-        json["dueDate"] = deadline.dueDate().toString(Qt::ISODate);
-        json["context"] = deadline.context();
-        json["hardDeadline"] = deadline.isHardDeadline();
-        break;
-    }
-
-    case ActivityKind::Reminder: {
-        const ReminderActivity& reminder = static_cast<const ReminderActivity&>(activity);
-
-        json["reminderDateTime"] = reminder.reminderDateTime().toString(Qt::ISODate);
-        json["advanceMinutes"] = reminder.advanceMinutes();
-        json["reminderNote"] = reminder.reminderNote();
-        break;
-    }
-
-    case ActivityKind::Checklist: {
-        const ChecklistActivity& checklist = static_cast<const ChecklistActivity&>(activity);
-
-        json["targetDate"] = checklist.primaryDate().toString(Qt::ISODate);
-        QJsonArray itemsArray;
-
-        for (const ChecklistItem& item : checklist.items()) {
-            QJsonObject itemObject;
-            itemObject["text"] = item.text;
-            itemObject["completed"] = item.completed;
-            itemsArray.append(itemObject);
-        }
-
-        json["items"] = itemsArray;
-        break;
-    }
-    }
-
-    return json;
+    ActivityJsonSerializationVisitor visitor;
+    activity.accept(visitor);
+    return visitor.json();
 }
 
 std::unique_ptr<Activity> ActivityJsonSerializer::fromJson(const QJsonObject& json)
@@ -99,7 +46,6 @@ std::unique_ptr<Activity> ActivityJsonSerializer::fromJson(const QJsonObject& js
         const QString location = json["location"].toString();
 
         QStringList participants;
-
         const QJsonArray participantsArray = json["participants"].toArray();
 
         for (const QJsonValue& value : participantsArray) {
@@ -120,7 +66,6 @@ std::unique_ptr<Activity> ActivityJsonSerializer::fromJson(const QJsonObject& js
             createdAt,
             updatedAt
         );
-
         break;
     }
 
@@ -142,7 +87,6 @@ std::unique_ptr<Activity> ActivityJsonSerializer::fromJson(const QJsonObject& js
             createdAt,
             updatedAt
         );
-
         break;
     }
 
@@ -164,15 +108,12 @@ std::unique_ptr<Activity> ActivityJsonSerializer::fromJson(const QJsonObject& js
             createdAt,
             updatedAt
         );
-
         break;
     }
 
     case ActivityKind::Checklist: {
         const QDateTime targetDate = dateTimeFromJsonString(json["targetDate"].toString());
-
         QVector<ChecklistItem> items;
-
         const QJsonArray itemsArray = json["items"].toArray();
 
         for (const QJsonValue& value : itemsArray) {
@@ -181,7 +122,6 @@ std::unique_ptr<Activity> ActivityJsonSerializer::fromJson(const QJsonObject& js
             ChecklistItem item;
             item.text = itemObject["text"].toString();
             item.completed = itemObject["completed"].toBool(false);
-
             items.append(item);
         }
 
@@ -197,7 +137,6 @@ std::unique_ptr<Activity> ActivityJsonSerializer::fromJson(const QJsonObject& js
             createdAt,
             updatedAt
         );
-
         break;
     }
     }
@@ -218,12 +157,13 @@ std::unique_ptr<Activity> ActivityJsonSerializer::fromJson(const QJsonObject& js
     return activity;
 }
 
-QJsonObject ActivityJsonSerializer::commonFieldsToJson(const Activity& activity)
+QJsonObject ActivityJsonSerializer::commonFieldsToJson(const Activity& activity,
+                                                       const QString& typeName)
 {
     QJsonObject json;
 
     json["id"] = activity.id();
-    json["type"] = activityKindToJsonString(activity.kind());
+    json["type"] = typeName;
     json["title"] = activity.title();
     json["description"] = activity.description();
     json["category"] = activity.category();
@@ -252,7 +192,6 @@ QJsonObject ActivityJsonSerializer::recurrenceToJson(const RecurrenceRule& recur
     }
 
     json["maxOccurrences"] = recurrenceRule.maxOccurrences();
-
     return json;
 }
 
@@ -261,13 +200,10 @@ QString ActivityJsonSerializer::priorityToJsonString(Priority priority)
     switch (priority) {
     case Priority::Low:
         return "low";
-
     case Priority::Medium:
         return "medium";
-
     case Priority::High:
         return "high";
-
     case Priority::Critical:
         return "critical";
     }
@@ -275,37 +211,15 @@ QString ActivityJsonSerializer::priorityToJsonString(Priority priority)
     return "medium";
 }
 
-QString ActivityJsonSerializer::activityKindToJsonString(ActivityKind kind)
-{
-    switch (kind) {
-    case ActivityKind::Event:
-        return "event";
-
-    case ActivityKind::Deadline:
-        return "deadline";
-
-    case ActivityKind::Reminder:
-        return "reminder";
-
-    case ActivityKind::Checklist:
-        return "checklist";
-    }
-
-    return "activity";
-}
-
 QString ActivityJsonSerializer::recurrenceFrequencyToJsonString(RecurrenceRule::Frequency frequency)
 {
     switch (frequency) {
     case RecurrenceRule::Frequency::Daily:
         return "daily";
-
     case RecurrenceRule::Frequency::Weekly:
         return "weekly";
-
     case RecurrenceRule::Frequency::Monthly:
         return "monthly";
-
     case RecurrenceRule::Frequency::Yearly:
         return "yearly";
     }
@@ -318,10 +232,8 @@ QString ActivityJsonSerializer::recurrenceEndModeToJsonString(RecurrenceRule::En
     switch (endMode) {
     case RecurrenceRule::EndMode::Never:
         return "never";
-
     case RecurrenceRule::EndMode::UntilDate:
         return "until_date";
-
     case RecurrenceRule::EndMode::AfterOccurrences:
         return "after_occurrences";
     }
@@ -336,11 +248,9 @@ Priority ActivityJsonSerializer::priorityFromJsonString(const QString& value)
     if (normalized == "low") {
         return Priority::Low;
     }
-
     if (normalized == "high") {
         return Priority::High;
     }
-
     if (normalized == "critical") {
         return Priority::Critical;
     }
@@ -355,15 +265,12 @@ std::optional<ActivityKind> ActivityJsonSerializer::activityKindFromJsonString(c
     if (normalized == "event") {
         return ActivityKind::Event;
     }
-
     if (normalized == "deadline") {
         return ActivityKind::Deadline;
     }
-
     if (normalized == "reminder") {
         return ActivityKind::Reminder;
     }
-
     if (normalized == "checklist") {
         return ActivityKind::Checklist;
     }
@@ -378,11 +285,9 @@ RecurrenceRule::Frequency ActivityJsonSerializer::recurrenceFrequencyFromJsonStr
     if (normalized == "daily") {
         return RecurrenceRule::Frequency::Daily;
     }
-
     if (normalized == "monthly") {
         return RecurrenceRule::Frequency::Monthly;
     }
-
     if (normalized == "yearly") {
         return RecurrenceRule::Frequency::Yearly;
     }
@@ -397,7 +302,6 @@ RecurrenceRule::EndMode ActivityJsonSerializer::recurrenceEndModeFromJsonString(
     if (normalized == "never") {
         return RecurrenceRule::EndMode::Never;
     }
-
     if (normalized == "until_date") {
         return RecurrenceRule::EndMode::UntilDate;
     }
@@ -409,12 +313,9 @@ std::optional<RecurrenceRule> ActivityJsonSerializer::recurrenceFromJson(const Q
 {
     const RecurrenceRule::Frequency frequency =
         recurrenceFrequencyFromJsonString(json["frequency"].toString());
-
     const int interval = json["interval"].toInt(1);
-
     const RecurrenceRule::EndMode endMode =
         recurrenceEndModeFromJsonString(json["endMode"].toString());
-
     const QDateTime untilDate = dateTimeFromJsonString(json["untilDate"].toString());
     const int maxOccurrences = json["maxOccurrences"].toInt(1);
 
