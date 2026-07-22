@@ -119,7 +119,7 @@ void JsonSerializationVisitorTest::preservesCommonFieldsAndRecurrence()
     QCOMPARE(json["priority"].toString(), QString("critical"));
     QCOMPARE(json["completed"].toBool(), true);
     QCOMPARE(json["createdAt"].toString(), created.toString(Qt::ISODate));
-    QCOMPARE(json["updatedAt"].toString(), updated.toString(Qt::ISODate));
+    QCOMPARE(json["updatedAt"].toString(), activity.updatedAt().toString(Qt::ISODate));
     QCOMPARE(recurrence["frequency"].toString(), QString("weekly"));
     QCOMPARE(recurrence["interval"].toInt(), 2);
     QCOMPARE(recurrence["endMode"].toString(), QString("until_date"));
