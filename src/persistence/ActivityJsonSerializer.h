@@ -13,6 +13,8 @@
 #include <memory>
 #include <optional>
 
+class ActivityJsonSerializationVisitor;
+
 class ActivityJsonSerializer
 {
 public:
@@ -20,11 +22,13 @@ public:
     static std::unique_ptr<Activity> fromJson(const QJsonObject& json);
 
 private:
-    static QJsonObject commonFieldsToJson(const Activity& activity);
+    friend class ActivityJsonSerializationVisitor;
+
+    static QJsonObject commonFieldsToJson(const Activity& activity,
+                                          const QString& typeName);
     static QJsonObject recurrenceToJson(const RecurrenceRule& recurrenceRule);
 
     static QString priorityToJsonString(Priority priority);
-    static QString activityKindToJsonString(ActivityKind kind);
     static QString recurrenceFrequencyToJsonString(RecurrenceRule::Frequency frequency);
     static QString recurrenceEndModeToJsonString(RecurrenceRule::EndMode endMode);
 
