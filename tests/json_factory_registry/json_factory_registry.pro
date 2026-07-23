@@ -4,7 +4,7 @@ CONFIG += c++17 console testcase
 CONFIG -= app_bundle
 
 TEMPLATE = app
-TARGET = tst_jsonserializationvisitor
+TARGET = tst_jsonfactoryregistry
 
 INCLUDEPATH += \
     ../../src \
@@ -12,7 +12,7 @@ INCLUDEPATH += \
     ../../src/persistence
 
 SOURCES += \
-    tst_jsonserializationvisitor.cpp \
+    tst_jsonfactoryregistry.cpp \
     ../../src/model/Activity.cpp \
     ../../src/model/EventActivity.cpp \
     ../../src/model/DeadlineActivity.cpp \

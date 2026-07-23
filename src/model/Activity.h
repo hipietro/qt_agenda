@@ -13,6 +13,7 @@
 #include "ActivityKind.h"
 #include "RecurrenceRule.h"
 
+class ActivityFactoryRegistry;
 class ActivityVisitor;
 
 class Activity
@@ -68,6 +69,8 @@ protected:
     void touch();
 
 private:
+    friend class ActivityFactoryRegistry;
+
     QString m_id;
     QString m_title;
     QString m_description;
