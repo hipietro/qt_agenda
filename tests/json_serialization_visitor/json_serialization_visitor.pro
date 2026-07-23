@@ -19,6 +19,7 @@ SOURCES += \
     ../../src/model/ReminderActivity.cpp \
     ../../src/model/ChecklistActivity.cpp \
     ../../src/model/RecurrenceRule.cpp \
+    ../../src/persistence/ActivityFactoryRegistry.cpp \
     ../../src/persistence/ActivityJsonSerializer.cpp \
     ../../src/persistence/ActivityJsonSerializationVisitor.cpp
 
@@ -32,5 +33,6 @@ HEADERS += \
     ../../src/model/ReminderActivity.h \
     ../../src/model/ChecklistActivity.h \
     ../../src/model/RecurrenceRule.h \
+    ../../src/persistence/ActivityFactoryRegistry.h \
     ../../src/persistence/ActivityJsonSerializer.h \
     ../../src/persistence/ActivityJsonSerializationVisitor.h
