@@ -400,6 +400,8 @@ bool ActivityCreationDialog::validateForm() const
         selectedRecurrenceEndMode() == RecurrenceRule::EndMode::UntilDate) {
         QDateTime primaryDate;
 
+        // No Activity object exists yet: this selects the date field for the type
+        // explicitly requested by the user in the creation form.
         switch (selectedActivityKind()) {
         case ActivityKind::Event:
             primaryDate = m_eventStartEdit->dateTime();
@@ -440,6 +442,8 @@ std::unique_ptr<Activity> ActivityCreationDialog::createActivityFromForm() const
 
     std::unique_ptr<Activity> activity;
 
+    // Creation is the justified boundary where the user's selected type chooses
+    // which concrete object must be constructed.
     switch (selectedActivityKind()) {
     case ActivityKind::Event: {
         QStringList participants;

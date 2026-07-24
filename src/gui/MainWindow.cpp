@@ -15,19 +15,15 @@
 #include "model/ActivityTemplateManager.h"
 #include "model/Category.h"
 #include "model/CategoryManager.h"
-#include "model/ChecklistActivity.h"
 #include "model/SearchEngine.h"
 #include "persistence/AgendaJsonStorage.h"
 
 #include <QAction>
-#include <QBrush>
-#include <QColor>
 #include <QComboBox>
 #include <QDateTime>
 #include <QDialog>
 #include <QFileDialog>
 #include <QFileInfo>
-#include <QFont>
 #include <QFrame>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -387,7 +383,6 @@ void MainWindow::connectSignals()
 
     connect(m_activityList, &QListWidget::currentRowChanged, this, [this](int currentRow) {
         if (currentRow < 0) {
-            showActivityDetails(nullptr);
             updateActionButtons();
             return;
         }
@@ -395,13 +390,10 @@ void MainWindow::connectSignals()
         QListWidgetItem* item = m_activityList->item(currentRow);
 
         if (!item) {
-            showActivityDetails(nullptr);
             updateActionButtons();
             return;
         }
 
-        const QString activityId = item->data(Qt::UserRole).toString();
-        showActivityDetails(findActivityById(activityId));
         updateActionButtons();
     });
 
@@ -451,11 +443,10 @@ void MainWindow::refreshActivityList()
             continue;
         }
 
-        QListWidgetItem* item = new QListWidgetItem(activityListItemText(activity));
+        // The presentation controller renders the concrete card through ActivityVisitor.
+        QListWidgetItem* item = new QListWidgetItem();
         item->setData(Qt::UserRole, activity->id());
         item->setToolTip(activity->summary());
-        item->setSizeHint(QSize(0, 68));
-        applyActivityListItemVisualState(item, activity);
 
         const int newRow = m_activityList->count();
         m_activityList->addItem(item);
@@ -501,66 +492,6 @@ void MainWindow::refreshActivityList()
     }
 
     updateActionButtons();
-}
-
-void MainWindow::showActivityDetails(const Activity* activity)
-{
-    if (!activity) {
-        m_detailView->setPlainText(
-            "No activity selected.\n\n"
-            "Select an activity from the list to view its details."
-        );
-        return;
-    }
-
-    QString details;
-
-    details += QString("%1\n").arg(activity->title());
-    details += "----------------------------------------\n\n";
-
-    details += QString("Type: %1\n").arg(activityKindToString(activity->kind()));
-    details += QString("Category: %1\n").arg(activity->category().isEmpty() ? "No category" : activity->category());
-    details += QString("Priority: %1\n").arg(priorityText(activity->priority()));
-    details += QString("Status: %1\n").arg(statusText(activity));
-    details += QString("Primary date: %1\n").arg(activity->primaryDate().toString("yyyy-MM-dd HH:mm"));
-    details += QString("Created at: %1\n").arg(activity->createdAt().toString("yyyy-MM-dd HH:mm"));
-    details += QString("Updated at: %1\n").arg(activity->updatedAt().toString("yyyy-MM-dd HH:mm"));
-    details += QString("Recurrence: %1\n").arg(recurrenceText(activity));
-
-    const QDateTime nextOccurrence = activity->nextOccurrenceAfter(QDateTime::currentDateTime());
-
-    details += QString("Next occurrence: %1\n")
-            .arg(nextOccurrence.isValid()
-                 ? nextOccurrence.toString("yyyy-MM-dd HH:mm")
-                 : "No future occurrence");
-
-    details += "\nSummary:\n";
-    details += activity->summary();
-
-    if (!activity->description().trimmed().isEmpty()) {
-        details += "\n\nDescription:\n";
-        details += activity->description();
-    }
-
-    /* Se l'attività è una checklist mostro anche i singoli item.
-       Così si capisce lo stato della lista senza dover aprire la modifica. */
-    if (activity->kind() == ActivityKind::Checklist) {
-        const ChecklistActivity& checklist =
-            static_cast<const ChecklistActivity&>(*activity);
-
-        details += "\n\nChecklist items:\n";
-
-        if (checklist.items().isEmpty()) {
-            details += "- No items\n";
-        } else {
-            for (const ChecklistItem& item : checklist.items()) {
-                const QString marker = item.completed ? "[x]" : "[ ]";
-                details += QString("%1 %2\n").arg(marker, item.text);
-            }
-        }
-    }
-
-    m_detailView->setPlainText(details);
 }
 
 void MainWindow::updateActionButtons()
@@ -614,72 +545,6 @@ void MainWindow::updateActionButtons()
         m_redoAction->setText(m_commandHistory.redoDescription());
     }
 }
-QString MainWindow::activityListItemText(const Activity* activity) const
-{
-    if (!activity) {
-        return QString();
-    }
-
-    const bool completed = activity->isCompleted();
-    const bool overdue = !completed && activity->isOverdue(QDateTime::currentDateTime());
-
-    QString titlePrefix;
-
-    if (completed) {
-        titlePrefix = "[DONE] ";
-    } else if (overdue) {
-        titlePrefix = "[OVERDUE] ";
-    }
-
-    const QString categoryText = activity->category().trimmed().isEmpty()
-            ? "No category"
-            : activity->category().trimmed();
-
-    const QString recurrenceSuffix = activity->hasRecurrence()
-            ? " | Repeating"
-            : QString();
-
-    return QString("%1%2\n%3 | %4 | Priority: %5 | %6\nCategory: %7%8")
-            .arg(titlePrefix)
-            .arg(activity->title())
-            .arg(activityKindToString(activity->kind()))
-            .arg(activity->primaryDate().toString("yyyy-MM-dd HH:mm"))
-            .arg(priorityText(activity->priority()))
-            .arg(statusText(activity))
-            .arg(categoryText)
-            .arg(recurrenceSuffix);
-}
-
-void MainWindow::applyActivityListItemVisualState(QListWidgetItem* item, const Activity* activity) const
-{
-    if (!item || !activity) {
-        return;
-    }
-
-    QFont itemFont = item->font();
-
-    if (activity->priority() == Priority::High || activity->priority() == Priority::Critical) {
-        itemFont.setBold(true);
-    }
-
-    if (activity->isCompleted()) {
-        itemFont.setStrikeOut(true);
-        item->setForeground(QBrush(QColor("#6f6f6f")));
-        item->setBackground(QBrush(QColor("#f1f1f1")));
-    } else if (activity->isOverdue(QDateTime::currentDateTime())) {
-        itemFont.setBold(true);
-        item->setForeground(QBrush(QColor("#C62828")));
-        item->setBackground(QBrush(QColor("#FFE5E5")));
-    } else if (activity->priority() == Priority::Critical) {
-        item->setForeground(QBrush(QColor("#5A2A00")));
-        item->setBackground(QBrush(QColor("#FFF6E6")));
-    } else {
-        item->setForeground(QBrush(QColor("#222222")));
-    }
-
-    item->setFont(itemFont);
-}
-
 void MainWindow::updateCategoryFilterOptions()
 {
     if (!m_categoryCombo) {
@@ -767,6 +632,7 @@ std::vector<const Activity*> MainWindow::collectVisibleActivities() const
     if (m_typeCombo) {
         const int selectedKindValue = m_typeCombo->currentData().toInt();
 
+        // ActivityKind is retained here only as user-selected filter metadata.
         if (selectedKindValue >= 0) {
             criteria.kind = static_cast<ActivityKind>(selectedKindValue);
         }
@@ -902,51 +768,6 @@ QString MainWindow::selectedActivityId() const
     return item->data(Qt::UserRole).toString();
 }
 
-QString MainWindow::statusText(const Activity* activity) const
-{
-    if (!activity) {
-        return "Invalid";
-    }
-
-    if (activity->isCompleted()) {
-        return "Completed";
-    }
-
-    if (activity->isOverdue(QDateTime::currentDateTime())) {
-        return "Overdue";
-    }
-
-    return "Active";
-}
-
-QString MainWindow::priorityText(Priority priority) const
-{
-    switch (priority) {
-    case Priority::Low:
-        return "Low";
-
-    case Priority::Medium:
-        return "Medium";
-
-    case Priority::High:
-        return "High";
-
-    case Priority::Critical:
-        return "Critical";
-    }
-
-    return "Medium";
-}
-
-QString MainWindow::recurrenceText(const Activity* activity) const
-{
-    if (!activity || !activity->hasRecurrence()) {
-        return "No recurrence";
-    }
-
-    return activity->recurrenceRule()->toDisplayString();
-}
-
 void MainWindow::toggleSelectedActivityCompletion()
 {
     if (!m_activityManager) {
@@ -981,7 +802,6 @@ void MainWindow::toggleSelectedActivityCompletion()
     refreshActivityList();
 
     const Activity* updatedActivity = findActivityById(activityId);
-    showActivityDetails(updatedActivity);
     updateActionButtons();
 }
 
@@ -1338,7 +1158,6 @@ void MainWindow::createActivity()
         }
     }
 
-    showActivityDetails(findActivityById(createdActivityId));
     updateActionButtons();
 
     statusBar()->showMessage("Activity created", 3000);
@@ -1405,7 +1224,6 @@ void MainWindow::editSelectedActivity()
         }
     }
 
-    showActivityDetails(findActivityById(activityId));
     updateActionButtons();
 
     statusBar()->showMessage("Activity updated", 3000);
@@ -1507,7 +1325,6 @@ void MainWindow::createActivityFromTemplate()
         }
     }
 
-    showActivityDetails(findActivityById(createdActivityId));
     updateActionButtons();
 
     statusBar()->showMessage(

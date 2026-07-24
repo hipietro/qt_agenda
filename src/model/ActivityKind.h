@@ -1,4 +1,5 @@
-// Small enum used to identify the concrete activity family when needed by UI or JSON.
+// Descriptive classifier retained for filtering, creation choices and simple labels.
+// Type-specific runtime behavior must use ActivityVisitor instead.
 
 #ifndef ACTIVITYKIND_H
 #define ACTIVITYKIND_H
