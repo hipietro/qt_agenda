@@ -35,6 +35,7 @@ bool ActivityFilter::matches(const Activity* activity,
         return false;
     }
 
+    // ActivityKind is used as filter data, not to dispatch activity behavior.
     if (criteria.kind.has_value() && activity->kind() != criteria.kind.value()) {
         return false;
     }

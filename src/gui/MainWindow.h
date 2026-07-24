@@ -10,8 +10,6 @@
 #include <vector>
 
 #include "model/Activity.h"
-#include "model/ActivityKind.h"
-#include "model/Priority.h"
 #include "commands/CommandHistory.h"
 
 class ActivityManager;
@@ -42,7 +40,6 @@ private:
     void connectSignals();
 
     void refreshActivityList();
-    void showActivityDetails(const Activity* activity);
     void updateActionButtons();
     void updateCategoryFilterOptions();
     void synchronizeCategoryManagerFromActivities();
@@ -56,12 +53,7 @@ private:
     const Activity* findActivityById(const QString& id) const;
     QString selectedActivityId() const;
 
-    QString activityListItemText(const Activity* activity) const;
-    void applyActivityListItemVisualState(QListWidgetItem* item, const Activity* activity) const;
 
-    QString statusText(const Activity* activity) const;
-    QString priorityText(Priority priority) const;
-    QString recurrenceText(const Activity* activity) const;
     QString fileDisplayName(const QString& filePath) const;
     QString storageSummaryText() const;
 

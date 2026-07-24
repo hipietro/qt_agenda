@@ -58,6 +58,7 @@ public:
 
     virtual void accept(ActivityVisitor& visitor) const = 0;
 
+    // Descriptive classifier only; never use it to dispatch type-specific behavior.
     virtual ActivityKind kind() const = 0;
     virtual QDateTime primaryDate() const = 0;
     virtual bool isOverdue(const QDateTime& now) const = 0;

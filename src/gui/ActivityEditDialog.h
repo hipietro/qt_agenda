@@ -9,7 +9,6 @@
 #include <optional>
 
 #include "model/Activity.h"
-#include "model/ActivityKind.h"
 #include "model/Priority.h"
 #include "model/ChecklistActivity.h"
 #include "model/RecurrenceRule.h"
@@ -28,6 +27,7 @@ class QTextEdit;
 class QGroupBox;
 class QWidget;
 class CategoryManager;
+class ActivityEditFormVisitor;
 
 /*
  * Dialog usato per modificare un'attività esistente.
@@ -37,6 +37,7 @@ class CategoryManager;
  */
 class ActivityEditDialog : public QDialog
 {
+    friend class ActivityEditFormVisitor;
 public:
     explicit ActivityEditDialog(const Activity& activity,
                                 const CategoryManager* categoryManager = nullptr,
@@ -62,7 +63,7 @@ private:
     QString selectedCategoryText() const;
     void populateCategoryCombo(const QString& currentCategory);
 
-    void populateChecklistItems(const Activity& activity);
+    void populateChecklistItems(const ChecklistActivity& activity);
     QVector<ChecklistItem> checklistItemsFromList() const;
 
     void populateRecurrence(const Activity& activity);
@@ -74,7 +75,7 @@ private:
 
     const CategoryManager* m_categoryManager = nullptr;
 
-    ActivityKind m_activityKind;
+    const Activity* m_originalActivity = nullptr;
     QString m_originalId;
     QDateTime m_originalCreatedAt;
     bool m_originalCompleted = false;

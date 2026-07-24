@@ -2,6 +2,8 @@
 
 #include "ActivityEditDialog.h"
 
+#include "ActivityEditFormVisitor.h"
+
 #include "model/Category.h"
 #include "model/CategoryManager.h"
 #include "model/ChecklistActivity.h"
@@ -40,7 +42,7 @@ ActivityEditDialog::ActivityEditDialog(const Activity& activity,
                                        QWidget* parent)
     : QDialog(parent),
       m_categoryManager(categoryManager),
-      m_activityKind(activity.kind()),
+      m_originalActivity(&activity),
       m_originalId(activity.id()),
       m_originalCreatedAt(activity.createdAt()),
       m_originalCompleted(activity.isCompleted())
@@ -440,44 +442,8 @@ void ActivityEditDialog::populateFromActivity(const Activity& activity)
     const int priorityIndex = m_priorityCombo->findData(static_cast<int>(activity.priority()));
     m_priorityCombo->setCurrentIndex(priorityIndex >= 0 ? priorityIndex : 1);
 
-    switch (activity.kind()) {
-    case ActivityKind::Event: {
-        m_typeStack->setCurrentIndex(0);
-
-        const EventActivity& event = static_cast<const EventActivity&>(activity);
-        m_eventStartEdit->setDateTime(event.startDateTime());
-        m_eventEndEdit->setDateTime(event.endDateTime());
-        m_eventLocationEdit->setText(event.location());
-        m_eventParticipantsEdit->setText(event.participants().join(", "));
-        break;
-    }
-
-    case ActivityKind::Deadline: {
-        m_typeStack->setCurrentIndex(1);
-
-        const DeadlineActivity& deadline = static_cast<const DeadlineActivity&>(activity);
-        m_deadlineDueEdit->setDateTime(deadline.dueDate());
-        m_deadlineContextEdit->setText(deadline.context());
-        m_deadlineHardCheck->setChecked(deadline.isHardDeadline());
-        break;
-    }
-
-    case ActivityKind::Reminder: {
-        m_typeStack->setCurrentIndex(2);
-
-        const ReminderActivity& reminder = static_cast<const ReminderActivity&>(activity);
-        m_reminderDateEdit->setDateTime(reminder.reminderDateTime());
-        m_reminderAdvanceSpin->setValue(reminder.advanceMinutes());
-        m_reminderNoteEdit->setText(reminder.reminderNote());
-        break;
-    }
-
-    case ActivityKind::Checklist:
-        m_typeStack->setCurrentIndex(3);
-        m_checklistDueEdit->setDateTime(activity.primaryDate());
-        populateChecklistItems(activity);
-        break;
-    }
+    ActivityEditFormVisitor visitor(*this, ActivityEditFormVisitor::Operation::Populate);
+    activity.accept(visitor);
     populateRecurrence(activity);
 }
 
@@ -488,52 +454,30 @@ bool ActivityEditDialog::validateForm() const
         return false;
     }
 
-    if (m_activityKind == ActivityKind::Event &&
-        m_eventEndEdit->dateTime() <= m_eventStartEdit->dateTime()) {
-        QMessageBox::warning(nullptr, "Invalid event", "The event end time must be after the start time.");
+    if (!m_originalActivity) {
+        QMessageBox::warning(nullptr, "Invalid activity", "The original activity is not available.");
         return false;
     }
 
-    if (m_activityKind == ActivityKind::Checklist &&
-        checklistItemsFromList().isEmpty()) {
-        QMessageBox::warning(
-            nullptr,
-            "Invalid checklist",
-            "A checklist must contain at least one item."
-        );
+    ActivityEditFormVisitor visitor(
+        const_cast<ActivityEditDialog&>(*this),
+        ActivityEditFormVisitor::Operation::Validate);
+    m_originalActivity->accept(visitor);
+
+    if (!visitor.isValid()) {
+        QMessageBox::warning(nullptr, visitor.errorTitle(), visitor.errorMessage());
         return false;
     }
 
     if (m_repeatsCheck->isChecked() &&
-        selectedRecurrenceEndMode() == RecurrenceRule::EndMode::UntilDate) {
-        QDateTime primaryDate;
-
-        switch (m_activityKind) {
-        case ActivityKind::Event:
-            primaryDate = m_eventStartEdit->dateTime();
-            break;
-
-        case ActivityKind::Deadline:
-            primaryDate = m_deadlineDueEdit->dateTime();
-            break;
-
-        case ActivityKind::Reminder:
-            primaryDate = m_reminderDateEdit->dateTime();
-            break;
-
-        case ActivityKind::Checklist:
-            primaryDate = m_checklistDueEdit->dateTime();
-            break;
-        }
-
-        if (m_recurrenceUntilEdit->dateTime() <= primaryDate) {
-            QMessageBox::warning(
-                nullptr,
-                "Invalid recurrence",
-                "The recurrence end date must be after the activity date."
-            );
-            return false;
-        }
+        selectedRecurrenceEndMode() == RecurrenceRule::EndMode::UntilDate &&
+        m_recurrenceUntilEdit->dateTime() <= visitor.primaryDate()) {
+        QMessageBox::warning(
+            nullptr,
+            "Invalid recurrence",
+            "The recurrence end date must be after the activity date."
+        );
+        return false;
     }
 
     return true;
@@ -541,104 +485,16 @@ bool ActivityEditDialog::validateForm() const
 
 std::unique_ptr<Activity> ActivityEditDialog::createUpdatedActivityFromForm() const
 {
-    const QString title = m_titleEdit->text().trimmed();
-    const QString description = m_descriptionEdit->toPlainText().trimmed();
-    const QString category = selectedCategoryText();
-    const Priority priority = selectedPriority();
-
-    const QDateTime updatedAt = QDateTime::currentDateTime();
-
-    std::unique_ptr<Activity> activity;
-
-    /*
-     * Ricostruisco una nuova istanza concreta mantenendo id e createdAt originali.
-     * Ho scelto questa strada per evitare setter specifici su ogni sottoclasse
-     * e per usare ActivityManager::replaceActivity(...) in modo pulito.
-     */
-    switch (m_activityKind) {
-    case ActivityKind::Event: {
-        QStringList participants;
-
-        const QStringList rawParticipants =
-            m_eventParticipantsEdit->text().split(",", Qt::SkipEmptyParts);
-
-        for (const QString& participant : rawParticipants) {
-            const QString trimmedParticipant = participant.trimmed();
-
-            if (!trimmedParticipant.isEmpty()) {
-                participants.append(trimmedParticipant);
-            }
-        }
-
-        activity = std::make_unique<EventActivity>(
-            title,
-            m_eventStartEdit->dateTime(),
-            m_eventEndEdit->dateTime(),
-            m_eventLocationEdit->text().trimmed(),
-            participants,
-            description,
-            category,
-            priority,
-            m_originalCompleted,
-            m_originalId,
-            m_originalCreatedAt,
-            updatedAt
-        );
-
-        break;
+    if (!m_originalActivity) {
+        return nullptr;
     }
 
-    case ActivityKind::Deadline:
-        activity = std::make_unique<DeadlineActivity>(
-            title,
-            m_deadlineDueEdit->dateTime(),
-            m_deadlineContextEdit->text().trimmed(),
-            m_deadlineHardCheck->isChecked(),
-            description,
-            category,
-            priority,
-            m_originalCompleted,
-            m_originalId,
-            m_originalCreatedAt,
-            updatedAt
-        );
+    ActivityEditFormVisitor visitor(
+        const_cast<ActivityEditDialog&>(*this),
+        ActivityEditFormVisitor::Operation::Build);
+    m_originalActivity->accept(visitor);
 
-        break;
-
-    case ActivityKind::Reminder:
-        activity = std::make_unique<ReminderActivity>(
-            title,
-            m_reminderDateEdit->dateTime(),
-            m_reminderAdvanceSpin->value(),
-            m_reminderNoteEdit->text().trimmed(),
-            description,
-            category,
-            priority,
-            m_originalCompleted,
-            m_originalId,
-            m_originalCreatedAt,
-            updatedAt
-        );
-
-        break;
-
-    case ActivityKind::Checklist:
-        activity = std::make_unique<ChecklistActivity>(
-            title,
-            m_checklistDueEdit->dateTime(),
-            checklistItemsFromList(),
-            description,
-            category,
-            priority,
-            m_originalCompleted,
-            m_originalId,
-            m_originalCreatedAt,
-            updatedAt
-        );
-
-        break;
-    }
-
+    std::unique_ptr<Activity> activity = visitor.takeActivity();
     if (!activity) {
         return nullptr;
     }
@@ -702,17 +558,15 @@ Priority ActivityEditDialog::selectedPriority() const
     return static_cast<Priority>(m_priorityCombo->currentData().toInt());
 }
 
-void ActivityEditDialog::populateChecklistItems(const Activity& activity)
+void ActivityEditDialog::populateChecklistItems(const ChecklistActivity& activity)
 {
-    const ChecklistActivity& checklist = static_cast<const ChecklistActivity&>(activity);
-
     m_checklistItemsList->clear();
 
     /*
      * Ogni ChecklistItem del modello diventa una riga selezionabile.
      * Lo stato completed viene rappresentato direttamente dalla checkbox.
      */
-    for (const ChecklistItem& checklistItem : checklist.items()) {
+    for (const ChecklistItem& checklistItem : activity.items()) {
         QListWidgetItem* item = new QListWidgetItem(checklistItem.text);
         item->setFlags(item->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsEditable);
         item->setCheckState(checklistItem.completed ? Qt::Checked : Qt::Unchecked);
