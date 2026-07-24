@@ -22,6 +22,8 @@ class QListWidget;
 class QListWidgetItem;
 class QPushButton;
 class QTextEdit;
+class QStackedWidget;
+class QWidget;
 class QAction;
 
 class MainWindow : public QMainWindow
@@ -38,6 +40,13 @@ private:
     void setupUi();
     void setupMenuBar();
     void connectSignals();
+
+    QWidget* createWorkflowPlaceholderPage(const QString& title,
+                                           const QString& description);
+    void openAgendaPage();
+    void openCreationPage();
+    void openEditingPage();
+    void showPage(QWidget* page);
 
     void refreshActivityList();
     void updateActionButtons();
@@ -74,6 +83,11 @@ private:
     CategoryManager* m_categoryManager = nullptr;
 
     CommandHistory m_commandHistory;
+
+    QStackedWidget* m_pageStack = nullptr;
+    QWidget* m_agendaPage = nullptr;
+    QWidget* m_creationPage = nullptr;
+    QWidget* m_editingPage = nullptr;
 
     QLineEdit* m_searchEdit = nullptr;
     QComboBox* m_typeCombo = nullptr;
