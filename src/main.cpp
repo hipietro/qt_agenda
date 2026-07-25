@@ -162,13 +162,15 @@ int main(int argc, char *argv[])
     populateDemoData(manager, templateManager, categoryManager);
 
     MainWindow window(&manager, &templateManager, &categoryManager);
-    QListWidget* activityList = window.findChild<QListWidget*>();
-    QTextEdit* legacyDetailView = window.findChild<QTextEdit*>();
+    QListWidget* activityList =
+        window.findChild<QListWidget*>("activityList");
+    QTextEdit* activityDetailView =
+        window.findChild<QTextEdit*>("activityDetailView");
 
     new ActivityListPresentationController(activityList, &manager, &window);
     new ActivityDetailPresentationController(
         activityList,
-        legacyDetailView,
+        activityDetailView,
         &manager,
         &window);
 

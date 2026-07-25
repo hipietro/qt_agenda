@@ -7,11 +7,13 @@
 #include <QMainWindow>
 #include <QString>
 
+#include <memory>
 #include <vector>
 
 #include "model/Activity.h"
 #include "commands/CommandHistory.h"
 
+class ActivityCreationPage;
 class ActivityManager;
 class ActivityTemplateManager;
 class CategoryManager;
@@ -21,6 +23,9 @@ class QLineEdit;
 class QListWidget;
 class QListWidgetItem;
 class QPushButton;
+class QResizeEvent;
+class QScrollArea;
+class QSplitter;
 class QTextEdit;
 class QStackedWidget;
 class QWidget;
@@ -35,6 +40,7 @@ explicit MainWindow(ActivityManager* activityManager,
                     QWidget* parent = nullptr);
 protected:
     void closeEvent(QCloseEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     void setupUi();
@@ -47,6 +53,7 @@ private:
     void openCreationPage();
     void openEditingPage();
     void showPage(QWidget* page);
+    void updateResponsiveWorkspace();
 
     void refreshActivityList();
     void updateActionButtons();
@@ -69,6 +76,7 @@ private:
     void toggleSelectedActivityCompletion();
     void deleteSelectedActivity();
     void createActivity();
+    void addCreatedActivity(std::unique_ptr<Activity> activity);
     void editSelectedActivity();
     void createActivityFromTemplate();
     void saveSelectedActivityAsTemplate();
@@ -86,7 +94,11 @@ private:
 
     QStackedWidget* m_pageStack = nullptr;
     QWidget* m_agendaPage = nullptr;
-    QWidget* m_creationPage = nullptr;
+    QSplitter* m_mainSplitter = nullptr;
+    QScrollArea* m_leftScrollArea = nullptr;
+    QStackedWidget* m_workspaceStack = nullptr;
+    QWidget* m_detailPage = nullptr;
+    ActivityCreationPage* m_creationPage = nullptr;
     QWidget* m_editingPage = nullptr;
 
     QLineEdit* m_searchEdit = nullptr;

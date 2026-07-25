@@ -1,10 +1,11 @@
-// Dialog used to collect data for a new activity.
+// In-window page used to collect data for a new activity.
 
-#ifndef ACTIVITYCREATIONDIALOG_H
-#define ACTIVITYCREATIONDIALOG_H
+#ifndef ACTIVITYCREATIONPAGE_H
+#define ACTIVITYCREATIONPAGE_H
 
-#include <QDialog>
+#include <QWidget>
 
+#include <functional>
 #include <memory>
 #include <optional>
 
@@ -28,35 +29,29 @@ class QWidget;
 class CategoryManager;
 
 /*
- * Dialog usato per creare una nuova attività.
+ * Reusable activity-creation page hosted directly inside MainWindow.
  *
- * Ho scelto di separare questa classe dalla MainWindow perché la finestra
- * principale deve coordinare la GUI generale, mentre questo dialog gestisce
- * solo la raccolta e la validazione dei dati necessari alla creazione.
+ * The page owns only form state and validation. MainWindow remains responsible
+ * for executing AddActivityCommand and navigating back to the agenda.
  */
-class ActivityCreationDialog : public QDialog
+class ActivityCreationPage : public QWidget
 {
 public:
-    explicit ActivityCreationDialog(const CategoryManager* categoryManager = nullptr,
-                                    QWidget* parent = nullptr);
+    using CreatedHandler = std::function<void(std::unique_ptr<Activity>)>;
+    using CancelHandler = std::function<void()>;
 
-    /*
-     * Restituisce l'attività creata trasferendone la proprietà al chiamante.
-     * La MainWindow potrà poi inserirla dentro ActivityManager.
-     */
-    std::unique_ptr<Activity> takeCreatedActivity();
+    explicit ActivityCreationPage(const CategoryManager* categoryManager = nullptr,
+                                  QWidget* parent = nullptr);
 
-protected:
-    /*
-     * Sovrascrivo accept() per validare i campi prima di chiudere il dialog.
-     * In questo modo evito di creare attività incomplete o incoerenti.
-     */
-    void accept() override;
+    void setCreatedHandler(CreatedHandler handler);
+    void setCancelHandler(CancelHandler handler);
+    void resetForm();
 
 private:
     void setupUi();
     void connectSignals();
     void updateTypePage();
+    void submit();
 
     bool validateForm() const;
     std::unique_ptr<Activity> createActivityFromForm() const;
@@ -91,10 +86,7 @@ private:
     QLabel* m_recurrenceEndDetailsLabel = nullptr;
     QDateTimeEdit* m_recurrenceUntilEdit = nullptr;
     QSpinBox* m_recurrenceOccurrencesSpin = nullptr;
-    /*
-     * Uso uno QStackedWidget per mostrare campi diversi in base al tipo
-     * concreto scelto: Event, Deadline, Reminder o Checklist.
-     */
+
     QStackedWidget* m_typeStack = nullptr;
 
     QDateTimeEdit* m_eventStartEdit = nullptr;
@@ -115,7 +107,8 @@ private:
 
     QDialogButtonBox* m_buttonBox = nullptr;
 
-    std::unique_ptr<Activity> m_createdActivity;
+    CreatedHandler m_createdHandler;
+    CancelHandler m_cancelHandler;
 };
 
 #endif

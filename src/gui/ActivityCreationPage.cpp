@@ -1,6 +1,6 @@
-// Activity creation dialog implementation. It builds the right concrete Activity type from user input.
+// In-window activity creation page. It builds the requested concrete Activity from user input.
 
-#include "ActivityCreationDialog.h"
+#include "ActivityCreationPage.h"
 
 #include "model/Category.h"
 #include "model/CategoryManager.h"
@@ -16,6 +16,7 @@
 #include <QDateTimeEdit>
 #include <QDialogButtonBox>
 #include <QFormLayout>
+#include <QFrame>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -23,6 +24,7 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QSizePolicy>
 #include <QSpinBox>
 #include <QStringList>
@@ -32,48 +34,118 @@
 
 #include <algorithm>
 
-ActivityCreationDialog::ActivityCreationDialog(const CategoryManager* categoryManager,
+ActivityCreationPage::ActivityCreationPage(const CategoryManager* categoryManager,
                                                    QWidget* parent)
-    : QDialog(parent),
+    : QWidget(parent),
       m_categoryManager(categoryManager)
 {
     setupUi();
     connectSignals();
-    updateTypePage();
+    resetForm();
 }
 
-std::unique_ptr<Activity> ActivityCreationDialog::takeCreatedActivity()
+void ActivityCreationPage::setCreatedHandler(CreatedHandler handler)
 {
-    return std::move(m_createdActivity);
+    m_createdHandler = std::move(handler);
 }
 
-void ActivityCreationDialog::accept()
+void ActivityCreationPage::setCancelHandler(CancelHandler handler)
+{
+    m_cancelHandler = std::move(handler);
+}
+
+void ActivityCreationPage::resetForm()
+{
+    if (!m_typeCombo) {
+        return;
+    }
+
+    const QDateTime now = QDateTime::currentDateTime();
+
+    m_typeCombo->setCurrentIndex(0);
+    m_titleEdit->clear();
+    m_descriptionEdit->clear();
+    populateCategoryCombo();
+    m_priorityCombo->setCurrentIndex(1);
+
+    m_eventStartEdit->setDateTime(now.addDays(1));
+    m_eventEndEdit->setDateTime(now.addDays(1).addSecs(3600));
+    m_eventLocationEdit->clear();
+    m_eventParticipantsEdit->clear();
+
+    m_deadlineDueEdit->setDateTime(now.addDays(7));
+    m_deadlineContextEdit->clear();
+    m_deadlineHardCheck->setChecked(true);
+
+    m_reminderDateEdit->setDateTime(now.addDays(1));
+    m_reminderAdvanceSpin->setValue(0);
+    m_reminderNoteEdit->clear();
+
+    m_checklistDueEdit->setDateTime(now.addDays(3));
+    m_checklistItemsEdit->clear();
+
+    m_repeatsCheck->setChecked(false);
+    m_recurrenceIntervalSpin->setValue(1);
+    m_recurrenceFrequencyCombo->setCurrentIndex(0);
+    m_recurrenceEndModeCombo->setCurrentIndex(0);
+    m_recurrenceUntilEdit->setDateTime(now.addMonths(1));
+    m_recurrenceOccurrencesSpin->setValue(5);
+
+    updateTypePage();
+    updateRecurrenceControls();
+    m_titleEdit->setFocus(Qt::OtherFocusReason);
+}
+
+void ActivityCreationPage::submit()
 {
     if (!validateForm()) {
         return;
     }
 
-    m_createdActivity = createActivityFromForm();
+    std::unique_ptr<Activity> activity = createActivityFromForm();
 
-    if (!m_createdActivity) {
+    if (!activity) {
         QMessageBox::warning(this, "Invalid activity", "The activity could not be created.");
         return;
     }
 
-    QDialog::accept();
+    if (!m_createdHandler) {
+        QMessageBox::warning(this, "Create activity failed", "The creation action is not available.");
+        return;
+    }
+
+    m_createdHandler(std::move(activity));
 }
 
-void ActivityCreationDialog::setupUi()
+void ActivityCreationPage::setupUi()
 {
-    setWindowTitle("Create activity");
-    resize(720, 620);
-    setMinimumSize(680, 560);
+    setObjectName("activityCreationPage");
 
-    QVBoxLayout* mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(14, 14, 14, 14);
+    QVBoxLayout* pageLayout = new QVBoxLayout(this);
+    pageLayout->setContentsMargins(0, 0, 0, 0);
+    pageLayout->setSpacing(0);
+
+    QScrollArea* scrollArea = new QScrollArea(this);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setFrameShape(QFrame::NoFrame);
+
+    QWidget* contentWidget = new QWidget(scrollArea);
+    QVBoxLayout* mainLayout = new QVBoxLayout(contentWidget);
+    mainLayout->setContentsMargins(24, 20, 24, 20);
     mainLayout->setSpacing(10);
 
-    QGroupBox* commonGroup = new QGroupBox("Common fields", this);
+    QLabel* pageTitle = new QLabel("Create activity", contentWidget);
+    pageTitle->setObjectName("pageTitle");
+
+    QLabel* pageDescription = new QLabel(
+        "Choose an activity type, complete its fields, then create it without leaving the main window.",
+        contentWidget);
+    pageDescription->setWordWrap(true);
+
+    mainLayout->addWidget(pageTitle);
+    mainLayout->addWidget(pageDescription);
+
+    QGroupBox* commonGroup = new QGroupBox("Common fields", contentWidget);
     QFormLayout* commonLayout = new QFormLayout(commonGroup);
 
     /* Ho scelto di forzare allineamenti e spaziature del form
@@ -129,11 +201,11 @@ void ActivityCreationDialog::setupUi()
     commonLayout->addRow("Category", m_categoryCombo);
     commonLayout->addRow("Priority", m_priorityCombo);
 
-    QGroupBox* specificGroup = new QGroupBox("Type-specific fields", this);
+    QGroupBox* specificGroup = new QGroupBox("Type-specific fields", contentWidget);
     QVBoxLayout* specificLayout = new QVBoxLayout(specificGroup);
     specificLayout->setContentsMargins(12, 12, 12, 12);
 
-    m_typeStack = new QStackedWidget(this);
+    m_typeStack = new QStackedWidget(specificGroup);
     m_typeStack->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     const QDateTime now = QDateTime::currentDateTime();
@@ -248,7 +320,7 @@ void ActivityCreationDialog::setupUi()
      * Ho scelto questa struttura perché "Repeat every 2 week(s)" è più chiaro
      * di un campo generico chiamato "Interval".
      */
-    m_recurrenceGroup = new QGroupBox("Recurrence", this);
+    m_recurrenceGroup = new QGroupBox("Recurrence", contentWidget);
     QVBoxLayout* recurrenceLayout = new QVBoxLayout(m_recurrenceGroup);
     recurrenceLayout->setContentsMargins(12, 12, 12, 12);
     recurrenceLayout->setSpacing(8);
@@ -324,7 +396,7 @@ void ActivityCreationDialog::setupUi()
 
     recurrenceLayout->addWidget(m_recurrenceOptionsWidget);
 
-    m_buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    m_buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, contentWidget);
     m_buttonBox->button(QDialogButtonBox::Ok)->setText("Create");
     m_buttonBox->button(QDialogButtonBox::Cancel)->setText("Cancel");
 
@@ -332,22 +404,28 @@ void ActivityCreationDialog::setupUi()
     mainLayout->addWidget(specificGroup);
     mainLayout->addWidget(m_recurrenceGroup);
     mainLayout->addWidget(m_buttonBox);
+    mainLayout->addStretch(1);
+
+    scrollArea->setWidget(contentWidget);
+    pageLayout->addWidget(scrollArea);
 
     updateRecurrenceControls();
 }
 
-void ActivityCreationDialog::connectSignals()
+void ActivityCreationPage::connectSignals()
 {
     connect(m_typeCombo, &QComboBox::currentIndexChanged, this, [this](int) {
         updateTypePage();
     });
 
     connect(m_buttonBox, &QDialogButtonBox::accepted, this, [this]() {
-        accept();
+        submit();
     });
 
     connect(m_buttonBox, &QDialogButtonBox::rejected, this, [this]() {
-        reject();
+        if (m_cancelHandler) {
+            m_cancelHandler();
+        }
     });
 
     connect(m_repeatsCheck, &QCheckBox::toggled, this, [this]() {
@@ -359,7 +437,7 @@ void ActivityCreationDialog::connectSignals()
     });
 }
 
-void ActivityCreationDialog::updateTypePage()
+void ActivityCreationPage::updateTypePage()
 {
     if (!m_typeStack || !m_typeCombo) {
         return;
@@ -372,7 +450,7 @@ void ActivityCreationDialog::updateTypePage()
     m_typeStack->setCurrentIndex(m_typeCombo->currentIndex());
 }
 
-bool ActivityCreationDialog::validateForm() const
+bool ActivityCreationPage::validateForm() const
 {
     if (m_titleEdit->text().trimmed().isEmpty()) {
         QMessageBox::warning(nullptr, "Invalid activity", "The title cannot be empty.");
@@ -433,7 +511,7 @@ bool ActivityCreationDialog::validateForm() const
     return true;
 }
 
-std::unique_ptr<Activity> ActivityCreationDialog::createActivityFromForm() const
+std::unique_ptr<Activity> ActivityCreationPage::createActivityFromForm() const
 {
     const QString title = m_titleEdit->text().trimmed();
     const QString description = m_descriptionEdit->toPlainText().trimmed();
@@ -524,7 +602,7 @@ std::unique_ptr<Activity> ActivityCreationDialog::createActivityFromForm() const
     return activity;
 }
 
-QString ActivityCreationDialog::selectedCategoryText() const
+QString ActivityCreationPage::selectedCategoryText() const
 {
     if (!m_categoryCombo) {
         return QString();
@@ -533,7 +611,7 @@ QString ActivityCreationDialog::selectedCategoryText() const
     return m_categoryCombo->currentText().trimmed();
 }
 
-void ActivityCreationDialog::populateCategoryCombo()
+void ActivityCreationPage::populateCategoryCombo()
 {
     if (!m_categoryCombo) {
         return;
@@ -564,17 +642,17 @@ void ActivityCreationDialog::populateCategoryCombo()
     m_categoryCombo->setCurrentText(QString());
 }
 
-Priority ActivityCreationDialog::selectedPriority() const
+Priority ActivityCreationPage::selectedPriority() const
 {
     return static_cast<Priority>(m_priorityCombo->currentData().toInt());
 }
 
-ActivityKind ActivityCreationDialog::selectedActivityKind() const
+ActivityKind ActivityCreationPage::selectedActivityKind() const
 {
     return static_cast<ActivityKind>(m_typeCombo->currentData().toInt());
 }
 
-void ActivityCreationDialog::updateRecurrenceControls()
+void ActivityCreationPage::updateRecurrenceControls()
 {
     const bool recurrenceEnabled = m_repeatsCheck->isChecked();
 
@@ -582,7 +660,6 @@ void ActivityCreationDialog::updateRecurrenceControls()
 
     if (!recurrenceEnabled) {
         m_recurrenceEndDetailsWidget->setVisible(false);
-        adjustSize();
         return;
     }
 
@@ -597,10 +674,9 @@ void ActivityCreationDialog::updateRecurrenceControls()
     m_recurrenceUntilEdit->setVisible(usesUntilDate);
     m_recurrenceOccurrencesSpin->setVisible(usesOccurrences);
 
-    adjustSize();
 }
 
-std::optional<RecurrenceRule> ActivityCreationDialog::recurrenceRuleFromForm() const
+std::optional<RecurrenceRule> ActivityCreationPage::recurrenceRuleFromForm() const
 {
     if (!m_repeatsCheck->isChecked()) {
         return std::nullopt;
@@ -633,7 +709,7 @@ std::optional<RecurrenceRule> ActivityCreationDialog::recurrenceRuleFromForm() c
     return recurrenceRule;
 }
 
-QVector<ChecklistItem> ActivityCreationDialog::checklistItemsFromText() const
+QVector<ChecklistItem> ActivityCreationPage::checklistItemsFromText() const
 {
     QVector<ChecklistItem> items;
 
@@ -668,14 +744,14 @@ QVector<ChecklistItem> ActivityCreationDialog::checklistItemsFromText() const
     return items;
 }
 
-RecurrenceRule::Frequency ActivityCreationDialog::selectedRecurrenceFrequency() const
+RecurrenceRule::Frequency ActivityCreationPage::selectedRecurrenceFrequency() const
 {
     return static_cast<RecurrenceRule::Frequency>(
         m_recurrenceFrequencyCombo->currentData().toInt()
     );
 }
 
-RecurrenceRule::EndMode ActivityCreationDialog::selectedRecurrenceEndMode() const
+RecurrenceRule::EndMode ActivityCreationPage::selectedRecurrenceEndMode() const
 {
     return static_cast<RecurrenceRule::EndMode>(
         m_recurrenceEndModeCombo->currentData().toInt()
