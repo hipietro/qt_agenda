@@ -2,7 +2,7 @@
 
 #include "MainWindow.h"
 
-#include "ActivityCreationDialog.h"
+#include "ActivityCreationPage.h"
 #include "ActivityEditDialog.h"
 #include "CategoryManagementDialog.h"
 #include "commands/AddActivityCommand.h"
@@ -38,6 +38,7 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QResizeEvent>
 #include <QScrollArea>
 #include <QSize>
 #include <QSplitter>
@@ -76,6 +77,12 @@ void MainWindow::closeEvent(QCloseEvent* event)
     }
 }
 
+void MainWindow::resizeEvent(QResizeEvent* event)
+{
+    QMainWindow::resizeEvent(event);
+    updateResponsiveWorkspace();
+}
+
 void MainWindow::setupUi()
 {
     setWindowTitle("Agenda Qt");
@@ -97,16 +104,16 @@ void MainWindow::setupUi()
     mainLayout->setContentsMargins(12, 12, 12, 12);
     mainLayout->setSpacing(8);
 
-    QSplitter* splitter = new QSplitter(m_agendaPage);
-    splitter->setChildrenCollapsible(false);
+    m_mainSplitter = new QSplitter(m_agendaPage);
+    m_mainSplitter->setChildrenCollapsible(false);
 
-    QScrollArea* leftScrollArea = new QScrollArea(splitter);
-    leftScrollArea->setWidgetResizable(true);
-    leftScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    leftScrollArea->setFrameShape(QFrame::NoFrame);
-    leftScrollArea->setMinimumWidth(360);
+    m_leftScrollArea = new QScrollArea(m_mainSplitter);
+    m_leftScrollArea->setWidgetResizable(true);
+    m_leftScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_leftScrollArea->setFrameShape(QFrame::NoFrame);
+    m_leftScrollArea->setMinimumWidth(320);
 
-    QWidget* leftPanel = new QWidget(leftScrollArea);
+    QWidget* leftPanel = new QWidget(m_leftScrollArea);
     leftPanel->setMinimumWidth(340);
 
     QVBoxLayout* leftLayout = new QVBoxLayout(leftPanel);
@@ -207,6 +214,7 @@ void MainWindow::setupUi()
     m_resultCountLabel->setObjectName("resultCountLabel");
 
     m_activityList = new QListWidget(leftPanel);
+    m_activityList->setObjectName("activityList");
     m_activityList->setSpacing(4);
     m_activityList->setMinimumHeight(150);
 
@@ -263,49 +271,57 @@ void MainWindow::setupUi()
     leftLayout->addWidget(m_activityList, 1);
     leftLayout->addLayout(actionLayout);
 
-    QWidget* rightPanel = new QWidget(splitter);
-    rightPanel->setMinimumWidth(280);
+    m_workspaceStack = new QStackedWidget(m_mainSplitter);
+    m_workspaceStack->setObjectName("workspaceStack");
+    m_workspaceStack->setMinimumWidth(280);
 
-    QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
+    m_detailPage = new QWidget(m_workspaceStack);
+    m_detailPage->setObjectName("activityDetailPage");
+
+    QVBoxLayout* rightLayout = new QVBoxLayout(m_detailPage);
     rightLayout->setContentsMargins(0, 0, 0, 0);
     rightLayout->setSpacing(8);
 
-    QLabel* detailLabel = new QLabel("Activity details", rightPanel);
+    QLabel* detailLabel = new QLabel("Activity details", m_detailPage);
     detailLabel->setObjectName("sectionLabel");
 
-    m_detailView = new QTextEdit(rightPanel);
+    m_detailView = new QTextEdit(m_detailPage);
+    m_detailView->setObjectName("activityDetailView");
     m_detailView->setReadOnly(true);
 
     rightLayout->addWidget(detailLabel);
     rightLayout->addWidget(m_detailView, 1);
 
-    leftScrollArea->setWidget(leftPanel);
+    m_workspaceStack->addWidget(m_detailPage);
 
-    splitter->addWidget(leftScrollArea);
-    splitter->addWidget(rightPanel);
-    splitter->setStretchFactor(0, 12);
-    splitter->setStretchFactor(1, 8);
-    splitter->setSizes({590, 360});
+    m_leftScrollArea->setWidget(leftPanel);
 
-    mainLayout->addWidget(splitter, 1);
+    m_mainSplitter->addWidget(m_leftScrollArea);
+    m_mainSplitter->addWidget(m_workspaceStack);
+    m_mainSplitter->setStretchFactor(0, 12);
+    m_mainSplitter->setStretchFactor(1, 8);
+    m_mainSplitter->setSizes({590, 360});
+
+    mainLayout->addWidget(m_mainSplitter, 1);
 
     m_pageStack->addWidget(m_agendaPage);
 
-    m_creationPage = createWorkflowPlaceholderPage(
-        "Create activity",
-        "The activity creation form will be hosted on this page. "
-        "The dedicated form migration is implemented separately so the existing agenda remains stable."
-    );
-    m_creationPage->setObjectName("activityCreationPage");
-    m_pageStack->addWidget(m_creationPage);
+    m_creationPage = new ActivityCreationPage(m_categoryManager, m_workspaceStack);
+    m_creationPage->setCreatedHandler([this](std::unique_ptr<Activity> activity) {
+        addCreatedActivity(std::move(activity));
+    });
+    m_creationPage->setCancelHandler([this]() {
+        openAgendaPage();
+    });
+    m_workspaceStack->addWidget(m_creationPage);
 
     m_editingPage = createWorkflowPlaceholderPage(
         "Edit activity",
-        "The activity editing form will be hosted on this page. "
-        "Keeping it inside the page stack preserves the agenda filters and selection while navigating."
+        "The activity editing form will replace this workspace in issue 48. "
+        "The agenda remains visible on wide windows and collapses only when space is limited."
     );
     m_editingPage->setObjectName("activityEditingPage");
-    m_pageStack->addWidget(m_editingPage);
+    m_workspaceStack->addWidget(m_editingPage);
 
     rootLayout->addWidget(m_pageStack, 1);
     setCentralWidget(centralWidget);
@@ -315,7 +331,7 @@ void MainWindow::setupUi()
 QWidget* MainWindow::createWorkflowPlaceholderPage(const QString& title,
                                                    const QString& description)
 {
-    QWidget* page = new QWidget(m_pageStack);
+    QWidget* page = new QWidget(m_workspaceStack);
     QVBoxLayout* layout = new QVBoxLayout(page);
     layout->setContentsMargins(32, 32, 32, 32);
     layout->setSpacing(16);
@@ -344,12 +360,17 @@ QWidget* MainWindow::createWorkflowPlaceholderPage(const QString& title,
 
 void MainWindow::openAgendaPage()
 {
-    showPage(m_agendaPage);
-    updateActionButtons();
+    showPage(m_detailPage);
 }
 
 void MainWindow::openCreationPage()
 {
+    if (!m_creationPage) {
+        return;
+    }
+
+    synchronizeCategoryManagerFromActivities();
+    m_creationPage->resetForm();
     showPage(m_creationPage);
 }
 
@@ -360,11 +381,45 @@ void MainWindow::openEditingPage()
 
 void MainWindow::showPage(QWidget* page)
 {
-    if (!m_pageStack || !page || m_pageStack->indexOf(page) < 0) {
+    if (!m_workspaceStack || !page || m_workspaceStack->indexOf(page) < 0) {
         return;
     }
 
-    m_pageStack->setCurrentWidget(page);
+    m_workspaceStack->setCurrentWidget(page);
+    updateResponsiveWorkspace();
+    updateActionButtons();
+}
+
+void MainWindow::updateResponsiveWorkspace()
+{
+    if (!m_mainSplitter || !m_leftScrollArea || !m_workspaceStack || !m_detailPage) {
+        return;
+    }
+
+    const bool workflowActive = m_workspaceStack->currentWidget() != m_detailPage;
+    const bool compactWindow = width() < 1050;
+    const bool showAgendaPanel = !(workflowActive && compactWindow);
+
+    m_leftScrollArea->setVisible(showAgendaPanel);
+
+    const int totalWidth = std::max(1, m_mainSplitter->width());
+
+    if (!showAgendaPanel) {
+        m_mainSplitter->setSizes({0, totalWidth});
+        return;
+    }
+
+    int leftWidth = workflowActive
+        ? totalWidth * 32 / 100
+        : totalWidth * 60 / 100;
+
+    if (workflowActive) {
+        leftWidth = std::max(320, std::min(leftWidth, 420));
+    } else {
+        leftWidth = std::max(360, std::min(leftWidth, 650));
+    }
+
+    m_mainSplitter->setSizes({leftWidth, std::max(1, totalWidth - leftWidth)});
 }
 
 void MainWindow::setupMenuBar()
@@ -582,19 +637,24 @@ void MainWindow::refreshActivityList()
 
 void MainWindow::updateActionButtons()
 {
+    const bool workflowActive = m_workspaceStack &&
+        m_detailPage &&
+        m_workspaceStack->currentWidget() != m_detailPage;
+
     if (m_addButton) {
-        m_addButton->setEnabled(m_activityManager != nullptr);
+        m_addButton->setEnabled(m_activityManager != nullptr && !workflowActive);
     }
 
     if (m_templateButton) {
         m_templateButton->setEnabled(m_activityManager != nullptr &&
                                      m_templateManager != nullptr &&
-                                     !m_templateManager->isEmpty());
+                                     !m_templateManager->isEmpty() &&
+                                     !workflowActive);
     }
 
     const QString activityId = selectedActivityId();
     const Activity* activity = activityId.isEmpty() ? nullptr : findActivityById(activityId);
-    const bool hasSelection = activity != nullptr;
+    const bool hasSelection = activity != nullptr && !workflowActive;
 
     if (m_toggleCompletedButton) {
         m_toggleCompletedButton->setEnabled(hasSelection);
@@ -612,22 +672,22 @@ void MainWindow::updateActionButtons()
     }
 
     if (m_undoButton) {
-        m_undoButton->setEnabled(m_commandHistory.canUndo());
+        m_undoButton->setEnabled(!workflowActive && m_commandHistory.canUndo());
         m_undoButton->setToolTip(m_commandHistory.undoDescription());
     }
 
     if (m_redoButton) {
-        m_redoButton->setEnabled(m_commandHistory.canRedo());
+        m_redoButton->setEnabled(!workflowActive && m_commandHistory.canRedo());
         m_redoButton->setToolTip(m_commandHistory.redoDescription());
     }
 
     if (m_undoAction) {
-        m_undoAction->setEnabled(m_commandHistory.canUndo());
+        m_undoAction->setEnabled(!workflowActive && m_commandHistory.canUndo());
         m_undoAction->setText(m_commandHistory.undoDescription());
     }
 
     if (m_redoAction) {
-        m_redoAction->setEnabled(m_commandHistory.canRedo());
+        m_redoAction->setEnabled(!workflowActive && m_commandHistory.canRedo());
         m_redoAction->setText(m_commandHistory.redoDescription());
     }
 }
@@ -1192,25 +1252,16 @@ bool MainWindow::confirmDiscardUnsavedChanges()
 
 void MainWindow::createActivity()
 {
-    if (!m_activityManager) {
+    if (!m_activityManager || !m_creationPage) {
         return;
     }
 
-    /*
-     * Il dialog costruisce l'attività concreta e la restituisce come Activity.
-     * Ho scelto questo flusso per tenere la logica di creazione fuori dalla MainWindow.
-     */
-    synchronizeCategoryManagerFromActivities();
+    openCreationPage();
+}
 
-    ActivityCreationDialog dialog(m_categoryManager, this);
-
-    if (dialog.exec() != QDialog::Accepted) {
-        return;
-    }
-
-    std::unique_ptr<Activity> activity = dialog.takeCreatedActivity();
-
-    if (!activity) {
+void MainWindow::addCreatedActivity(std::unique_ptr<Activity> activity)
+{
+    if (!m_activityManager || !activity) {
         return;
     }
 
@@ -1228,13 +1279,9 @@ void MainWindow::createActivity()
 
     setUnsavedChanges(true);
     synchronizeCategoryManagerFromActivities();
-
+    openAgendaPage();
     refreshActivityList();
 
-    /*
-     * Dopo il refresh provo a selezionare subito l'attività appena creata,
-     * così l'utente vede immediatamente il risultato dell'operazione.
-     */
     for (int row = 0; row < m_activityList->count(); ++row) {
         QListWidgetItem* item = m_activityList->item(row);
 
@@ -1245,7 +1292,6 @@ void MainWindow::createActivity()
     }
 
     updateActionButtons();
-
     statusBar()->showMessage("Activity created", 3000);
 }
 
