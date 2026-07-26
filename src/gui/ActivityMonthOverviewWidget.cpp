@@ -63,8 +63,9 @@ public:
         : QAbstractButton(parent)
     {
         setFocusPolicy(Qt::StrongFocus);
-        setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        setMinimumSize(44, 42);
+        setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        setMinimumSize(18, 24);
+        setMaximumHeight(31);
     }
 
     void setDayData(const QDate& date,
@@ -81,6 +82,9 @@ public:
         m_today = today;
 
         const bool valid = m_date.isValid();
+
+        // Invalid leading/trailing cells do not draw empty cards or reserve height.
+        setVisible(valid);
         setEnabled(valid);
         setCursor(QCursor(valid ? Qt::PointingHandCursor : Qt::ArrowCursor));
         setToolTip(valid ? tooltip : QString());
@@ -99,81 +103,80 @@ public:
 
     QSize sizeHint() const override
     {
-        return QSize(58, 50);
+        return QSize(36, 28);
     }
 
 protected:
     void paintEvent(QPaintEvent*) override
     {
-        QPainter painter(this);
-        painter.setRenderHint(QPainter::Antialiasing, true);
-
-        const QRectF cellRect = QRectF(rect()).adjusted(1.5, 1.5, -1.5, -1.5);
-
-        QColor background = palette().color(QPalette::Base);
-        QColor border = palette().color(QPalette::Midlight);
-        qreal borderWidth = 1.0;
-
-        if (m_selected) {
-            background = QColor(QStringLiteral("#E3E8FF"));
-            border = QColor(QStringLiteral("#3F51B5"));
-            borderWidth = 2.0;
-        } else if (underMouse() && isEnabled()) {
-            background = palette().color(QPalette::AlternateBase);
-            border = palette().color(QPalette::Mid);
-        }
-
-        painter.setPen(QPen(border, borderWidth));
-        painter.setBrush(background);
-        painter.drawRoundedRect(cellRect, 6.0, 6.0);
-
         if (!m_date.isValid()) {
             return;
         }
 
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing, true);
+
+        const QRectF cellRect = QRectF(rect()).adjusted(1.0, 1.0, -1.0, -1.0);
+        QColor background = Qt::transparent;
+        QColor border = Qt::transparent;
+        qreal borderWidth = 1.0;
+        bool drawSurface = false;
+
+        if (m_selected) {
+            background = QColor(QStringLiteral("#E3E8FF"));
+            border = QColor(QStringLiteral("#3F51B5"));
+            borderWidth = 1.6;
+            drawSurface = true;
+        } else if (underMouse() && isEnabled()) {
+            background = palette().color(QPalette::AlternateBase);
+            border = palette().color(QPalette::Midlight);
+            drawSurface = true;
+        } else if (m_activityCount > 0) {
+            background = palette().color(QPalette::AlternateBase);
+            background.setAlpha(145);
+            drawSurface = true;
+        }
+
+        if (drawSurface) {
+            painter.setPen(QPen(border, borderWidth));
+            painter.setBrush(background);
+            painter.drawRoundedRect(cellRect, 4.0, 4.0);
+        }
+
         QFont dayFont = font();
+        dayFont.setPointSizeF(std::max(8.0, dayFont.pointSizeF() - 0.5));
         dayFont.setBold(m_today || m_selected);
         painter.setFont(dayFont);
         painter.setPen(palette().color(QPalette::Text));
-        painter.drawText(rect().adjusted(7, 5, -5, -5),
-                         Qt::AlignLeft | Qt::AlignTop,
+        painter.drawText(rect().adjusted(3, 2, -3, -8),
+                         Qt::AlignHCenter | Qt::AlignTop,
                          QString::number(m_date.day()));
 
         if (m_today) {
             painter.setPen(Qt::NoPen);
             painter.setBrush(QColor(QStringLiteral("#3F51B5")));
-            painter.drawEllipse(QPointF(width() - 9.0, 9.0), 3.0, 3.0);
+            painter.drawEllipse(QPointF(width() / 2.0, height() - 4.0), 2.0, 2.0);
         }
 
-        if (m_activityCount > 0) {
-            const QString countText = QString::number(m_activityCount);
+        // The small count is only shown when there is enough horizontal space.
+        if (m_activityCount > 1 && width() >= 34) {
             QFont countFont = font();
-            countFont.setPointSizeF(std::max(8.0, countFont.pointSizeF() - 1.0));
+            countFont.setPointSizeF(std::max(6.5, countFont.pointSizeF() - 2.0));
             countFont.setBold(true);
             painter.setFont(countFont);
-
-            const QFontMetrics metrics(countFont);
-            const int badgeWidth = std::max(18, metrics.horizontalAdvance(countText) + 10);
-            const QRect badgeRect(width() - badgeWidth - 5, height() - 22, badgeWidth, 17);
-
-            painter.setPen(Qt::NoPen);
-            painter.setBrush(QColor(245, 245, 245));
-            painter.drawRoundedRect(badgeRect, 8, 8);
-            painter.setPen(QColor(QStringLiteral("#444444")));
-            painter.drawText(badgeRect, Qt::AlignCenter, countText);
+            painter.setPen(palette().color(QPalette::Mid));
+            painter.drawText(QRect(width() - 15, 1, 13, 11),
+                             Qt::AlignRight | Qt::AlignVCenter,
+                             QString::number(m_activityCount));
         }
 
         const int markerCount = std::min(4, static_cast<int>(m_markerColors.size()));
         if (markerCount > 0) {
-            const int diameter = 7;
-            const int spacing = 3;
+            const int diameter = width() < 31 ? 4 : 5;
+            const int spacing = 2;
             const int totalWidth = markerCount * diameter + (markerCount - 1) * spacing;
-            int x = 7;
-            const int y = height() - diameter - 7;
-
-            if (m_activityCount > 0 && totalWidth > width() - 42) {
-                x = std::max(5, width() - totalWidth - 5);
-            }
+            int x = std::max(2, (width() - totalWidth) / 2);
+            const int y = height() - diameter - 3;
 
             painter.setPen(Qt::NoPen);
             for (int index = 0; index < markerCount; ++index) {
@@ -186,7 +189,7 @@ protected:
         if (hasFocus()) {
             QStyleOptionFocusRect focusOption;
             focusOption.initFrom(this);
-            focusOption.rect = rect().adjusted(3, 3, -3, -3);
+            focusOption.rect = rect().adjusted(2, 2, -2, -2);
             style()->drawPrimitive(QStyle::PE_FrameFocusRect,
                                    &focusOption,
                                    &painter,
@@ -219,7 +222,9 @@ ActivityMonthOverviewWidget::ActivityMonthOverviewWidget(QWidget* parent)
       m_displayedMonth(QDate::currentDate().year(), QDate::currentDate().month(), 1)
 {
     setObjectName(QStringLiteral("activityMonthOverview"));
-    setMinimumHeight(285);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    setMinimumHeight(150);
+    setMaximumHeight(218);
     setupUi();
     rebuildCalendar();
 }
@@ -294,27 +299,30 @@ std::optional<QDate> ActivityMonthOverviewWidget::selectedDate() const
 void ActivityMonthOverviewWidget::setupUi()
 {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(10, 10, 10, 10);
-    mainLayout->setSpacing(7);
+    mainLayout->setContentsMargins(4, 3, 4, 3);
+    mainLayout->setSpacing(3);
 
     QHBoxLayout* headerLayout = new QHBoxLayout();
     headerLayout->setContentsMargins(0, 0, 0, 0);
-    headerLayout->setSpacing(6);
+    headerLayout->setSpacing(4);
 
     QPushButton* previousButton = new QPushButton(QStringLiteral("‹"), this);
     previousButton->setToolTip(QStringLiteral("Previous month"));
-    previousButton->setFixedWidth(34);
+    previousButton->setFixedSize(27, 24);
 
     m_monthLabel = new QLabel(this);
     m_monthLabel->setObjectName(QStringLiteral("sectionLabel"));
     m_monthLabel->setAlignment(Qt::AlignCenter);
+    m_monthLabel->setMinimumWidth(0);
 
     QPushButton* currentMonthButton = new QPushButton(QStringLiteral("Today"), this);
     currentMonthButton->setToolTip(QStringLiteral("Show the current month"));
+    currentMonthButton->setFixedHeight(24);
+    currentMonthButton->setMaximumWidth(52);
 
     QPushButton* nextButton = new QPushButton(QStringLiteral("›"), this);
     nextButton->setToolTip(QStringLiteral("Next month"));
-    nextButton->setFixedWidth(34);
+    nextButton->setFixedSize(27, 24);
 
     headerLayout->addWidget(previousButton);
     headerLayout->addWidget(m_monthLabel, 1);
@@ -324,14 +332,15 @@ void ActivityMonthOverviewWidget::setupUi()
 
     QGridLayout* calendarLayout = new QGridLayout();
     calendarLayout->setContentsMargins(0, 0, 0, 0);
-    calendarLayout->setHorizontalSpacing(4);
-    calendarLayout->setVerticalSpacing(4);
+    calendarLayout->setHorizontalSpacing(1);
+    calendarLayout->setVerticalSpacing(1);
 
     const QLocale locale;
     for (int day = 1; day <= 7; ++day) {
-        QLabel* weekdayLabel = new QLabel(locale.dayName(day, QLocale::ShortFormat), this);
+        QLabel* weekdayLabel = new QLabel(locale.dayName(day, QLocale::NarrowFormat), this);
         weekdayLabel->setAlignment(Qt::AlignCenter);
         weekdayLabel->setObjectName(QStringLiteral("filterFieldLabel"));
+        weekdayLabel->setMaximumHeight(15);
         calendarLayout->addWidget(weekdayLabel, 0, day - 1);
         calendarLayout->setColumnStretch(day - 1, 1);
     }
@@ -340,7 +349,6 @@ void ActivityMonthOverviewWidget::setupUi()
         MonthDayButton* dayButton = new MonthDayButton(this);
         m_dayButtons.append(dayButton);
         calendarLayout->addWidget(dayButton, index / 7 + 1, index % 7);
-        calendarLayout->setRowStretch(index / 7 + 1, 1);
 
         connect(dayButton, &QAbstractButton::clicked, this, [this, dayButton]() {
             const QDate date = dayButton->date();
@@ -357,7 +365,8 @@ void ActivityMonthOverviewWidget::setupUi()
         });
     }
 
-    mainLayout->addLayout(calendarLayout, 1);
+    mainLayout->addLayout(calendarLayout);
+    mainLayout->addStretch(1);
 
     connect(previousButton, &QPushButton::clicked, this, [this]() {
         changeMonth(-1);
@@ -379,7 +388,7 @@ void ActivityMonthOverviewWidget::rebuildCalendar()
     }
 
     const QLocale locale;
-    m_monthLabel->setText(locale.toString(m_displayedMonth, QStringLiteral("MMMM yyyy")));
+    m_monthLabel->setText(locale.toString(m_displayedMonth, QStringLiteral("MMM yyyy")));
 
     const int firstColumn = m_displayedMonth.dayOfWeek() - 1;
     const int daysInMonth = m_displayedMonth.daysInMonth();
