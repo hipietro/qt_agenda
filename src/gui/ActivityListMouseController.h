@@ -3,7 +3,6 @@
 
 #include <QObject>
 #include <QPointer>
-#include <QString>
 
 class QAction;
 class QEvent;
@@ -12,6 +11,7 @@ class QListWidgetItem;
 class QMainWindow;
 class QPoint;
 class QPushButton;
+class QSplitter;
 class QStackedWidget;
 class QWidget;
 
@@ -27,7 +27,12 @@ private:
     void configureWindow(QMainWindow* window);
     void editItem(QListWidgetItem* item);
     void showContextMenu(const QPoint& position);
-    bool workflowActive() const;
+    void triggerButton(QPushButton* button);
+    void leaveEditingWorkflow();
+    void rebalanceDetailLayout();
+
+    bool creationActive() const;
+    bool editingActive() const;
 
     QPushButton* buttonWithText(QMainWindow* window, const QString& text) const;
     QPushButton* buttonStartingWith(QMainWindow* window, const QString& prefix) const;
@@ -35,8 +40,11 @@ private:
 
     QPointer<QMainWindow> m_window;
     QPointer<QListWidget> m_activityList;
+    QPointer<QSplitter> m_mainSplitter;
     QPointer<QStackedWidget> m_workspaceStack;
     QPointer<QWidget> m_detailPage;
+    QPointer<QWidget> m_creationPage;
+    QPointer<QWidget> m_editingPage;
     QPointer<QPushButton> m_editButton;
     QPointer<QPushButton> m_toggleButton;
     QPointer<QPushButton> m_deleteButton;
