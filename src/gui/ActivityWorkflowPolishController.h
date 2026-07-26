@@ -4,7 +4,6 @@
 #define ACTIVITYWORKFLOWPOLISHCONTROLLER_H
 
 #include <QObject>
-#include <QPointer>
 
 class QDialogButtonBox;
 class QEvent;
@@ -36,14 +35,14 @@ private:
     QStackedWidget* typeStack(QWidget* page) const;
     bool isInside(QWidget* widget, const QWidget* container) const;
 
-    QPointer<QMainWindow> m_window;
-    QPointer<QStackedWidget> m_workspaceStack;
-    QPointer<QWidget> m_creationPage;
-    QPointer<QWidget> m_editingPage;
-    QPointer<QPushButton> m_addButton;
-    QPointer<QPushButton> m_editButton;
-    QPointer<QLineEdit> m_newChecklistItemEdit;
-    QPointer<QListWidget> m_editChecklistList;
+    QMainWindow* m_window = nullptr;
+    QStackedWidget* m_workspaceStack = nullptr;
+    QWidget* m_creationPage = nullptr;
+    QWidget* m_editingPage = nullptr;
+    QPushButton* m_addButton = nullptr;
+    QPushButton* m_editButton = nullptr;
+    QLineEdit* m_newChecklistItemEdit = nullptr;
+    QListWidget* m_editChecklistList = nullptr;
 };
 
 #endif
