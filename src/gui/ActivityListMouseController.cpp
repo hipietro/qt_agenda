@@ -2,14 +2,19 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QDialogButtonBox>
 #include <QEvent>
 #include <QListWidget>
 #include <QMainWindow>
 #include <QMenu>
 #include <QPoint>
 #include <QPushButton>
+#include <QSplitter>
 #include <QStackedWidget>
+#include <QTimer>
 #include <QWidget>
+
+#include <algorithm>
 
 namespace {
 
@@ -36,6 +41,12 @@ bool ActivityListMouseController::eventFilter(QObject* watched, QEvent* event)
         }
     }
 
+    if (m_window && watched == m_window && event->type() == QEvent::Resize) {
+        QTimer::singleShot(0, this, [this]() {
+            rebalanceDetailLayout();
+        });
+    }
+
     return QObject::eventFilter(watched, event);
 }
 
@@ -51,15 +62,24 @@ void ActivityListMouseController::configureWindow(QMainWindow* window)
         window->findChild<QStackedWidget*>(QStringLiteral("workspaceStack"));
     QWidget* detailPage =
         window->findChild<QWidget*>(QStringLiteral("activityDetailPage"));
+    QWidget* creationPage =
+        window->findChild<QWidget*>(QStringLiteral("activityCreationPage"));
+    QWidget* editingPage =
+        window->findChild<QWidget*>(QStringLiteral("activityEditPage"));
+    QSplitter* mainSplitter = window->findChild<QSplitter*>();
 
-    if (!activityList || !workspaceStack || !detailPage) {
+    if (!activityList || !workspaceStack || !detailPage || !creationPage ||
+        !editingPage || !mainSplitter) {
         return;
     }
 
     m_window = window;
     m_activityList = activityList;
+    m_mainSplitter = mainSplitter;
     m_workspaceStack = workspaceStack;
     m_detailPage = detailPage;
+    m_creationPage = creationPage;
+    m_editingPage = editingPage;
     m_editButton = buttonWithText(window, QStringLiteral("Edit activity"));
     m_toggleButton = buttonStartingWith(window, QStringLiteral("Mark "));
     m_deleteButton = buttonWithText(window, QStringLiteral("Delete activity"));
@@ -79,23 +99,33 @@ void ActivityListMouseController::configureWindow(QMainWindow* window)
             this, [this](const QPoint& position) {
                 showContextMenu(position);
             });
+
+    connect(m_workspaceStack, &QStackedWidget::currentChanged,
+            this, [this](int) {
+                QTimer::singleShot(0, this, [this]() {
+                    rebalanceDetailLayout();
+                });
+            });
+
+    QTimer::singleShot(0, this, [this]() {
+        rebalanceDetailLayout();
+    });
 }
 
 void ActivityListMouseController::editItem(QListWidgetItem* item)
 {
-    if (!m_activityList || !item || workflowActive() || !m_editButton ||
-        !m_editButton->isEnabled()) {
+    if (!m_activityList || !item || creationActive() || !m_editButton) {
         return;
     }
 
     m_activityList->setCurrentItem(item);
     item->setSelected(true);
-    m_editButton->click();
+    triggerButton(m_editButton);
 }
 
 void ActivityListMouseController::showContextMenu(const QPoint& position)
 {
-    if (!m_activityList || workflowActive()) {
+    if (!m_activityList || creationActive()) {
         return;
     }
 
@@ -113,13 +143,13 @@ void ActivityListMouseController::showContextMenu(const QPoint& position)
     QMenu menu(m_activityList);
 
     QAction* editAction = menu.addAction(QStringLiteral("Edit activity"));
-    editAction->setEnabled(m_editButton && m_editButton->isEnabled());
+    editAction->setEnabled(m_editButton != nullptr);
 
     const QString toggleText = m_toggleButton
         ? m_toggleButton->text()
         : QStringLiteral("Mark completed");
     QAction* toggleAction = menu.addAction(toggleText);
-    toggleAction->setEnabled(m_toggleButton && m_toggleButton->isEnabled());
+    toggleAction->setEnabled(m_toggleButton != nullptr);
 
     QAction* templateAction = menu.addAction(QStringLiteral("Save as template..."));
     templateAction->setEnabled(m_saveAsTemplateAction != nullptr);
@@ -127,26 +157,98 @@ void ActivityListMouseController::showContextMenu(const QPoint& position)
     menu.addSeparator();
 
     QAction* deleteAction = menu.addAction(QStringLiteral("Delete activity"));
-    deleteAction->setEnabled(m_deleteButton && m_deleteButton->isEnabled());
+    deleteAction->setEnabled(m_deleteButton != nullptr);
 
     QAction* chosenAction =
         menu.exec(m_activityList->viewport()->mapToGlobal(position));
 
     if (chosenAction == editAction && m_editButton) {
-        m_editButton->click();
-    } else if (chosenAction == toggleAction && m_toggleButton) {
-        m_toggleButton->click();
+        triggerButton(m_editButton);
+        return;
+    }
+
+    if (!chosenAction) {
+        return;
+    }
+
+    /*
+     * Non-edit actions first leave the active edit page. This avoids keeping a
+     * pointer to an activity that could be deleted or replaced by the command.
+     * The selected list item remains selected, so the existing MainWindow
+     * operation still acts on the item chosen with the secondary click.
+     */
+    leaveEditingWorkflow();
+
+    if (chosenAction == toggleAction && m_toggleButton) {
+        triggerButton(m_toggleButton);
     } else if (chosenAction == templateAction && m_saveAsTemplateAction) {
         m_saveAsTemplateAction->trigger();
     } else if (chosenAction == deleteAction && m_deleteButton) {
-        m_deleteButton->click();
+        triggerButton(m_deleteButton);
     }
 }
 
-bool ActivityListMouseController::workflowActive() const
+void ActivityListMouseController::triggerButton(QPushButton* button)
 {
-    return !m_workspaceStack || !m_detailPage ||
-           m_workspaceStack->currentWidget() != m_detailPage;
+    if (!button) {
+        return;
+    }
+
+    const bool wasEnabled = button->isEnabled();
+    if (!wasEnabled) {
+        button->setEnabled(true);
+    }
+
+    button->click();
+
+    if (!wasEnabled && button) {
+        button->setEnabled(false);
+    }
+}
+
+void ActivityListMouseController::leaveEditingWorkflow()
+{
+    if (!editingActive() || !m_editingPage) {
+        return;
+    }
+
+    QDialogButtonBox* buttonBox =
+        m_editingPage->findChild<QDialogButtonBox*>();
+
+    if (!buttonBox) {
+        return;
+    }
+
+    if (QPushButton* cancelButton = buttonBox->button(QDialogButtonBox::Cancel)) {
+        cancelButton->click();
+    }
+}
+
+void ActivityListMouseController::rebalanceDetailLayout()
+{
+    if (!m_mainSplitter || !m_workspaceStack || !m_detailPage ||
+        m_workspaceStack->currentWidget() != m_detailPage) {
+        return;
+    }
+
+    const int totalWidth = std::max(1, m_mainSplitter->width());
+    const int desiredLeftWidth = totalWidth * 55 / 100;
+    const int maximumLeftWidth = std::max(360, totalWidth - 420);
+    const int leftWidth = std::max(360, std::min(desiredLeftWidth, maximumLeftWidth));
+
+    m_mainSplitter->setSizes({leftWidth, std::max(1, totalWidth - leftWidth)});
+}
+
+bool ActivityListMouseController::creationActive() const
+{
+    return m_workspaceStack && m_creationPage &&
+           m_workspaceStack->currentWidget() == m_creationPage;
+}
+
+bool ActivityListMouseController::editingActive() const
+{
+    return m_workspaceStack && m_editingPage &&
+           m_workspaceStack->currentWidget() == m_editingPage;
 }
 
 QPushButton* ActivityListMouseController::buttonWithText(
