@@ -27,6 +27,7 @@ SOURCES += \
     src/model/ActivityTemplateManager.cpp \
     src/model/CategoryManager.cpp \
     src/gui/MainWindow.cpp \
+    src/gui/ActivityWorkflowPolishController.cpp \
     src/gui/ActivityListItemVisitor.cpp \
     src/gui/ActivityListPresentationController.cpp \
     src/gui/ActivityDetailVisitor.cpp \
@@ -63,6 +64,7 @@ HEADERS += \
     src/model/ActivityTemplateManager.h \
     src/model/CategoryManager.h \
     src/gui/MainWindow.h \
+    src/gui/ActivityWorkflowPolishController.h \
     src/gui/ActivityListItemVisitor.h \
     src/gui/ActivityListPresentationController.h \
     src/gui/ActivityDetailVisitor.h \
