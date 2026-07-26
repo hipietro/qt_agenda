@@ -8,6 +8,7 @@
 #include "model/ReminderActivity.h"
 
 #include <QAbstractButton>
+#include <QCursor>
 #include <QFont>
 #include <QFontMetrics>
 #include <QGridLayout>
@@ -81,7 +82,7 @@ public:
 
         const bool valid = m_date.isValid();
         setEnabled(valid);
-        setCursor(valid ? Qt::PointingHandCursor : Qt::ArrowCursor);
+        setCursor(QCursor(valid ? Qt::PointingHandCursor : Qt::ArrowCursor));
         setToolTip(valid ? tooltip : QString());
         setAccessibleName(valid
                               ? QStringLiteral("%1, %2 activities")
@@ -162,7 +163,7 @@ protected:
             painter.drawText(badgeRect, Qt::AlignCenter, countText);
         }
 
-        const int markerCount = std::min(4, m_markerColors.size());
+        const int markerCount = std::min(4, static_cast<int>(m_markerColors.size()));
         if (markerCount > 0) {
             const int diameter = 7;
             const int spacing = 3;
@@ -435,7 +436,7 @@ QString ActivityMonthOverviewWidget::tooltipForDate(
                    .arg(summary.total == 1 ? QStringLiteral("activity")
                                            : QStringLiteral("activities"));
 
-    const int visibleTitles = std::min(5, summary.titles.size());
+    const int visibleTitles = std::min(5, static_cast<int>(summary.titles.size()));
     for (int index = 0; index < visibleTitles; ++index) {
         tooltip += QStringLiteral("\n• %1").arg(summary.titles.at(index));
     }
