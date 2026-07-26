@@ -29,6 +29,7 @@ SOURCES += \
     src/gui/MainWindow.cpp \
     src/gui/ActivityWorkflowPolishController.cpp \
     src/gui/ActivityListMouseController.cpp \
+    src/gui/ActivityKeyboardNavigationController.cpp \
     src/gui/ActivityMonthOverviewWidget.cpp \
     src/gui/ActivityListItemVisitor.cpp \
     src/gui/ActivityListPresentationController.cpp \
@@ -68,6 +69,7 @@ HEADERS += \
     src/gui/MainWindow.h \
     src/gui/ActivityWorkflowPolishController.h \
     src/gui/ActivityListMouseController.h \
+    src/gui/ActivityKeyboardNavigationController.h \
     src/gui/ActivityMonthOverviewWidget.h \
     src/gui/ActivityListItemVisitor.h \
     src/gui/ActivityListPresentationController.h \
