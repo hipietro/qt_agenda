@@ -231,9 +231,15 @@ void ActivityListMouseController::rebalanceDetailLayout()
         return;
     }
 
+    /*
+     * The list is the primary navigation surface, while the details panel only
+     * needs enough width to keep its cards readable. On large windows the old
+     * fixed maximum left a wide, mostly empty details area. A proportional split
+     * uses the available space more effectively without making details cramped.
+     */
     const int totalWidth = std::max(1, m_mainSplitter->width());
-    const int desiredLeftWidth = totalWidth * 55 / 100;
-    const int maximumLeftWidth = std::max(360, totalWidth - 420);
+    const int desiredLeftWidth = totalWidth * 62 / 100;
+    const int maximumLeftWidth = std::max(360, totalWidth - 440);
     const int leftWidth = std::max(360, std::min(desiredLeftWidth, maximumLeftWidth));
 
     m_mainSplitter->setSizes({leftWidth, std::max(1, totalWidth - leftWidth)});
