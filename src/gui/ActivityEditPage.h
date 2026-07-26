@@ -1,10 +1,11 @@
-// Dialog used to edit an existing activity without changing its concrete type.
+// In-window page used to edit an existing activity without changing its concrete type.
 
-#ifndef ACTIVITYEDITDIALOG_H
-#define ACTIVITYEDITDIALOG_H
+#ifndef ACTIVITYEDITPAGE_H
+#define ACTIVITYEDITPAGE_H
 
-#include <QDialog>
+#include <QWidget>
 
+#include <functional>
 #include <memory>
 #include <optional>
 
@@ -30,31 +31,30 @@ class CategoryManager;
 class ActivityEditFormVisitor;
 
 /*
- * Dialog usato per modificare un'attività esistente.
+ * Reusable edit page hosted directly inside MainWindow.
  *
- * Ho scelto di creare un dialog separato da quello di creazione perché qui
- * devo preservare id, timestamp e tipo concreto dell'attività originale.
+ * The page owns form state and validation. MainWindow remains responsible for
+ * executing UpdateActivityCommand, refreshing the agenda, and navigation.
  */
-class ActivityEditDialog : public QDialog
+class ActivityEditPage : public QWidget
 {
     friend class ActivityEditFormVisitor;
 public:
-    explicit ActivityEditDialog(const Activity& activity,
-                                const CategoryManager* categoryManager = nullptr,
-                                QWidget* parent = nullptr);
+    using SavedHandler = std::function<bool(const QString&, std::unique_ptr<Activity>)>;
+    using CancelHandler = std::function<void()>;
 
-    /*
-     * Restituisce l'attività aggiornata trasferendone la proprietà al chiamante.
-     * La MainWindow la userà per sostituire l'oggetto dentro ActivityManager.
-     */
-    std::unique_ptr<Activity> takeUpdatedActivity();
+    explicit ActivityEditPage(const CategoryManager* categoryManager = nullptr,
+                              QWidget* parent = nullptr);
 
-protected:
-    void accept() override;
+    void setSavedHandler(SavedHandler handler);
+    void setCancelHandler(CancelHandler handler);
+    void editActivity(const Activity& activity);
+    void clearActivity();
 
 private:
     void setupUi();
     void populateFromActivity(const Activity& activity);
+    void submit();
 
     bool validateForm() const;
     std::unique_ptr<Activity> createUpdatedActivityFromForm() const;
@@ -80,6 +80,7 @@ private:
     QDateTime m_originalCreatedAt;
     bool m_originalCompleted = false;
 
+    QLabel* m_contextLabel = nullptr;
     QLabel* m_typeLabel = nullptr;
     QLineEdit* m_titleEdit = nullptr;
     QTextEdit* m_descriptionEdit = nullptr;
@@ -120,7 +121,8 @@ private:
     QDateTimeEdit* m_recurrenceUntilEdit = nullptr;
     QSpinBox* m_recurrenceOccurrencesSpin = nullptr;
 
-    std::unique_ptr<Activity> m_updatedActivity;
+    SavedHandler m_savedHandler;
+    CancelHandler m_cancelHandler;
 };
 
 #endif

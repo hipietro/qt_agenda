@@ -36,7 +36,7 @@ SOURCES += \
     src/persistence/ActivityJsonSerializationVisitor.cpp \
     src/persistence/AgendaJsonStorage.cpp \
     src/gui/ActivityCreationPage.cpp \
-    src/gui/ActivityEditDialog.cpp \
+    src/gui/ActivityEditPage.cpp \
     src/gui/ActivityEditFormVisitor.cpp \
     src/gui/CategoryManagementDialog.cpp \
     src/commands/RemoveActivityCommand.cpp \
@@ -72,7 +72,7 @@ HEADERS += \
     src/persistence/ActivityJsonSerializationVisitor.h \
     src/persistence/AgendaJsonStorage.h \
     src/gui/ActivityCreationPage.h \
-    src/gui/ActivityEditDialog.h \
+    src/gui/ActivityEditPage.h \
     src/gui/ActivityEditFormVisitor.h \
     src/gui/CategoryManagementDialog.h \
     src/commands/Command.h \

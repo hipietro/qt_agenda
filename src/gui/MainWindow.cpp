@@ -3,7 +3,7 @@
 #include "MainWindow.h"
 
 #include "ActivityCreationPage.h"
-#include "ActivityEditDialog.h"
+#include "ActivityEditPage.h"
 #include "CategoryManagementDialog.h"
 #include "commands/AddActivityCommand.h"
 #include "commands/RemoveActivityCommand.h"
@@ -21,7 +21,6 @@
 #include <QAction>
 #include <QComboBox>
 #include <QDateTime>
-#include <QDialog>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFrame>
@@ -315,47 +314,19 @@ void MainWindow::setupUi()
     });
     m_workspaceStack->addWidget(m_creationPage);
 
-    m_editingPage = createWorkflowPlaceholderPage(
-        "Edit activity",
-        "The activity editing form will replace this workspace in issue 48. "
-        "The agenda remains visible on wide windows and collapses only when space is limited."
-    );
-    m_editingPage->setObjectName("activityEditingPage");
+    m_editingPage = new ActivityEditPage(m_categoryManager, m_workspaceStack);
+    m_editingPage->setSavedHandler(
+        [this](const QString& activityId, std::unique_ptr<Activity> activity) {
+            return applyEditedActivity(activityId, std::move(activity));
+        });
+    m_editingPage->setCancelHandler([this]() {
+        openAgendaPage();
+    });
     m_workspaceStack->addWidget(m_editingPage);
 
     rootLayout->addWidget(m_pageStack, 1);
     setCentralWidget(centralWidget);
     openAgendaPage();
-}
-
-QWidget* MainWindow::createWorkflowPlaceholderPage(const QString& title,
-                                                   const QString& description)
-{
-    QWidget* page = new QWidget(m_workspaceStack);
-    QVBoxLayout* layout = new QVBoxLayout(page);
-    layout->setContentsMargins(32, 32, 32, 32);
-    layout->setSpacing(16);
-
-    QLabel* titleLabel = new QLabel(title, page);
-    titleLabel->setObjectName("pageTitle");
-
-    QLabel* descriptionLabel = new QLabel(description, page);
-    descriptionLabel->setWordWrap(true);
-    descriptionLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-
-    QPushButton* backButton = new QPushButton("Back to agenda", page);
-    backButton->setObjectName("primaryButton");
-
-    connect(backButton, &QPushButton::clicked, this, [this]() {
-        openAgendaPage();
-    });
-
-    layout->addWidget(titleLabel);
-    layout->addWidget(descriptionLabel);
-    layout->addStretch(1);
-    layout->addWidget(backButton, 0, Qt::AlignLeft);
-
-    return page;
 }
 
 void MainWindow::openAgendaPage()
@@ -1297,54 +1268,46 @@ void MainWindow::addCreatedActivity(std::unique_ptr<Activity> activity)
 
 void MainWindow::editSelectedActivity()
 {
-    if (!m_activityManager) {
+    if (!m_activityManager || !m_editingPage) {
         return;
     }
 
     const QString activityId = selectedActivityId();
-
     if (activityId.isEmpty()) {
         return;
     }
 
     const Activity* activity = m_activityManager->findActivityById(activityId);
-
     if (!activity) {
         return;
     }
 
-    /*
-     * Il dialog modifica una copia logica dell'attività.
-     * Quando l'utente conferma, sostituisco l'oggetto nel manager mantenendo lo stesso id.
-     */
     synchronizeCategoryManagerFromActivities();
+    m_editingPage->editActivity(*activity);
+    openEditingPage();
+}
 
-    ActivityEditDialog dialog(*activity, m_categoryManager, this);
-
-    if (dialog.exec() != QDialog::Accepted) {
-        return;
-    }
-
-    std::unique_ptr<Activity> updatedActivity = dialog.takeUpdatedActivity();
-
-    if (!updatedActivity) {
-        return;
+bool MainWindow::applyEditedActivity(const QString& activityId,
+                                     std::unique_ptr<Activity> activity)
+{
+    if (!m_activityManager || activityId.isEmpty() || !activity) {
+        return false;
     }
 
     auto command = std::make_unique<UpdateActivityCommand>(
         m_activityManager,
         activityId,
-        std::move(updatedActivity)
+        std::move(activity)
     );
 
     if (!m_commandHistory.executeCommand(std::move(command))) {
         QMessageBox::warning(this, "Edit activity failed", "The activity could not be updated.");
-        return;
+        return false;
     }
 
     setUnsavedChanges(true);
     synchronizeCategoryManagerFromActivities();
-
+    openAgendaPage();
     refreshActivityList();
 
     for (int row = 0; row < m_activityList->count(); ++row) {
@@ -1357,8 +1320,8 @@ void MainWindow::editSelectedActivity()
     }
 
     updateActionButtons();
-
     statusBar()->showMessage("Activity updated", 3000);
+    return true;
 }
 
 void MainWindow::createActivityFromTemplate()
