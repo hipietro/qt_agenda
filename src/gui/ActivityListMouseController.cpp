@@ -90,6 +90,25 @@ void ActivityListMouseController::configureWindow(QMainWindow* window)
     m_activityList->setToolTip(
         QStringLiteral("Single-click to select, double-click to edit, or right-click for actions."));
 
+    connect(m_activityList, &QListWidget::itemClicked,
+            this, [this](QListWidgetItem* item) {
+                if (!item || creationActive()) {
+                    return;
+                }
+
+                m_activityList->setCurrentItem(item);
+                item->setSelected(true);
+
+                /*
+                 * A normal click always means "show this activity". If editing is
+                 * open, cancel only the editing workflow and return to the details
+                 * page for the item that Qt has already selected.
+                 */
+                if (editingActive()) {
+                    leaveEditingWorkflow();
+                }
+            });
+
     connect(m_activityList, &QListWidget::itemDoubleClicked,
             this, [this](QListWidgetItem* item) {
                 editItem(item);
