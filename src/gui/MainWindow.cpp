@@ -4,6 +4,7 @@
 
 #include "ActivityCreationPage.h"
 #include "ActivityEditPage.h"
+#include "ActivityMonthOverviewWidget.h"
 #include "CategoryManagementDialog.h"
 #include "commands/AddActivityCommand.h"
 #include "commands/RemoveActivityCommand.h"
@@ -39,12 +40,14 @@
 #include <QPushButton>
 #include <QResizeEvent>
 #include <QScrollArea>
+#include <QSignalBlocker>
 #include <QSize>
 #include <QSplitter>
 #include <QStatusBar>
 #include <QStackedWidget>
 #include <QStringList>
 #include <QTextEdit>
+#include <QTime>
 #include <QVariant>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -201,6 +204,13 @@ void MainWindow::setupUi()
     filterGridLayout->addWidget(createFilterCell("Recurrence", m_recurrenceCombo), 1, 1);
     filterGridLayout->addWidget(createFilterCell("Due state", m_overdueCombo), 2, 0);
     filterGridLayout->addWidget(createFilterCell("Sort by", m_sortCombo), 2, 1);
+
+    m_clearFiltersButton = new QPushButton("Clear filters", filterPanel);
+    m_clearFiltersButton->setObjectName("primaryButton");
+    m_clearFiltersButton->setToolTip(
+        "Reset type, priority, category, status, recurrence, due-state and date filters");
+    filterGridLayout->addWidget(m_clearFiltersButton, 3, 0, 1, 2);
+
     filterGridLayout->setColumnStretch(0, 1);
     filterGridLayout->setColumnStretch(1, 1);
 
@@ -279,17 +289,51 @@ void MainWindow::setupUi()
 
     QVBoxLayout* rightLayout = new QVBoxLayout(m_detailPage);
     rightLayout->setContentsMargins(0, 0, 0, 0);
-    rightLayout->setSpacing(8);
+    rightLayout->setSpacing(0);
 
-    QLabel* detailLabel = new QLabel("Activity details", m_detailPage);
+    QSplitter* detailSplitter = new QSplitter(Qt::Vertical, m_detailPage);
+    detailSplitter->setObjectName("detailOverviewSplitter");
+    detailSplitter->setChildrenCollapsible(false);
+
+    QWidget* detailContainer = new QWidget(detailSplitter);
+    QVBoxLayout* detailLayout = new QVBoxLayout(detailContainer);
+    detailLayout->setContentsMargins(0, 0, 0, 0);
+    detailLayout->setSpacing(8);
+
+    QLabel* detailLabel = new QLabel("Activity details", detailContainer);
     detailLabel->setObjectName("sectionLabel");
 
-    m_detailView = new QTextEdit(m_detailPage);
+    m_detailView = new QTextEdit(detailContainer);
     m_detailView->setObjectName("activityDetailView");
     m_detailView->setReadOnly(true);
+    m_detailView->setMinimumHeight(135);
 
-    rightLayout->addWidget(detailLabel);
-    rightLayout->addWidget(m_detailView, 1);
+    detailLayout->addWidget(detailLabel);
+    detailLayout->addWidget(m_detailView, 1);
+
+    QWidget* overviewContainer = new QWidget(detailSplitter);
+    QVBoxLayout* overviewLayout = new QVBoxLayout(overviewContainer);
+    overviewLayout->setContentsMargins(0, 0, 0, 0);
+    overviewLayout->setSpacing(6);
+
+    QLabel* overviewLabel = new QLabel("Monthly overview", overviewContainer);
+    overviewLabel->setObjectName("sectionLabel");
+
+    m_monthOverview = new ActivityMonthOverviewWidget(overviewContainer);
+    m_monthOverview->setDateSelectedHandler([this](const QDate& date) {
+        selectDateFilter(date);
+    });
+
+    overviewLayout->addWidget(overviewLabel);
+    overviewLayout->addWidget(m_monthOverview, 1);
+
+    detailSplitter->addWidget(detailContainer);
+    detailSplitter->addWidget(overviewContainer);
+    detailSplitter->setStretchFactor(0, 3);
+    detailSplitter->setStretchFactor(1, 2);
+    detailSplitter->setSizes({360, 320});
+
+    rightLayout->addWidget(detailSplitter, 1);
 
     m_workspaceStack->addWidget(m_detailPage);
 
@@ -493,6 +537,10 @@ void MainWindow::connectSignals()
         refreshActivityList();
     });
 
+    connect(m_clearFiltersButton, &QPushButton::clicked, this, [this]() {
+        clearFilters();
+    });
+
     connect(m_activityList, &QListWidget::currentRowChanged, this, [this](int currentRow) {
         if (currentRow < 0) {
             updateActionButtons();
@@ -543,6 +591,7 @@ void MainWindow::refreshActivityList()
     const QString previousSelectedId = selectedActivityId();
 
     updateCategoryFilterOptions();
+    updateMonthOverview();
 
     m_activityList->clear();
 
@@ -570,16 +619,21 @@ void MainWindow::refreshActivityList()
 
     const QString query = m_searchEdit->text().trimmed();
     const QString sortText = m_sortCombo ? m_sortCombo->currentText() : "Default";
+    const QString dateSuffix = m_selectedDateFilter.has_value()
+        ? QString(" | Date: %1").arg(m_selectedDateFilter->toString("dd MMM yyyy"))
+        : QString();
 
     if (query.isEmpty()) {
-        m_resultCountLabel->setText(QString("Activities shown: %1 | Sort: %2")
+        m_resultCountLabel->setText(QString("Activities shown: %1 | Sort: %2%3")
                                     .arg(visibleActivities.size())
-                                    .arg(sortText));
+                                    .arg(sortText)
+                                    .arg(dateSuffix));
     } else {
-        m_resultCountLabel->setText(QString("Search results: %1 | Query: \"%2\" | Sort: %3")
+        m_resultCountLabel->setText(QString("Search results: %1 | Query: \"%2\" | Sort: %3%4")
                                     .arg(visibleActivities.size())
                                     .arg(query)
-                                    .arg(sortText));
+                                    .arg(sortText)
+                                    .arg(dateSuffix));
     }
 
     if (m_activityList->count() > 0) {
@@ -590,10 +644,18 @@ void MainWindow::refreshActivityList()
         m_activityList->setCurrentRow(rowToSelect);
     } else {
         if (query.isEmpty()) {
-            m_detailView->setPlainText(
-                "No activities are available.\n\n"
-                "Use Add activity or From template to create a new activity."
-            );
+            if (m_selectedDateFilter.has_value()) {
+                m_detailView->setPlainText(
+                    QString("No activities are scheduled for %1.\n\n"
+                            "Choose another day or use Clear filters.")
+                        .arg(m_selectedDateFilter->toString("dd MMMM yyyy"))
+                );
+            } else {
+                m_detailView->setPlainText(
+                    "No activities are available.\n\n"
+                    "Use Add activity or From template to create a new activity."
+                );
+            }
         } else {
             m_detailView->setPlainText(
                 QString("No activities match \"%1\".\n\n"
@@ -604,6 +666,56 @@ void MainWindow::refreshActivityList()
     }
 
     updateActionButtons();
+}
+
+void MainWindow::updateMonthOverview()
+{
+    if (!m_monthOverview || !m_activityManager) {
+        return;
+    }
+
+    m_monthOverview->setActivities(m_activityManager->activities());
+    m_monthOverview->setSelectedDate(m_selectedDateFilter);
+}
+
+void MainWindow::clearFilters()
+{
+    const auto resetCombo = [](QComboBox* comboBox) {
+        if (!comboBox) {
+            return;
+        }
+
+        const QSignalBlocker blocker(comboBox);
+        comboBox->setCurrentIndex(0);
+    };
+
+    resetCombo(m_typeCombo);
+    resetCombo(m_priorityCombo);
+    resetCombo(m_categoryCombo);
+    resetCombo(m_completionCombo);
+    resetCombo(m_recurrenceCombo);
+    resetCombo(m_overdueCombo);
+
+    m_selectedDateFilter.reset();
+    if (m_monthOverview) {
+        m_monthOverview->clearSelectedDate();
+    }
+
+    refreshActivityList();
+}
+
+void MainWindow::selectDateFilter(const QDate& date)
+{
+    if (!date.isValid()) {
+        return;
+    }
+
+    m_selectedDateFilter = date;
+    if (m_monthOverview) {
+        m_monthOverview->setSelectedDate(m_selectedDateFilter);
+    }
+
+    refreshActivityList();
 }
 
 void MainWindow::updateActionButtons()
@@ -799,6 +911,11 @@ std::vector<const Activity*> MainWindow::collectVisibleActivities() const
         } else if (overdueValue == 2) {
             criteria.overdue = ActivityFilter::OverdueFilter::NotOverdueOnly;
         }
+    }
+
+    if (m_selectedDateFilter.has_value()) {
+        criteria.fromDate = QDateTime(m_selectedDateFilter.value(), QTime(0, 0, 0, 0));
+        criteria.toDate = QDateTime(m_selectedDateFilter.value(), QTime(23, 59, 59, 999));
     }
 
     const QString sortValue = m_sortCombo

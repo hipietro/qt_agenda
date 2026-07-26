@@ -4,10 +4,12 @@
 #define MAINWINDOW_H
 
 #include <QCloseEvent>
+#include <QDate>
 #include <QMainWindow>
 #include <QString>
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "model/Activity.h"
@@ -16,6 +18,7 @@
 class ActivityCreationPage;
 class ActivityEditPage;
 class ActivityManager;
+class ActivityMonthOverviewWidget;
 class ActivityTemplateManager;
 class CategoryManager;
 class QComboBox;
@@ -35,10 +38,11 @@ class QAction;
 class MainWindow : public QMainWindow
 {
 public:
-explicit MainWindow(ActivityManager* activityManager,
-                    ActivityTemplateManager* templateManager,
-                    CategoryManager* categoryManager,
-                    QWidget* parent = nullptr);
+    explicit MainWindow(ActivityManager* activityManager,
+                        ActivityTemplateManager* templateManager,
+                        CategoryManager* categoryManager,
+                        QWidget* parent = nullptr);
+
 protected:
     void closeEvent(QCloseEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
@@ -57,6 +61,9 @@ private:
     void refreshActivityList();
     void updateActionButtons();
     void updateCategoryFilterOptions();
+    void updateMonthOverview();
+    void clearFilters();
+    void selectDateFilter(const QDate& date);
     void synchronizeCategoryManagerFromActivities();
     void updateWindowTitle();
     void setUnsavedChanges(bool hasUnsavedChanges);
@@ -67,7 +74,6 @@ private:
     std::vector<const Activity*> collectVisibleActivities() const;
     const Activity* findActivityById(const QString& id) const;
     QString selectedActivityId() const;
-
 
     QString fileDisplayName(const QString& filePath) const;
     QString storageSummaryText() const;
@@ -101,6 +107,7 @@ private:
     QWidget* m_detailPage = nullptr;
     ActivityCreationPage* m_creationPage = nullptr;
     ActivityEditPage* m_editingPage = nullptr;
+    ActivityMonthOverviewWidget* m_monthOverview = nullptr;
 
     QLineEdit* m_searchEdit = nullptr;
     QComboBox* m_typeCombo = nullptr;
@@ -121,7 +128,9 @@ private:
     QPushButton* m_templateButton = nullptr;
     QPushButton* m_undoButton = nullptr;
     QPushButton* m_redoButton = nullptr;
+    QPushButton* m_clearFiltersButton = nullptr;
 
+    std::optional<QDate> m_selectedDateFilter;
     QString m_currentFilePath;
     bool m_hasUnsavedChanges = false;
 
