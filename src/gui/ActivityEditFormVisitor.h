@@ -11,7 +11,7 @@
 
 #include <memory>
 
-class ActivityEditDialog;
+class ActivityEditPage;
 
 class ActivityEditFormVisitor final : public ActivityVisitor
 {
@@ -23,7 +23,7 @@ public:
         Build
     };
 
-    ActivityEditFormVisitor(ActivityEditDialog& dialog, Operation operation);
+    ActivityEditFormVisitor(ActivityEditPage& dialog, Operation operation);
 
     bool isValid() const;
     QString errorTitle() const;
@@ -39,7 +39,7 @@ public:
 private:
     void setError(const QString& title, const QString& message);
 
-    ActivityEditDialog& m_dialog;
+    ActivityEditPage& m_dialog;
     Operation m_operation;
     bool m_valid = true;
     QString m_errorTitle;

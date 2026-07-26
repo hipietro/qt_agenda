@@ -27,6 +27,7 @@ SOURCES += \
     src/model/ActivityTemplateManager.cpp \
     src/model/CategoryManager.cpp \
     src/gui/MainWindow.cpp \
+    src/gui/ActivityWorkflowPolishController.cpp \
     src/gui/ActivityListItemVisitor.cpp \
     src/gui/ActivityListPresentationController.cpp \
     src/gui/ActivityDetailVisitor.cpp \
@@ -36,7 +37,7 @@ SOURCES += \
     src/persistence/ActivityJsonSerializationVisitor.cpp \
     src/persistence/AgendaJsonStorage.cpp \
     src/gui/ActivityCreationPage.cpp \
-    src/gui/ActivityEditDialog.cpp \
+    src/gui/ActivityEditPage.cpp \
     src/gui/ActivityEditFormVisitor.cpp \
     src/gui/CategoryManagementDialog.cpp \
     src/commands/RemoveActivityCommand.cpp \
@@ -63,6 +64,7 @@ HEADERS += \
     src/model/ActivityTemplateManager.h \
     src/model/CategoryManager.h \
     src/gui/MainWindow.h \
+    src/gui/ActivityWorkflowPolishController.h \
     src/gui/ActivityListItemVisitor.h \
     src/gui/ActivityListPresentationController.h \
     src/gui/ActivityDetailVisitor.h \
@@ -72,7 +74,7 @@ HEADERS += \
     src/persistence/ActivityJsonSerializationVisitor.h \
     src/persistence/AgendaJsonStorage.h \
     src/gui/ActivityCreationPage.h \
-    src/gui/ActivityEditDialog.h \
+    src/gui/ActivityEditPage.h \
     src/gui/ActivityEditFormVisitor.h \
     src/gui/CategoryManagementDialog.h \
     src/commands/Command.h \

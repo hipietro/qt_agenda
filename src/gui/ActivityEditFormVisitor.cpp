@@ -1,6 +1,6 @@
 #include "ActivityEditFormVisitor.h"
 
-#include "ActivityEditDialog.h"
+#include "ActivityEditPage.h"
 #include "model/ChecklistActivity.h"
 #include "model/DeadlineActivity.h"
 #include "model/EventActivity.h"
@@ -15,7 +15,7 @@
 
 #include <utility>
 
-ActivityEditFormVisitor::ActivityEditFormVisitor(ActivityEditDialog& dialog,
+ActivityEditFormVisitor::ActivityEditFormVisitor(ActivityEditPage& dialog,
                                                  Operation operation)
     : m_dialog(dialog),
       m_operation(operation)

@@ -1,6 +1,6 @@
-// Activity edit dialog implementation. Existing values are loaded first, then rebuilt on save.
+// In-window activity edit page. Existing values are loaded first, then rebuilt on save.
 
-#include "ActivityEditDialog.h"
+#include "ActivityEditPage.h"
 
 #include "ActivityEditFormVisitor.h"
 
@@ -36,51 +36,92 @@
 #include <QVBoxLayout>
 
 #include <algorithm>
+#include <utility>
 
-ActivityEditDialog::ActivityEditDialog(const Activity& activity,
-                                       const CategoryManager* categoryManager,
+ActivityEditPage::ActivityEditPage(const CategoryManager* categoryManager,
                                        QWidget* parent)
-    : QDialog(parent),
-      m_categoryManager(categoryManager),
-      m_originalActivity(&activity),
-      m_originalId(activity.id()),
-      m_originalCreatedAt(activity.createdAt()),
-      m_originalCompleted(activity.isCompleted())
+    : QWidget(parent),
+      m_categoryManager(categoryManager)
 {
     setupUi();
-    populateFromActivity(activity);
+    clearActivity();
 }
 
-std::unique_ptr<Activity> ActivityEditDialog::takeUpdatedActivity()
+void ActivityEditPage::setSavedHandler(SavedHandler handler)
 {
-    return std::move(m_updatedActivity);
+    m_savedHandler = std::move(handler);
 }
 
-void ActivityEditDialog::accept()
+void ActivityEditPage::setCancelHandler(CancelHandler handler)
+{
+    m_cancelHandler = std::move(handler);
+}
+
+void ActivityEditPage::editActivity(const Activity& activity)
+{
+    populateFromActivity(activity);
+    m_titleEdit->setFocus(Qt::OtherFocusReason);
+    m_titleEdit->selectAll();
+}
+
+void ActivityEditPage::clearActivity()
+{
+    m_originalActivity = nullptr;
+    m_originalId.clear();
+    m_originalCreatedAt = QDateTime();
+    m_originalCompleted = false;
+
+    if (m_contextLabel) {
+        m_contextLabel->setText("Select an activity from the agenda before editing.");
+    }
+}
+
+void ActivityEditPage::submit()
 {
     if (!validateForm()) {
         return;
     }
 
-    m_updatedActivity = createUpdatedActivityFromForm();
+    std::unique_ptr<Activity> updatedActivity = createUpdatedActivityFromForm();
 
-    if (!m_updatedActivity) {
+    if (!updatedActivity) {
         QMessageBox::warning(this, "Invalid activity", "The activity could not be updated.");
         return;
     }
 
-    QDialog::accept();
+    if (!m_savedHandler) {
+        QMessageBox::warning(this, "Edit activity failed", "The save action is not available.");
+        return;
+    }
+
+    const QString activityId = m_originalId;
+    if (m_savedHandler(activityId, std::move(updatedActivity))) {
+        clearActivity();
+    }
 }
 
-void ActivityEditDialog::setupUi()
+void ActivityEditPage::setupUi()
 {
-    setWindowTitle("Edit activity");
-    resize(760, 640);
-    setMinimumSize(680, 500);
+    setObjectName("activityEditPage");
 
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(14, 14, 14, 14);
-    mainLayout->setSpacing(10);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(8);
+
+    QWidget* headerWidget = new QWidget(this);
+    QVBoxLayout* headerLayout = new QVBoxLayout(headerWidget);
+    headerLayout->setContentsMargins(18, 14, 18, 0);
+    headerLayout->setSpacing(4);
+
+    QLabel* pageTitle = new QLabel("Edit activity", headerWidget);
+    pageTitle->setObjectName("pageTitle");
+
+    m_contextLabel = new QLabel(headerWidget);
+    m_contextLabel->setWordWrap(true);
+
+    headerLayout->addWidget(pageTitle);
+    headerLayout->addWidget(m_contextLabel);
+    mainLayout->addWidget(headerWidget);
 
     /*
      * Tengo i pulsanti finali sempre visibili e rendo scrollabile il contenuto.
@@ -365,11 +406,14 @@ void ActivityEditDialog::setupUi()
     m_buttonBox->button(QDialogButtonBox::Cancel)->setText("Cancel");
 
     connect(m_buttonBox, &QDialogButtonBox::accepted, this, [this]() {
-        accept();
+        submit();
     });
 
     connect(m_buttonBox, &QDialogButtonBox::rejected, this, [this]() {
-        reject();
+        if (m_cancelHandler) {
+            m_cancelHandler();
+        }
+        clearActivity();
     });
 
     connect(m_addChecklistItemButton, &QPushButton::clicked, this, [this]() {
@@ -432,8 +476,17 @@ void ActivityEditDialog::setupUi()
     updateRecurrenceControls();
 }
 
-void ActivityEditDialog::populateFromActivity(const Activity& activity)
+void ActivityEditPage::populateFromActivity(const Activity& activity)
 {
+    m_originalActivity = &activity;
+    m_originalId = activity.id();
+    m_originalCreatedAt = activity.createdAt();
+    m_originalCompleted = activity.isCompleted();
+
+    if (m_contextLabel) {
+        m_contextLabel->setText(QString("Editing: %1").arg(activity.title()));
+    }
+
     m_typeLabel->setText(activityKindToString(activity.kind()));
     m_titleEdit->setText(activity.title());
     m_descriptionEdit->setPlainText(activity.description());
@@ -447,7 +500,7 @@ void ActivityEditDialog::populateFromActivity(const Activity& activity)
     populateRecurrence(activity);
 }
 
-bool ActivityEditDialog::validateForm() const
+bool ActivityEditPage::validateForm() const
 {
     if (m_titleEdit->text().trimmed().isEmpty()) {
         QMessageBox::warning(nullptr, "Invalid activity", "The title cannot be empty.");
@@ -460,7 +513,7 @@ bool ActivityEditDialog::validateForm() const
     }
 
     ActivityEditFormVisitor visitor(
-        const_cast<ActivityEditDialog&>(*this),
+        const_cast<ActivityEditPage&>(*this),
         ActivityEditFormVisitor::Operation::Validate);
     m_originalActivity->accept(visitor);
 
@@ -483,14 +536,14 @@ bool ActivityEditDialog::validateForm() const
     return true;
 }
 
-std::unique_ptr<Activity> ActivityEditDialog::createUpdatedActivityFromForm() const
+std::unique_ptr<Activity> ActivityEditPage::createUpdatedActivityFromForm() const
 {
     if (!m_originalActivity) {
         return nullptr;
     }
 
     ActivityEditFormVisitor visitor(
-        const_cast<ActivityEditDialog&>(*this),
+        const_cast<ActivityEditPage&>(*this),
         ActivityEditFormVisitor::Operation::Build);
     m_originalActivity->accept(visitor);
 
@@ -507,7 +560,7 @@ std::unique_ptr<Activity> ActivityEditDialog::createUpdatedActivityFromForm() co
     return activity;
 }
 
-QString ActivityEditDialog::selectedCategoryText() const
+QString ActivityEditPage::selectedCategoryText() const
 {
     if (!m_categoryCombo) {
         return QString();
@@ -516,7 +569,7 @@ QString ActivityEditDialog::selectedCategoryText() const
     return m_categoryCombo->currentText().trimmed();
 }
 
-void ActivityEditDialog::populateCategoryCombo(const QString& currentCategory)
+void ActivityEditPage::populateCategoryCombo(const QString& currentCategory)
 {
     if (!m_categoryCombo) {
         return;
@@ -553,12 +606,12 @@ void ActivityEditDialog::populateCategoryCombo(const QString& currentCategory)
     m_categoryCombo->setCurrentText(trimmedCurrent);
 }
 
-Priority ActivityEditDialog::selectedPriority() const
+Priority ActivityEditPage::selectedPriority() const
 {
     return static_cast<Priority>(m_priorityCombo->currentData().toInt());
 }
 
-void ActivityEditDialog::populateChecklistItems(const ChecklistActivity& activity)
+void ActivityEditPage::populateChecklistItems(const ChecklistActivity& activity)
 {
     m_checklistItemsList->clear();
 
@@ -575,7 +628,7 @@ void ActivityEditDialog::populateChecklistItems(const ChecklistActivity& activit
     }
 }
 
-QVector<ChecklistItem> ActivityEditDialog::checklistItemsFromList() const
+QVector<ChecklistItem> ActivityEditPage::checklistItemsFromList() const
 {
     QVector<ChecklistItem> items;
 
@@ -607,7 +660,7 @@ QVector<ChecklistItem> ActivityEditDialog::checklistItemsFromList() const
     return items;
 }
 
-void ActivityEditDialog::populateRecurrence(const Activity& activity)
+void ActivityEditPage::populateRecurrence(const Activity& activity)
 {
     const std::optional<RecurrenceRule> recurrence = activity.recurrenceRule();
 
@@ -642,7 +695,7 @@ void ActivityEditDialog::populateRecurrence(const Activity& activity)
     updateRecurrenceControls();
 }
 
-void ActivityEditDialog::updateRecurrenceControls()
+void ActivityEditPage::updateRecurrenceControls()
 {
     const bool recurrenceEnabled = m_repeatsCheck->isChecked();
 
@@ -650,7 +703,6 @@ void ActivityEditDialog::updateRecurrenceControls()
 
     if (!recurrenceEnabled) {
         m_recurrenceEndDetailsWidget->setVisible(false);
-        adjustSize();
         return;
     }
 
@@ -665,10 +717,9 @@ void ActivityEditDialog::updateRecurrenceControls()
     m_recurrenceUntilEdit->setVisible(usesUntilDate);
     m_recurrenceOccurrencesSpin->setVisible(usesOccurrences);
 
-    adjustSize();
 }
 
-std::optional<RecurrenceRule> ActivityEditDialog::recurrenceRuleFromForm() const
+std::optional<RecurrenceRule> ActivityEditPage::recurrenceRuleFromForm() const
 {
     if (!m_repeatsCheck->isChecked()) {
         return std::nullopt;
@@ -701,14 +752,14 @@ std::optional<RecurrenceRule> ActivityEditDialog::recurrenceRuleFromForm() const
     return recurrenceRule;
 }
 
-RecurrenceRule::Frequency ActivityEditDialog::selectedRecurrenceFrequency() const
+RecurrenceRule::Frequency ActivityEditPage::selectedRecurrenceFrequency() const
 {
     return static_cast<RecurrenceRule::Frequency>(
         m_recurrenceFrequencyCombo->currentData().toInt()
     );
 }
 
-RecurrenceRule::EndMode ActivityEditDialog::selectedRecurrenceEndMode() const
+RecurrenceRule::EndMode ActivityEditPage::selectedRecurrenceEndMode() const
 {
     return static_cast<RecurrenceRule::EndMode>(
         m_recurrenceEndModeCombo->currentData().toInt()

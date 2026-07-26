@@ -14,6 +14,7 @@
 #include "commands/CommandHistory.h"
 
 class ActivityCreationPage;
+class ActivityEditPage;
 class ActivityManager;
 class ActivityTemplateManager;
 class CategoryManager;
@@ -47,8 +48,6 @@ private:
     void setupMenuBar();
     void connectSignals();
 
-    QWidget* createWorkflowPlaceholderPage(const QString& title,
-                                           const QString& description);
     void openAgendaPage();
     void openCreationPage();
     void openEditingPage();
@@ -78,6 +77,8 @@ private:
     void createActivity();
     void addCreatedActivity(std::unique_ptr<Activity> activity);
     void editSelectedActivity();
+    bool applyEditedActivity(const QString& activityId,
+                             std::unique_ptr<Activity> activity);
     void createActivityFromTemplate();
     void saveSelectedActivityAsTemplate();
     void manageCategories();
@@ -99,7 +100,7 @@ private:
     QStackedWidget* m_workspaceStack = nullptr;
     QWidget* m_detailPage = nullptr;
     ActivityCreationPage* m_creationPage = nullptr;
-    QWidget* m_editingPage = nullptr;
+    ActivityEditPage* m_editingPage = nullptr;
 
     QLineEdit* m_searchEdit = nullptr;
     QComboBox* m_typeCombo = nullptr;
