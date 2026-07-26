@@ -1,0 +1,46 @@
+name: Apply issue 60 single-click fix
+
+on:
+  push:
+    branches:
+      - feature/60-activity-list-mouse-interactions
+
+permissions:
+  contents: write
+
+jobs:
+  apply-build-and-commit:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Qt
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt6-base-dev
+
+      - name: Apply single-click navigation fix
+        run: python3 scripts/apply_issue_60_single_click_detail_fix.py
+
+      - name: Build application
+        run: |
+          mkdir build
+          cd build
+          qmake6 ../agenda_qt.pro
+          make -j2
+
+      - name: Commit implementation
+        run: |
+          rm -rf build
+          git rm scripts/apply_issue_60_single_click_detail_fix.py
+          git rm .github/workflows/apply-issue-60-single-click-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Return to activity details on single click"
+          git push origin HEAD:feature/60-activity-list-mouse-interactions
