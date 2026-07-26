@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QPointer>
+#include <QString>
 
 class QAction;
 class QEvent;
