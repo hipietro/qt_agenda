@@ -5,6 +5,22 @@
 #include "model/Activity.h"
 #include "model/ActivityManager.h"
 
+namespace {
+
+QString activityLabel(const QString& title)
+{
+    return title.trimmed().isEmpty()
+        ? QStringLiteral("activity")
+        : QStringLiteral("activity \"%1\"").arg(title);
+}
+
+QString completionStateLabel(bool completed)
+{
+    return completed ? QStringLiteral("completed") : QStringLiteral("active");
+}
+
+} // namespace
+
 ToggleCompletionCommand::ToggleCompletionCommand(ActivityManager* activityManager,
                                                  const QString& activityId)
     : m_activityManager(activityManager),
@@ -25,13 +41,14 @@ bool ToggleCompletionCommand::execute()
     }
 
     /*
-     * Salvo lo stato iniziale solo alla prima esecuzione.
-     * Così un futuro redo non cambia il valore originale usato da undo().
+     * Capture the transition once. After undo, redo must reapply the original
+     * destination state rather than toggling whatever state happens to exist.
      */
-    if (!m_hasBeenExecuted) {
+    if (!m_stateCaptured) {
         m_previousCompleted = activity->isCompleted();
         m_newCompleted = !m_previousCompleted;
         m_activityTitle = activity->title();
+        m_stateCaptured = true;
     }
 
     activity->setCompleted(m_newCompleted);
@@ -42,7 +59,7 @@ bool ToggleCompletionCommand::execute()
 
 bool ToggleCompletionCommand::undo()
 {
-    if (!m_activityManager || !m_hasBeenExecuted) {
+    if (!m_activityManager || !m_hasBeenExecuted || !m_stateCaptured) {
         return false;
     }
 
@@ -60,11 +77,20 @@ bool ToggleCompletionCommand::undo()
 
 QString ToggleCompletionCommand::description() const
 {
-    if (!m_activityTitle.trimmed().isEmpty()) {
-        return QString("Toggle completion for \"%1\"").arg(m_activityTitle);
-    }
+    return QStringLiteral("Mark %1 %2")
+        .arg(activityLabel(m_activityTitle), completionStateLabel(m_newCompleted));
+}
 
-    return "Toggle completion";
+QString ToggleCompletionCommand::undoDescription() const
+{
+    return QStringLiteral("Restore %1 to %2")
+        .arg(activityLabel(m_activityTitle), completionStateLabel(m_previousCompleted));
+}
+
+QString ToggleCompletionCommand::redoDescription() const
+{
+    return QStringLiteral("Mark %1 %2 again")
+        .arg(activityLabel(m_activityTitle), completionStateLabel(m_newCompleted));
 }
 
 QString ToggleCompletionCommand::activityId() const
