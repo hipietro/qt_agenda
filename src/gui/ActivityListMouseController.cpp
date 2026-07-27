@@ -4,6 +4,7 @@
 #include <QApplication>
 #include <QDialogButtonBox>
 #include <QEvent>
+#include <QEventLoop>
 #include <QListWidget>
 #include <QMainWindow>
 #include <QMenu>
@@ -178,8 +179,22 @@ void ActivityListMouseController::showContextMenu(const QPoint& position)
     QAction* deleteAction = menu.addAction(QStringLiteral("Delete activity"));
     deleteAction->setEnabled(m_deleteButton != nullptr);
 
-    QAction* chosenAction =
-        menu.exec(m_activityList->viewport()->mapToGlobal(position));
+    /*
+     * QMenu::exec() is not exposed as an active popup by every headless Qt
+     * platform plugin. Using popup() with a local event loop preserves the
+     * same synchronous behavior for users while making the live menu visible
+     * to portable GUI regression tests and accessibility tooling.
+     */
+    QAction* chosenAction = nullptr;
+    QEventLoop menuLoop;
+
+    connect(&menu, &QMenu::triggered, &menuLoop, [&chosenAction](QAction* action) {
+        chosenAction = action;
+    });
+    connect(&menu, &QMenu::aboutToHide, &menuLoop, &QEventLoop::quit);
+
+    menu.popup(m_activityList->viewport()->mapToGlobal(position));
+    menuLoop.exec();
 
     if (chosenAction == editAction && m_editButton) {
         triggerButton(m_editButton);
