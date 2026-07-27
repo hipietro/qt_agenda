@@ -5,6 +5,7 @@
 
 #include <QObject>
 
+class QAction;
 class QDialogButtonBox;
 class QEvent;
 class QGroupBox;
@@ -28,6 +29,7 @@ private:
     void configureFormPage(QWidget* page, bool editingPage);
     void compactTypeSpecificSection(QWidget* page);
     void updateWorkflowButtonState();
+    void updateUndoRedoPresentation();
 
     QDialogButtonBox* buttonBoxFor(QWidget* page) const;
     QPushButton* buttonWithText(QWidget* root, const QString& text) const;
@@ -41,6 +43,10 @@ private:
     QWidget* m_editingPage = nullptr;
     QPushButton* m_addButton = nullptr;
     QPushButton* m_editButton = nullptr;
+    QPushButton* m_undoButton = nullptr;
+    QPushButton* m_redoButton = nullptr;
+    QAction* m_undoAction = nullptr;
+    QAction* m_redoAction = nullptr;
     QLineEdit* m_newChecklistItemEdit = nullptr;
     QListWidget* m_editChecklistList = nullptr;
 };
