@@ -32,4 +32,12 @@ jobs:
       - name: Run tests
         env:
           QT_QPA_PLATFORM: offscreen
-        run: ./build-tests/agenda_tests -o -,txt
+        run: ./build-tests/agenda_tests -o test-results.txt,txt
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qt-test-results
+          path: test-results.txt
+          if-no-files-found: error
