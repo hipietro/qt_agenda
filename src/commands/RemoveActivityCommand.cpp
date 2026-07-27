@@ -5,6 +5,17 @@
 #include "model/Activity.h"
 #include "model/ActivityManager.h"
 
+namespace {
+
+QString activityLabel(const QString& title)
+{
+    return title.trimmed().isEmpty()
+        ? QStringLiteral("activity")
+        : QStringLiteral("activity \"%1\"").arg(title);
+}
+
+} // namespace
+
 RemoveActivityCommand::RemoveActivityCommand(ActivityManager* activityManager,
                                              const QString& activityId)
     : m_activityManager(activityManager),
@@ -24,10 +35,6 @@ bool RemoveActivityCommand::execute()
         return false;
     }
 
-    /*
-     * Prima di eliminare l'attività ne salvo una copia polimorfa.
-     * Questa copia sarà usata da undo() per ricostruire l'oggetto eliminato.
-     */
     m_removedActivityPrototype = activity->clone();
 
     if (!m_removedActivityPrototype) {
@@ -51,10 +58,6 @@ bool RemoveActivityCommand::undo()
         return false;
     }
 
-    /*
-     * Se l'attività esiste già, non provo a reinserirla.
-     * Questo evita duplicati con lo stesso id.
-     */
     if (m_activityManager->findActivityById(m_activityId)) {
         return false;
     }
@@ -75,11 +78,17 @@ bool RemoveActivityCommand::undo()
 
 QString RemoveActivityCommand::description() const
 {
-    if (!m_activityTitle.trimmed().isEmpty()) {
-        return QString("Remove activity \"%1\"").arg(m_activityTitle);
-    }
+    return QStringLiteral("Remove %1").arg(activityLabel(m_activityTitle));
+}
 
-    return "Remove activity";
+QString RemoveActivityCommand::undoDescription() const
+{
+    return QStringLiteral("Restore removed %1").arg(activityLabel(m_activityTitle));
+}
+
+QString RemoveActivityCommand::redoDescription() const
+{
+    return QStringLiteral("Remove %1 again").arg(activityLabel(m_activityTitle));
 }
 
 QString RemoveActivityCommand::activityId() const
