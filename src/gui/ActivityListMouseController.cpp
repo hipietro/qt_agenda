@@ -8,6 +8,7 @@
 #include <QListWidget>
 #include <QMainWindow>
 #include <QMenu>
+#include <QMouseEvent>
 #include <QPoint>
 #include <QPushButton>
 #include <QSplitter>
@@ -46,6 +47,24 @@ bool ActivityListMouseController::eventFilter(QObject* watched, QEvent* event)
         QTimer::singleShot(0, this, [this]() {
             rebalanceDetailLayout();
         });
+    }
+
+    /*
+     * QTest and some headless platform plugins do not synthesize a
+     * QContextMenuEvent from a secondary mouse click. Handling the release on
+     * the list viewport gives real users and automated tests the same portable
+     * behavior. The guard prevents a second menu when a native platform has
+     * already emitted customContextMenuRequested for the same click.
+     */
+    if (m_activityList && watched == m_activityList->viewport() &&
+        event->type() == QEvent::MouseButtonRelease) {
+        auto* mouseEvent = static_cast<QMouseEvent*>(event);
+        if (mouseEvent->button() == Qt::RightButton) {
+            if (!m_contextMenuOpen) {
+                showContextMenu(mouseEvent->position().toPoint());
+            }
+            return true;
+        }
     }
 
     return QObject::eventFilter(watched, event);
@@ -117,7 +136,9 @@ void ActivityListMouseController::configureWindow(QMainWindow* window)
 
     connect(m_activityList, &QWidget::customContextMenuRequested,
             this, [this](const QPoint& position) {
-                showContextMenu(position);
+                if (!m_contextMenuOpen) {
+                    showContextMenu(position);
+                }
             });
 
     connect(m_workspaceStack, &QStackedWidget::currentChanged,
@@ -145,7 +166,7 @@ void ActivityListMouseController::editItem(QListWidgetItem* item)
 
 void ActivityListMouseController::showContextMenu(const QPoint& position)
 {
-    if (!m_activityList || creationActive()) {
+    if (!m_activityList || creationActive() || m_contextMenuOpen) {
         return;
     }
 
@@ -187,6 +208,7 @@ void ActivityListMouseController::showContextMenu(const QPoint& position)
      */
     QAction* chosenAction = nullptr;
     QEventLoop menuLoop;
+    m_contextMenuOpen = true;
 
     connect(&menu, &QMenu::triggered, &menuLoop, [&chosenAction](QAction* action) {
         chosenAction = action;
@@ -195,6 +217,7 @@ void ActivityListMouseController::showContextMenu(const QPoint& position)
 
     menu.popup(m_activityList->viewport()->mapToGlobal(position));
     menuLoop.exec();
+    m_contextMenuOpen = false;
 
     if (chosenAction == editAction && m_editButton) {
         triggerButton(m_editButton);
