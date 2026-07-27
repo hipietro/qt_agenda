@@ -15,8 +15,9 @@ class ActivityManager;
 /*
  * Command concreta per rimuovere un'attività.
  *
- * Ho scelto di salvare una copia dell'attività rimossa perché l'undo deve
- * poterla reinserire nel manager mantenendo i suoi dati originali.
+ * Conserva una copia polimorfa dell'oggetto eliminato, così undo ripristina
+ * identità, stato comune e attributi specifici del tipo senza conoscere la
+ * classe concreta.
  */
 class RemoveActivityCommand : public Command
 {
@@ -27,6 +28,8 @@ public:
     bool execute() override;
     bool undo() override;
     QString description() const override;
+    QString undoDescription() const override;
+    QString redoDescription() const override;
 
     QString activityId() const;
 
