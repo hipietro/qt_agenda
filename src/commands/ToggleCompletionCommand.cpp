@@ -19,6 +19,11 @@ QString completionStateLabel(bool completed)
     return completed ? QStringLiteral("completed") : QStringLiteral("active");
 }
 
+QString completionActionLabel(bool completed)
+{
+    return completed ? QStringLiteral("Mark completed") : QStringLiteral("Mark active");
+}
+
 } // namespace
 
 ToggleCompletionCommand::ToggleCompletionCommand(ActivityManager* activityManager,
@@ -83,14 +88,12 @@ QString ToggleCompletionCommand::description() const
 
 QString ToggleCompletionCommand::undoDescription() const
 {
-    return QStringLiteral("Restore %1 to %2")
-        .arg(activityLabel(m_activityTitle), completionStateLabel(m_previousCompleted));
+    return completionActionLabel(m_newCompleted);
 }
 
 QString ToggleCompletionCommand::redoDescription() const
 {
-    return QStringLiteral("Mark %1 %2 again")
-        .arg(activityLabel(m_activityTitle), completionStateLabel(m_newCompleted));
+    return completionActionLabel(m_newCompleted);
 }
 
 QString ToggleCompletionCommand::activityId() const
