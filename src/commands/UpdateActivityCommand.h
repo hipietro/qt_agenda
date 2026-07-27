@@ -15,8 +15,9 @@ class ActivityManager;
 /*
  * Command concreta per aggiornare un'attività esistente.
  *
- * Ho scelto di conservare sia lo stato precedente sia quello aggiornato
- * perché undo e redo devono poter sostituire l'attività in entrambe le direzioni.
+ * Conserva due snapshot polimorfi completi: lo stato precedente e quello
+ * aggiornato. Undo e redo sostituiscono quindi l'intero oggetto, compresi
+ * gli attributi specifici del tipo concreto.
  */
 class UpdateActivityCommand : public Command
 {
@@ -28,6 +29,8 @@ public:
     bool execute() override;
     bool undo() override;
     QString description() const override;
+    QString undoDescription() const override;
+    QString redoDescription() const override;
 
     QString activityId() const;
 
