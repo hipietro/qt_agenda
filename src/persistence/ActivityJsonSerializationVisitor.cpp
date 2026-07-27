@@ -16,8 +16,8 @@ QJsonObject ActivityJsonSerializationVisitor::json() const
 void ActivityJsonSerializationVisitor::visit(const EventActivity& activity)
 {
     m_json = ActivityJsonSerializer::commonFieldsToJson(activity, "event");
-    m_json["startDateTime"] = activity.startDateTime().toString(Qt::ISODate);
-    m_json["endDateTime"] = activity.endDateTime().toString(Qt::ISODate);
+    m_json["startDateTime"] = activity.startDateTime().toString(Qt::ISODateWithMs);
+    m_json["endDateTime"] = activity.endDateTime().toString(Qt::ISODateWithMs);
     m_json["location"] = activity.location();
 
     QJsonArray participantsArray;
@@ -31,7 +31,7 @@ void ActivityJsonSerializationVisitor::visit(const EventActivity& activity)
 void ActivityJsonSerializationVisitor::visit(const DeadlineActivity& activity)
 {
     m_json = ActivityJsonSerializer::commonFieldsToJson(activity, "deadline");
-    m_json["dueDate"] = activity.dueDate().toString(Qt::ISODate);
+    m_json["dueDate"] = activity.dueDate().toString(Qt::ISODateWithMs);
     m_json["context"] = activity.context();
     m_json["hardDeadline"] = activity.isHardDeadline();
 }
@@ -39,7 +39,7 @@ void ActivityJsonSerializationVisitor::visit(const DeadlineActivity& activity)
 void ActivityJsonSerializationVisitor::visit(const ReminderActivity& activity)
 {
     m_json = ActivityJsonSerializer::commonFieldsToJson(activity, "reminder");
-    m_json["reminderDateTime"] = activity.reminderDateTime().toString(Qt::ISODate);
+    m_json["reminderDateTime"] = activity.reminderDateTime().toString(Qt::ISODateWithMs);
     m_json["advanceMinutes"] = activity.advanceMinutes();
     m_json["reminderNote"] = activity.reminderNote();
 }
@@ -47,7 +47,7 @@ void ActivityJsonSerializationVisitor::visit(const ReminderActivity& activity)
 void ActivityJsonSerializationVisitor::visit(const ChecklistActivity& activity)
 {
     m_json = ActivityJsonSerializer::commonFieldsToJson(activity, "checklist");
-    m_json["targetDate"] = activity.primaryDate().toString(Qt::ISODate);
+    m_json["targetDate"] = activity.primaryDate().toString(Qt::ISODateWithMs);
 
     QJsonArray itemsArray;
     for (const ChecklistItem& item : activity.items()) {
