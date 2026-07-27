@@ -65,8 +65,8 @@ public:
     {
         setFocusPolicy(Qt::StrongFocus);
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        setMinimumSize(0, 25);
-        setMaximumHeight(27);
+        setMinimumSize(0, 24);
+        setMaximumHeight(25);
     }
 
     void setDayData(const QDate& date,
@@ -104,7 +104,7 @@ public:
 
     QSize sizeHint() const override
     {
-        return QSize(34, 26);
+        return QSize(34, 24);
     }
 
 protected:
@@ -214,14 +214,14 @@ ActivityMonthOverviewWidget::ActivityMonthOverviewWidget(QWidget* parent)
 {
     setObjectName(QStringLiteral("activityMonthOverview"));
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    setMinimumHeight(202);
-    setMaximumHeight(210);
+    setMinimumHeight(206);
+    setMaximumHeight(212);
 
     // The vertical splitter must not assign a large empty lower pane to the compact calendar.
     if (QWidget* container = parentWidget()) {
         container->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-        container->setMinimumHeight(232);
-        container->setMaximumHeight(242);
+        container->setMinimumHeight(236);
+        container->setMaximumHeight(244);
     }
 
     setupUi();
@@ -305,9 +305,14 @@ void ActivityMonthOverviewWidget::setupUi()
     headerLayout->setContentsMargins(0, 0, 0, 0);
     headerLayout->setSpacing(5);
 
+    /*
+     * macOS native push buttons need more than 26 px to render their lower
+     * bezel. Keeping the width fixed but giving the header a full 30 px
+     * prevents clipping without making the calendar visibly taller.
+     */
     QPushButton* previousButton = new QPushButton(QStringLiteral("‹"), this);
     previousButton->setToolTip(QStringLiteral("Previous month"));
-    previousButton->setFixedSize(28, 26);
+    previousButton->setFixedSize(30, 30);
 
     m_monthLabel = new QLabel(this);
     m_monthLabel->setObjectName(QStringLiteral("sectionLabel"));
@@ -316,16 +321,16 @@ void ActivityMonthOverviewWidget::setupUi()
 
     QPushButton* currentMonthButton = new QPushButton(QStringLiteral("Today"), this);
     currentMonthButton->setToolTip(QStringLiteral("Show the current month"));
-    currentMonthButton->setFixedSize(64, 26);
+    currentMonthButton->setFixedSize(70, 30);
 
     QPushButton* nextButton = new QPushButton(QStringLiteral("›"), this);
     nextButton->setToolTip(QStringLiteral("Next month"));
-    nextButton->setFixedSize(28, 26);
+    nextButton->setFixedSize(30, 30);
 
-    headerLayout->addWidget(previousButton);
-    headerLayout->addWidget(m_monthLabel, 1);
-    headerLayout->addWidget(currentMonthButton);
-    headerLayout->addWidget(nextButton);
+    headerLayout->addWidget(previousButton, 0, Qt::AlignTop);
+    headerLayout->addWidget(m_monthLabel, 1, Qt::AlignVCenter);
+    headerLayout->addWidget(currentMonthButton, 0, Qt::AlignTop);
+    headerLayout->addWidget(nextButton, 0, Qt::AlignTop);
     mainLayout->addLayout(headerLayout);
 
     QGridLayout* calendarLayout = new QGridLayout();
@@ -344,7 +349,7 @@ void ActivityMonthOverviewWidget::setupUi()
     }
 
     for (int row = 1; row <= 6; ++row) {
-        calendarLayout->setRowMinimumHeight(row, 25);
+        calendarLayout->setRowMinimumHeight(row, 24);
     }
 
     for (int index = 0; index < 42; ++index) {
