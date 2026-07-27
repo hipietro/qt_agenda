@@ -78,17 +78,17 @@ bool RemoveActivityCommand::undo()
 
 QString RemoveActivityCommand::description() const
 {
-    return QStringLiteral("Remove %1").arg(activityLabel(m_activityTitle));
+    return QStringLiteral("Delete %1").arg(activityLabel(m_activityTitle));
 }
 
 QString RemoveActivityCommand::undoDescription() const
 {
-    return QStringLiteral("Restore removed %1").arg(activityLabel(m_activityTitle));
+    return QStringLiteral("Delete activity");
 }
 
 QString RemoveActivityCommand::redoDescription() const
 {
-    return QStringLiteral("Remove %1 again").arg(activityLabel(m_activityTitle));
+    return QStringLiteral("Delete activity");
 }
 
 QString RemoveActivityCommand::activityId() const
