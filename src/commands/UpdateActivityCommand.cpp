@@ -1,9 +1,20 @@
-// Update command implementation. Keeps both old and new versions.
+// Update command implementation. Keeps complete polymorphic old and new versions.
 
 #include "UpdateActivityCommand.h"
 
 #include "model/Activity.h"
 #include "model/ActivityManager.h"
+
+namespace {
+
+QString activityLabel(const QString& title)
+{
+    return title.trimmed().isEmpty()
+        ? QStringLiteral("activity")
+        : QStringLiteral("activity \"%1\"").arg(title);
+}
+
+} // namespace
 
 UpdateActivityCommand::UpdateActivityCommand(ActivityManager* activityManager,
                                              const QString& activityId,
@@ -31,11 +42,7 @@ bool UpdateActivityCommand::execute()
         return false;
     }
 
-    /*
-     * Salvo lo stato precedente solo alla prima esecuzione.
-     * In questo modo, dopo un undo, un nuovo execute funziona come redo
-     * senza sovrascrivere il vero stato originale.
-     */
+    // Capture the original polymorphic state only on the first execution.
     if (!m_previousActivityPrototype) {
         m_previousActivityPrototype = currentActivity->clone();
 
@@ -86,11 +93,19 @@ bool UpdateActivityCommand::undo()
 
 QString UpdateActivityCommand::description() const
 {
-    if (!m_activityTitle.trimmed().isEmpty()) {
-        return QString("Update activity \"%1\"").arg(m_activityTitle);
-    }
+    return QStringLiteral("Update %1").arg(activityLabel(m_activityTitle));
+}
 
-    return "Update activity";
+QString UpdateActivityCommand::undoDescription() const
+{
+    return QStringLiteral("Restore previous version of %1")
+        .arg(activityLabel(m_activityTitle));
+}
+
+QString UpdateActivityCommand::redoDescription() const
+{
+    return QStringLiteral("Reapply edits to %1")
+        .arg(activityLabel(m_activityTitle));
 }
 
 QString UpdateActivityCommand::activityId() const
