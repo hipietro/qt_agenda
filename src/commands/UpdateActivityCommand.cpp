@@ -93,19 +93,17 @@ bool UpdateActivityCommand::undo()
 
 QString UpdateActivityCommand::description() const
 {
-    return QStringLiteral("Update %1").arg(activityLabel(m_activityTitle));
+    return QStringLiteral("Edit %1").arg(activityLabel(m_activityTitle));
 }
 
 QString UpdateActivityCommand::undoDescription() const
 {
-    return QStringLiteral("Restore previous version of %1")
-        .arg(activityLabel(m_activityTitle));
+    return QStringLiteral("Edit activity");
 }
 
 QString UpdateActivityCommand::redoDescription() const
 {
-    return QStringLiteral("Reapply edits to %1")
-        .arg(activityLabel(m_activityTitle));
+    return QStringLiteral("Edit activity");
 }
 
 QString UpdateActivityCommand::activityId() const
