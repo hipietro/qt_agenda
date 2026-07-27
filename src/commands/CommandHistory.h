@@ -11,16 +11,22 @@
 #include <vector>
 
 /*
- * Gestisce gli stack undo/redo dell'applicazione.
+ * Owns every executed command through the abstract Command interface.
  *
- * Ho scelto di separare questa classe dalla MainWindow perché la logica
- * undo/redo non deve dipendere dalla GUI. La finestra dovrà solo chiedere
- * alla history di eseguire, annullare o ripetere comandi.
+ * The history is intentionally independent from the GUI. It transfers each
+ * unique command between the undo and redo stacks without copying it, and a
+ * successful new command truncates the obsolete redo branch.
  */
 class CommandHistory
 {
 public:
     CommandHistory() = default;
+    ~CommandHistory() = default;
+
+    CommandHistory(const CommandHistory&) = delete;
+    CommandHistory& operator=(const CommandHistory&) = delete;
+    CommandHistory(CommandHistory&&) = default;
+    CommandHistory& operator=(CommandHistory&&) = default;
 
     bool executeCommand(std::unique_ptr<Command> command);
 
