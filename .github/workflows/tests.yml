@@ -18,7 +18,7 @@ jobs:
       - name: Install Qt 6 test dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y qt6-base-dev qt6-base-dev-tools
+          sudo apt-get install -y qt6-base-dev qt6-base-dev-tools xvfb
 
       - name: Configure tests
         run: |
@@ -31,8 +31,8 @@ jobs:
 
       - name: Run tests
         env:
-          QT_QPA_PLATFORM: offscreen
-        run: ./build-tests/agenda_tests -o test-results.txt,txt
+          QTEST_FUNCTION_TIMEOUT: 15000
+        run: xvfb-run -a ./build-tests/agenda_tests -o test-results.txt,txt
 
       - name: Upload test results
         if: always()
