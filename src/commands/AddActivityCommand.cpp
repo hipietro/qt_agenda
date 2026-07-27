@@ -1,9 +1,20 @@
-// Add command implementation. Stores enough data to undo the insertion.
+// Add command implementation. Stores enough data to undo and redo the insertion.
 
 #include "AddActivityCommand.h"
 
 #include "model/Activity.h"
 #include "model/ActivityManager.h"
+
+namespace {
+
+QString activityLabel(const QString& title)
+{
+    return title.trimmed().isEmpty()
+        ? QStringLiteral("activity")
+        : QStringLiteral("activity \"%1\"").arg(title);
+}
+
+} // namespace
 
 AddActivityCommand::AddActivityCommand(ActivityManager* activityManager,
                                        std::unique_ptr<Activity> activity)
@@ -22,11 +33,6 @@ bool AddActivityCommand::execute()
         return false;
     }
 
-    /*
-     * Evito di aggiungere due volte la stessa attività.
-     * Questo protegge la command se execute() viene richiamato mentre
-     * l'attività è già presente nel manager.
-     */
     if (m_activityManager->findActivityById(m_activityId)) {
         return false;
     }
@@ -65,11 +71,17 @@ bool AddActivityCommand::undo()
 
 QString AddActivityCommand::description() const
 {
-    if (!m_activityTitle.trimmed().isEmpty()) {
-        return QString("Add activity \"%1\"").arg(m_activityTitle);
-    }
+    return QStringLiteral("Add %1").arg(activityLabel(m_activityTitle));
+}
 
-    return "Add activity";
+QString AddActivityCommand::undoDescription() const
+{
+    return QStringLiteral("Remove added %1").arg(activityLabel(m_activityTitle));
+}
+
+QString AddActivityCommand::redoDescription() const
+{
+    return QStringLiteral("Add %1 again").arg(activityLabel(m_activityTitle));
 }
 
 QString AddActivityCommand::activityId() const
