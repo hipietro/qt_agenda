@@ -9,8 +9,9 @@ bool CommandHistory::executeCommand(std::unique_ptr<Command> command)
     }
 
     /*
-     * Se viene eseguita una nuova operazione dopo uno o più undo,
-     * la cronologia redo non è più valida e va eliminata.
+     * A failed command never enters the history. A successful new command
+     * invalidates every redo command because the application has started a
+     * different history branch.
      */
     if (!command->execute()) {
         return false;
@@ -32,10 +33,7 @@ bool CommandHistory::undo()
     m_undoStack.pop_back();
 
     if (!command->undo()) {
-        /*
-         * Se l'undo fallisce, rimetto il comando nello stack originale.
-         * Così la history non perde informazioni.
-         */
+        // Restore ownership to the original stack when the operation fails.
         m_undoStack.push_back(std::move(command));
         return false;
     }
@@ -54,10 +52,7 @@ bool CommandHistory::redo()
     m_redoStack.pop_back();
 
     if (!command->execute()) {
-        /*
-         * Se il redo fallisce, rimetto il comando nello stack redo.
-         * In questo modo la history resta coerente.
-         */
+        // Restore ownership to the original stack when re-execution fails.
         m_redoStack.push_back(std::move(command));
         return false;
     }
@@ -79,19 +74,21 @@ bool CommandHistory::canRedo() const
 QString CommandHistory::undoDescription() const
 {
     if (!canUndo()) {
-        return "Undo";
+        return QStringLiteral("Undo");
     }
 
-    return QString("Undo: %1").arg(m_undoStack.back()->description());
+    // Dynamic dispatch selects the concrete command's inverse operation.
+    return QStringLiteral("Undo: %1").arg(m_undoStack.back()->undoDescription());
 }
 
 QString CommandHistory::redoDescription() const
 {
     if (!canRedo()) {
-        return "Redo";
+        return QStringLiteral("Redo");
     }
 
-    return QString("Redo: %1").arg(m_redoStack.back()->description());
+    // Dynamic dispatch selects the concrete command's re-execution operation.
+    return QStringLiteral("Redo: %1").arg(m_redoStack.back()->redoDescription());
 }
 
 int CommandHistory::undoCount() const
