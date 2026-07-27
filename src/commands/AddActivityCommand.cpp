@@ -76,12 +76,12 @@ QString AddActivityCommand::description() const
 
 QString AddActivityCommand::undoDescription() const
 {
-    return QStringLiteral("Remove added %1").arg(activityLabel(m_activityTitle));
+    return QStringLiteral("Add activity");
 }
 
 QString AddActivityCommand::redoDescription() const
 {
-    return QStringLiteral("Add %1 again").arg(activityLabel(m_activityTitle));
+    return QStringLiteral("Add activity");
 }
 
 QString AddActivityCommand::activityId() const
