@@ -1,11 +1,13 @@
 #include "ActivityWorkflowPolishController.h"
 
+#include <QAction>
 #include <QApplication>
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QEvent>
 #include <QGroupBox>
 #include <QKeyEvent>
+#include <QKeySequence>
 #include <QLayout>
 #include <QLineEdit>
 #include <QListWidget>
@@ -165,6 +167,27 @@ void ActivityWorkflowPolishController::configureWindow(QMainWindow* window)
     m_editingPage = window->findChild<QWidget*>(QStringLiteral("activityEditPage"));
     m_addButton = buttonWithText(window, QStringLiteral("Add activity"));
     m_editButton = buttonWithText(window, QStringLiteral("Edit activity"));
+    m_undoButton = buttonWithText(window, QStringLiteral("Undo"));
+    m_redoButton = buttonWithText(window, QStringLiteral("Redo"));
+
+    const QList<QAction*> actions = window->findChildren<QAction*>();
+    for (QAction* action : actions) {
+        if (!action) {
+            continue;
+        }
+
+        if (!m_undoAction &&
+            action->shortcut().matches(QKeySequence(QKeySequence::Undo)) ==
+                QKeySequence::ExactMatch) {
+            m_undoAction = action;
+        }
+
+        if (!m_redoAction &&
+            action->shortcut().matches(QKeySequence(QKeySequence::Redo)) ==
+                QKeySequence::ExactMatch) {
+            m_redoAction = action;
+        }
+    }
 
     if (!m_workspaceStack || !m_creationPage || !m_editingPage) {
         return;
@@ -184,7 +207,18 @@ void ActivityWorkflowPolishController::configureWindow(QMainWindow* window)
         }
     });
 
+    if (m_undoAction) {
+        connect(m_undoAction, &QAction::changed,
+                this, &ActivityWorkflowPolishController::updateUndoRedoPresentation);
+    }
+
+    if (m_redoAction) {
+        connect(m_redoAction, &QAction::changed,
+                this, &ActivityWorkflowPolishController::updateUndoRedoPresentation);
+    }
+
     updateWorkflowButtonState();
+    updateUndoRedoPresentation();
 }
 
 void ActivityWorkflowPolishController::configureFormPage(QWidget* page, bool editingPage)
@@ -309,6 +343,30 @@ void ActivityWorkflowPolishController::updateWorkflowButtonState()
                 editingActive ? activeWorkflowStyle : inactiveWorkflowStyle);
         }
     }
+}
+
+void ActivityWorkflowPolishController::updateUndoRedoPresentation()
+{
+    const auto synchronizeButton = [](QPushButton* button,
+                                      QAction* action,
+                                      const QString& fallbackText) {
+        if (!button) {
+            return;
+        }
+
+        QString text = action ? action->text() : fallbackText;
+        text.remove(QLatin1Char('&'));
+        if (text.trimmed().isEmpty()) {
+            text = fallbackText;
+        }
+
+        button->setText(text);
+        button->setToolTip(text);
+        button->setStatusTip(text);
+    };
+
+    synchronizeButton(m_undoButton, m_undoAction, QStringLiteral("Undo"));
+    synchronizeButton(m_redoButton, m_redoAction, QStringLiteral("Redo"));
 }
 
 QDialogButtonBox* ActivityWorkflowPolishController::buttonBoxFor(QWidget* page) const
