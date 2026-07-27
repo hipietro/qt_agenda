@@ -15,8 +15,8 @@ class ActivityManager;
 /*
  * Command concreta per aggiungere un'attività.
  *
- * Ho scelto di conservare un prototipo dell'attività perché la command deve
- * poter rieseguire l'aggiunta anche dopo un undo, senza dipendere dalla GUI.
+ * Conserva un prototipo polimorfo perché redo deve ricreare esattamente
+ * l'attività rimossa da undo, inclusi tutti i campi specifici del tipo.
  */
 class AddActivityCommand : public Command
 {
@@ -27,6 +27,8 @@ public:
     bool execute() override;
     bool undo() override;
     QString description() const override;
+    QString undoDescription() const override;
+    QString redoDescription() const override;
 
     QString activityId() const;
 
