@@ -22,22 +22,42 @@ jobs:
 
       - name: Configure tests
         run: |
-          mkdir -p build-tests
-          cd build-tests
-          qmake6 ../tests/agenda_tests.pro
+          mkdir -p build-tests/core build-tests/gui
+          cd build-tests/core
+          qmake6 ../../tests/agenda_tests.pro
+          cd ../gui
+          qmake6 ../../tests/gui_interaction_tests.pro
 
       - name: Build tests
-        run: make -C build-tests -j2
+        run: |
+          make -C build-tests/core -j2
+          make -C build-tests/gui -j2
 
-      - name: Run tests
+      - name: Run core tests
         env:
           QTEST_FUNCTION_TIMEOUT: 15000
-        run: xvfb-run -a ./build-tests/agenda_tests -o test-results.txt,txt
+        run: |
+          xvfb-run -a ./build-tests/core/agenda_tests \
+            visitorDoubleDispatch \
+            visitorRenderers \
+            activityJsonRoundTrip \
+            malformedJson \
+            agendaStorageRoundTrip \
+            commandHistoryRegression \
+            filterAndSearchRegression \
+            -o core-test-results.txt,txt
+
+      - name: Run GUI tests
+        env:
+          QTEST_FUNCTION_TIMEOUT: 15000
+        run: xvfb-run -a ./build-tests/gui/gui_interaction_tests -o gui-test-results.txt,txt
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: qt-test-results
-          path: test-results.txt
+          path: |
+            core-test-results.txt
+            gui-test-results.txt
           if-no-files-found: error
