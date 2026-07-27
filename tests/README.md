@@ -12,25 +12,27 @@ mkdir build-tests
 cd build-tests
 ~/Qt/6.10.1/macos/bin/qmake ../tests/agenda_tests.pro
 make -j"$(sysctl -n hw.ncpu)"
-QT_QPA_PLATFORM=offscreen ./agenda_tests -o -,txt
+QTEST_FUNCTION_TIMEOUT=15000 ./agenda_tests -o -,txt
 ```
 
-The `offscreen` platform keeps widget tests deterministic and prevents test windows from interrupting the desktop session. Remove `QT_QPA_PLATFORM=offscreen` when visually debugging a GUI test.
+The GUI interaction test must use the normal macOS platform plugin. Qt's `offscreen` plugin does not support native popup menus reliably and can leave a contextual-menu test waiting indefinitely. A small test window may appear briefly while the suite runs.
+
+`QTEST_FUNCTION_TIMEOUT=15000` limits each test function to 15 seconds, so a GUI regression cannot block the terminal for several minutes.
 
 ## Linux / Docker-style environment
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y qt6-base-dev qt6-base-dev-tools
+sudo apt-get install -y qt6-base-dev qt6-base-dev-tools xvfb
 rm -rf build-tests
 mkdir build-tests
 cd build-tests
 qmake6 ../tests/agenda_tests.pro
 make -j2
-QT_QPA_PLATFORM=offscreen ./agenda_tests -o -,txt
+QTEST_FUNCTION_TIMEOUT=15000 xvfb-run -a ./agenda_tests -o -,txt
 ```
 
-GitHub Actions runs the same Linux commands for every pull request and for pushes to `main` or a `feature/*` branch.
+GitHub Actions runs the same Linux commands for every pull request and for pushes to `main` or a `feature/*` branch. Xvfb provides a real virtual display, which is required for popup-menu interaction tests.
 
 ## Coverage
 
