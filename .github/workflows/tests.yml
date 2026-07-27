@@ -1,0 +1,35 @@
+name: Qt tests
+
+on:
+  push:
+    branches:
+      - main
+      - "feature/**"
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Qt 6 test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt6-base-dev qt6-base-dev-tools
+
+      - name: Configure tests
+        run: |
+          mkdir -p build-tests
+          cd build-tests
+          qmake6 ../tests/agenda_tests.pro
+
+      - name: Build tests
+        run: make -C build-tests -j2
+
+      - name: Run tests
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: ./build-tests/agenda_tests -o -,txt
