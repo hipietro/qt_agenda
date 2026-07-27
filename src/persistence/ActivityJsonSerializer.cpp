@@ -33,8 +33,10 @@ QJsonObject ActivityJsonSerializer::commonFieldsToJson(const Activity& activity,
     json["category"] = activity.category();
     json["priority"] = priorityToJsonString(activity.priority());
     json["completed"] = activity.isCompleted();
-    json["createdAt"] = activity.createdAt().toString(Qt::ISODate);
-    json["updatedAt"] = activity.updatedAt().toString(Qt::ISODate);
+
+    // Millisecond precision matters for exact persistence and undo/redo snapshots.
+    json["createdAt"] = activity.createdAt().toString(Qt::ISODateWithMs);
+    json["updatedAt"] = activity.updatedAt().toString(Qt::ISODateWithMs);
 
     if (activity.hasRecurrence()) {
         json["recurrence"] = recurrenceToJson(activity.recurrenceRule().value());
@@ -52,7 +54,7 @@ QJsonObject ActivityJsonSerializer::recurrenceToJson(const RecurrenceRule& recur
     json["endMode"] = recurrenceEndModeToJsonString(recurrenceRule.endMode());
 
     if (recurrenceRule.untilDate().isValid()) {
-        json["untilDate"] = recurrenceRule.untilDate().toString(Qt::ISODate);
+        json["untilDate"] = recurrenceRule.untilDate().toString(Qt::ISODateWithMs);
     }
 
     json["maxOccurrences"] = recurrenceRule.maxOccurrences();
