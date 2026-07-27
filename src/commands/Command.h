@@ -8,32 +8,31 @@
 /*
  * Interfaccia base per il sistema undo/redo.
  *
- * Ho scelto il Command pattern perché ogni modifica dell'agenda può essere
- * rappresentata come un'azione eseguibile e annullabile.
- * In questo modo MainWindow non dovrà conoscere i dettagli di undo/redo
- * per ogni singola operazione.
+ * Ogni comando rappresenta una modifica del modello con comportamento
+ * dinamico diverso sia in esecuzione sia in annullamento. La history usa
+ * esclusivamente questa interfaccia astratta e non conosce i tipi concreti.
  */
 class Command
 {
 public:
     virtual ~Command() = default;
 
-    /*
-     * Esegue l'azione.
-     * Ritorna true se l'operazione è riuscita, false altrimenti.
-     */
+    // Executes or re-executes the concrete operation.
     virtual bool execute() = 0;
 
-    /*
-     * Annulla l'azione precedentemente eseguita.
-     * Ritorna true se l'annullamento è riuscito, false altrimenti.
-     */
+    // Restores the exact state that preceded the concrete operation.
     virtual bool undo() = 0;
 
-    /*
-     * Testo breve utile per debug, log o messaggi futuri nella GUI.
-     */
+    // Generic operation label, useful for logs and diagnostics.
     virtual QString description() const = 0;
+
+    /*
+     * Contextual labels are intentionally virtual: adding, removing,
+     * replacing and toggling an activity require different user-facing
+     * explanations when they are undone or redone.
+     */
+    virtual QString undoDescription() const = 0;
+    virtual QString redoDescription() const = 0;
 };
 
 #endif
