@@ -49,7 +49,6 @@ private:
     QPointer<QPushButton> m_toggleButton;
     QPointer<QPushButton> m_deleteButton;
     QPointer<QAction> m_saveAsTemplateAction;
-    bool m_contextMenuOpen = false;
 };
 
 #endif
