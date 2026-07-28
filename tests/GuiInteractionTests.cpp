@@ -26,7 +26,7 @@ QDateTime utcDateTime(int month, int day, int hour, int minute = 0)
 {
     return QDateTime(QDate(2026, month, day),
                      QTime(hour, minute),
-                     QTimeZone::UTC);
+                     QTimeZone::utc());
 }
 
 std::unique_ptr<EventActivity> makeEvent()
