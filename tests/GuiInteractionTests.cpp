@@ -153,10 +153,10 @@ void GuiInteractionTests::internalPagesAndContextMenu()
                  QStringLiteral("activityDetailPage"));
     QTRY_COMPARE(list->currentRow(), 1);
 
-    bool contextActionTriggered = false;
+    bool contextActionFound = false;
     QPointer<QListWidget> guardedList(list);
 
-    QTimer::singleShot(50, qApp, [guardedList, &contextActionTriggered]() {
+    QTimer::singleShot(50, qApp, [guardedList, &contextActionFound]() {
         if (!guardedList) {
             return;
         }
@@ -168,8 +168,9 @@ void GuiInteractionTests::internalPagesAndContextMenu()
 
             for (QAction* action : menu->actions()) {
                 if (action && action->text().startsWith(QStringLiteral("Mark completed"))) {
-                    contextActionTriggered = true;
-                    action->trigger();
+                    contextActionFound = true;
+                    menu->setActiveAction(action);
+                    QTest::keyClick(menu, Qt::Key_Return);
                     return;
                 }
             }
@@ -191,7 +192,7 @@ void GuiInteractionTests::internalPagesAndContextMenu()
         Qt::DirectConnection,
         Q_ARG(QPoint, secondPosition)));
 
-    QVERIFY(contextActionTriggered);
+    QVERIFY(contextActionFound);
     QTRY_VERIFY(activities.findActivityById(
                     QStringLiteral("gui-deadline"))->isCompleted());
 
