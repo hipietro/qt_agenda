@@ -1,3 +1,5 @@
+// Month calendar widget that aggregates activity counts, colors, and date filtering.
+
 #ifndef ACTIVITYMONTHOVERVIEWWIDGET_H
 #define ACTIVITYMONTHOVERVIEWWIDGET_H
 
@@ -16,6 +18,11 @@ class Activity;
 class QLabel;
 class MonthDayButton;
 
+/*
+ * Presents a derived monthly summary without owning logical activities.
+ * The widget stores only per-day presentation data and reports date
+ * selections through a callback supplied by MainWindow.
+ */
 class ActivityMonthOverviewWidget final : public QWidget
 {
 public:
@@ -32,6 +39,7 @@ public:
     std::optional<QDate> selectedDate() const;
 
 private:
+    // Compact presentation snapshot rebuilt whenever the activity view changes.
     struct DaySummary
     {
         int total = 0;

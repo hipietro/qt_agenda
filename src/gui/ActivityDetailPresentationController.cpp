@@ -1,3 +1,5 @@
+// Coordinates selection changes with the Visitor-built activity detail page.
+
 #include "ActivityDetailPresentationController.h"
 
 #include "ActivityDetailVisitor.h"
@@ -33,6 +35,7 @@ ActivityDetailPresentationController::ActivityDetailPresentationController(
         return;
     }
 
+    // Replace the legacy QTextEdit in-place so MainWindow keeps its original layout contract.
     m_scrollArea = new QScrollArea(detailParent);
     m_scrollArea->setObjectName("activityDetailScrollArea");
     m_scrollArea->setWidgetResizable(true);
@@ -75,6 +78,7 @@ void ActivityDetailPresentationController::renderItem(QListWidgetItem* item)
         return;
     }
 
+    // Double dispatch selects the concrete detail layout without a type switch in the controller.
     ActivityDetailVisitor visitor(m_scrollArea);
     activity->accept(visitor);
 
@@ -128,6 +132,7 @@ void ActivityDetailPresentationController::setPage(QWidget* page)
         return;
     }
 
+    // QScrollArea transfers ownership through takeWidget(); deferred deletion is safe during signals.
     if (QWidget* previousPage = m_scrollArea->takeWidget()) {
         previousPage->deleteLater();
     }
