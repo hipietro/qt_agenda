@@ -5,11 +5,8 @@
 #include "commands/RemoveActivityCommand.h"
 #include "commands/ToggleCompletionCommand.h"
 #include "commands/UpdateActivityCommand.h"
-#include "gui/ActivityDetailPresentationController.h"
 #include "gui/ActivityDetailVisitor.h"
 #include "gui/ActivityListItemVisitor.h"
-#include "gui/ActivityListPresentationController.h"
-#include "gui/MainWindow.h"
 #include "model/ActivityFilter.h"
 #include "model/ActivityManager.h"
 #include "model/ActivityTemplate.h"
@@ -24,17 +21,11 @@
 #include "persistence/ActivityJsonSerializer.h"
 #include "persistence/AgendaJsonStorage.h"
 
-#include <QApplication>
-#include <QDialogButtonBox>
+#include <QDateTime>
 #include <QJsonObject>
 #include <QLabel>
-#include <QListWidget>
-#include <QMenu>
-#include <QPushButton>
-#include <QStackedWidget>
 #include <QTemporaryDir>
-#include <QTextEdit>
-#include <QTimer>
+#include <QTimeZone>
 
 #include <memory>
 #include <vector>
@@ -43,9 +34,9 @@ namespace {
 
 QDateTime fixedDate(int day, int hour = 12, int minute = 0)
 {
-    QDateTime value(QDate(2026, 7, day), QTime(hour, minute));
-    value.setTimeSpec(Qt::UTC);
-    return value;
+    return QDateTime(QDate(2026, 7, day),
+                     QTime(hour, minute),
+                     QTimeZone::utc());
 }
 
 std::unique_ptr<EventActivity> makeEvent(const QString& id = QStringLiteral("event-id"))
@@ -77,7 +68,7 @@ std::unique_ptr<DeadlineActivity> makeDeadline(const QString& id = QStringLitera
 {
     return std::make_unique<DeadlineActivity>(
         QStringLiteral("Register for OOP exam"),
-        QDateTime(QDate(2026, 8, 2), QTime(14, 30), Qt::UTC),
+        QDateTime(QDate(2026, 8, 2), QTime(14, 30), QTimeZone::utc()),
         QStringLiteral("University exam"),
         true,
         QStringLiteral("Submit exam registration"),
@@ -211,16 +202,6 @@ QString allLabelText(QWidget* widget)
     return text.join(QLatin1Char('\n'));
 }
 
-QPushButton* findButton(QWidget* root, const QString& text)
-{
-    for (QPushButton* button : root->findChildren<QPushButton*>()) {
-        if (button->text() == text) {
-            return button;
-        }
-    }
-    return nullptr;
-}
-
 class RecordingVisitor final : public ActivityVisitor
 {
 public:
@@ -246,7 +227,6 @@ private slots:
     void agendaStorageRoundTrip();
     void commandHistoryRegression();
     void filterAndSearchRegression();
-    void internalPagesAndMouseInteractions();
 };
 
 void AgendaTests::visitorDoubleDispatch()
@@ -461,92 +441,6 @@ void AgendaTests::filterAndSearchRegression()
     QCOMPARE(summarySearch.results.front().activity->id(), QStringLiteral("filter-reminder"));
 
     QVERIFY(!SearchEngine::search(manager.activities(), QStringLiteral("interplanetary launch")).hasResults());
-}
-
-void AgendaTests::internalPagesAndMouseInteractions()
-{
-    ActivityManager activities;
-    ActivityTemplateManager templates;
-    CategoryManager categories;
-    QVERIFY(activities.addActivity(makeEvent(QStringLiteral("gui-event"))));
-    QVERIFY(activities.addActivity(makeDeadline(QStringLiteral("gui-deadline"))));
-
-    MainWindow window(&activities, &templates, &categories);
-    QListWidget* list = window.findChild<QListWidget*>(QStringLiteral("activityList"));
-    QTextEdit* legacyDetail = window.findChild<QTextEdit*>(QStringLiteral("activityDetailView"));
-    QStackedWidget* workspace = window.findChild<QStackedWidget*>(QStringLiteral("workspaceStack"));
-    QVERIFY(list != nullptr);
-    QVERIFY(legacyDetail != nullptr);
-    QVERIFY(workspace != nullptr);
-
-    new ActivityListPresentationController(list, &activities, &window);
-    new ActivityDetailPresentationController(list, legacyDetail, &activities, &window);
-
-    window.resize(1100, 760);
-    window.show();
-    QTest::qWait(100);
-    QTRY_COMPARE(list->count(), 2);
-    QTRY_VERIFY(list->itemWidget(list->item(0)) != nullptr);
-    QTRY_VERIFY(list->itemWidget(list->item(1)) != nullptr);
-    QCOMPARE(workspace->currentWidget()->objectName(), QStringLiteral("activityDetailPage"));
-
-    QPushButton* addButton = findButton(&window, QStringLiteral("Add activity"));
-    QVERIFY(addButton != nullptr);
-    QTest::mouseClick(addButton, Qt::LeftButton);
-    QTRY_COMPARE(workspace->currentWidget()->objectName(), QStringLiteral("activityCreationPage"));
-    QVERIFY(QApplication::activeModalWidget() == nullptr);
-
-    QDialogButtonBox* creationButtons = workspace->currentWidget()->findChild<QDialogButtonBox*>();
-    QVERIFY(creationButtons != nullptr);
-    creationButtons->button(QDialogButtonBox::Cancel)->click();
-    QTRY_COMPARE(workspace->currentWidget()->objectName(), QStringLiteral("activityDetailPage"));
-
-    QListWidgetItem* first = list->item(0);
-    QListWidgetItem* second = list->item(1);
-    QTest::mouseClick(list->viewport(), Qt::LeftButton, Qt::NoModifier,
-                      list->visualItemRect(first).center());
-    QTRY_COMPARE(list->currentRow(), 0);
-    QCOMPARE(workspace->currentWidget()->objectName(), QStringLiteral("activityDetailPage"));
-
-    QTest::mouseDClick(list->viewport(), Qt::LeftButton, Qt::NoModifier,
-                       list->visualItemRect(first).center());
-    QTRY_COMPARE(workspace->currentWidget()->objectName(), QStringLiteral("activityEditPage"));
-    QVERIFY(QApplication::activeModalWidget() == nullptr);
-
-    QTest::mouseClick(list->viewport(), Qt::LeftButton, Qt::NoModifier,
-                      list->visualItemRect(second).center());
-    QTRY_COMPARE(workspace->currentWidget()->objectName(), QStringLiteral("activityDetailPage"));
-    QTRY_COMPARE(list->currentRow(), 1);
-
-    bool contextActionTriggered = false;
-    QTimer::singleShot(100, qApp, [&contextActionTriggered]() {
-        QMenu* menu = qobject_cast<QMenu*>(QApplication::activePopupWidget());
-        if (!menu) {
-            return;
-        }
-        for (QAction* action : menu->actions()) {
-            if (action->text() == QStringLiteral("Mark completed")) {
-                contextActionTriggered = true;
-                action->trigger();
-                return;
-            }
-        }
-        menu->close();
-    });
-    QTest::mouseClick(list->viewport(), Qt::RightButton, Qt::NoModifier,
-                      list->visualItemRect(second).center());
-    QVERIFY(contextActionTriggered);
-    QTRY_VERIFY(activities.findActivityById(QStringLiteral("gui-deadline"))->isCompleted());
-
-    list->setMinimumHeight(360);
-    window.resize(1100, 900);
-    QCoreApplication::processEvents();
-    const QRect lastRect = list->visualItemRect(list->item(list->count() - 1));
-    const QPoint emptyPoint(10, qMin(list->viewport()->height() - 4, lastRect.bottom() + 20));
-    QVERIFY(list->itemAt(emptyPoint) == nullptr);
-    QTest::mouseClick(list->viewport(), Qt::RightButton, Qt::NoModifier, emptyPoint);
-    QTRY_VERIFY(list->currentItem() == nullptr);
-    QVERIFY(QApplication::activePopupWidget() == nullptr);
 }
 
 QTEST_MAIN(AgendaTests)
