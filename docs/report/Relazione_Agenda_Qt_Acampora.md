@@ -7,139 +7,161 @@
 
 ## Introduzione
 
-Agenda Qt è un'applicazione desktop sviluppata interamente in C++17 con Qt Widgets. Permette di creare, modificare, visualizzare, ricercare, filtrare, ordinare ed eliminare attività personali, salvando lo stato dell'agenda in file JSON scelti dall'utente. Il progetto è stato sviluppato come lavoro individuale per applicare in modo concreto ereditarietà, classi astratte, incapsulamento, polimorfismo dinamico e separazione tra modello logico e interfaccia grafica.
+Agenda Qt è un'applicazione desktop sviluppata interamente in C++17 con Qt Widgets. Il programma organizza attività personali eterogenee - eventi, scadenze, promemoria e checklist - attraverso una gerarchia di classi, un'interfaccia grafica a finestra singola e persistenza locale in JSON. L'utente può creare, cercare, visualizzare, modificare, eliminare e completare le attività, lavorando sia sui campi comuni sia sugli attributi specifici di ogni tipo.
 
-**Dichiarazione di originalità.** Dichiaro che il progetto, il codice sorgente e la presente relazione sono frutto del mio lavoro individuale originale. Le librerie impiegate sono quelle standard di C++ e Qt; eventuali strumenti di supporto sono stati usati esclusivamente per compilazione, verifica e documentazione.
+Il progetto è stato svolto individualmente. L'obiettivo architetturale principale è mantenere il modello logico indipendente dai widget e usare il polimorfismo per operazioni realmente differenti, non soltanto per getter o etichette. Per questo sono stati applicati Visitor per visualizzazione, modifica e serializzazione, Command per le azioni reversibili e una factory registry per ricostruire gli oggetti dal JSON.
 
-L'utente può gestire quattro tipologie concrete: eventi, scadenze, promemoria e checklist. Tutte condividono titolo, descrizione, categoria, priorità, completamento, timestamp e ricorrenza, ma possiedono dati e regole differenti. Le funzionalità aggiuntive comprendono categorie personalizzate, template, ricorrenze, calendario mensile, undo/redo, ricerca, filtri combinabili e menu contestuale.
+## Conformità ai vincoli obbligatori
 
-## Descrizione del modello
+| N. | Vincolo | Evidenza nel progetto |
+| ---: | --- | --- |
+| 1 | Lavoro individuale e originale | Repository, struttura, funzionalità e documentazione appartengono al singolo autore e sono specifici di Agenda Qt. |
+| 2 | Implementazione in C++ | Tutta la logica applicativa è in file `.h` e `.cpp` C++17. QSS, JSON e risorse Qt sono dati o presentazione. |
+| 3 | GUI in Qt | `MainWindow` deriva da `QMainWindow` e usa Qt Widgets, form, liste, stacked pages, menu, file dialog e overview mensile. |
+| 4 | Build nel Docker fornito | Il progetto usa qmake e il Dockerfile Ubuntu 24.04/Qt 6 del corso; la validazione finale usa `qmake6` e `make`. |
+| 5 | Incapsulamento e singolo concetto | Stato privato, accesso tramite metodi e classi separate per manager, storage, ricerca, filtri, rendering, comandi e controller. |
+| 6 | Separazione modello/GUI | `src/model` non include Qt Widgets; la GUI dipende dal modello, non il contrario. |
+| 7 | Robustezza | Validazione dei form, controlli su puntatori e id, gestione errori I/O, conferma modifiche non salvate e test automatici. |
+| 8 | Polimorfismo non banale | Visitor con doppio dispatch e Command con `execute()`/`undo()` dinamici e comportamenti differenti. |
+| 9 | Nessun getType per il flusso | `ActivityKind` è usato soltanto per filtro, selezione e costruzione iniziale; Visitor, Command e factory gestiscono il comportamento. |
+| 10 | Almeno tre classi concrete | Sono presenti quattro tipi con dati, validazioni, rendering e persistenza differenti. |
+| 11 | CRUD, ricerca e campi specifici via GUI | Tutti i workflow sono disponibili nella GUI; creazione e modifica mostrano form diversi per tipo. |
+| 12 | Persistenza strutturata locale | JSON completo di attività, categorie, ricorrenze, checklist e template. |
+| 13 | Save/Load con dialog | `QFileDialog` a runtime, annullamento sicuro e nessun percorso hardcoded. |
+| 14 | Navigazione nella stessa finestra | `ActivityCreationPage` e `ActivityEditPage` sono `QWidget` nello stack della `MainWindow`. |
+| 15 | Relazione conforme | Relazione italiana, massimo 8 pagine, corpo 10 pt e tutte le sezioni richieste. |
 
-Il modello è centrato sulla classe astratta `Activity`. I dati comuni sono privati e vengono modificati tramite metodi pubblici controllati; le sottoclassi conservano soltanto lo stato specifico del proprio concetto. `ActivityManager` possiede le attività mediante `std::unique_ptr`, rendendo esplicita l'ownership ed evitando cancellazioni manuali. `CategoryManager` e `ActivityTemplateManager` gestiscono rispettivamente categorie e prototipi riutilizzabili.
+## Descrizione del modello logico
 
-Le quattro classi concrete sono:
+La classe astratta `Activity` rappresenta il concetto comune di attività e mantiene privati identificatore, titolo, descrizione, categoria, priorità, completamento, timestamp e regola di ricorrenza. Espone `accept(ActivityVisitor&)` per il doppio dispatch e operazioni virtuali quali `primaryDate()`, `isOverdue()` e `clone()`. `ActivityManager` possiede gli oggetti tramite `std::unique_ptr`, rendendo esplicita l'ownership ed evitando gestione manuale della memoria.
 
-- `EventActivity`: inizio, fine, luogo e partecipanti;
-- `DeadlineActivity`: data limite, contesto e flag di scadenza rigida;
-- `ReminderActivity`: data/ora, anticipo e nota del promemoria;
-- `ChecklistActivity`: data obiettivo, elementi, progresso e completamento derivato.
+| Classe concreta | Attributi specifici | Comportamento significativo |
+| --- | --- | --- |
+| `EventActivity` | inizio/fine, luogo, partecipanti | validazione fine > inizio; card e dettaglio con durata e intervallo |
+| `DeadlineActivity` | data limite, contesto, `hardDeadline` | scadenza puntuale e indicazione della rigidità |
+| `ReminderActivity` | data/ora, anticipo, nota | configurazione e visualizzazione dell'anticipo |
+| `ChecklistActivity` | data obiettivo, elementi | progresso percentuale e completamento derivato dagli item |
 
 I diagrammi aggiornati sono disponibili in [`docs/uml/README.md`](../uml/README.md).
 
-## Struttura e responsabilità
+## Struttura e separazione delle responsabilità
 
-Le classi sono organizzate in quattro aree principali. Il modello contiene il dominio e i servizi di ricerca e filtraggio; la GUI contiene widget e controller; la persistenza converte e ricostruisce gli oggetti; i comandi rappresentano modifiche reversibili. Questa separazione impedisce ai widget di diventare il luogo in cui risiedono regole di dominio e gestione dello stato.
+Il codice è diviso in quattro aree. Il modello contiene gerarchia `Activity`, manager, ricerca, filtri, categorie, ricorrenze e template; la GUI costruisce i widget e coordina i workflow; la persistenza converte lo stato in JSON; i comandi rappresentano modifiche reversibili. `MainWindow` coordina segnali, azioni e navigazione, ma delega le operazioni specifiche a classi dedicate.
 
-| Componente | Responsabilità principale |
+| Componente | Responsabilità |
 | --- | --- |
-| `Activity` e sottoclassi | dati comuni e comportamento specifico delle attività |
-| `ActivityManager` | ownership, aggiunta, rimozione, aggiornamento e ricerca per id |
-| `SearchEngine` / `ActivityFilter` | ricerca testuale, filtri e ordinamenti senza dipendenze GUI |
-| `CategoryManager` / `ActivityTemplateManager` | categorie coerenti e creazione da prototipi polimorfici |
-| GUI visitors e presentation controller | costruzione di lista e dettagli in base al tipo dinamico |
-| `AgendaJsonStorage` / factory registry | salvataggio e ricostruzione dell'agenda completa |
-| `CommandHistory` e comandi concreti | execute, undo e redo delle operazioni sul modello |
-
-Il modello usa tipi di Qt Core come `QString`, `QDateTime` e `QVector`, ma non include classi Qt Widgets. `ActivityVisitor` appartiene al modello e dichiara soltanto overload sui tipi concreti; i visitor grafici dipendono dal modello, mai il contrario.
+| `ActivityManager` | possiede la collezione polimorfica; aggiunge, sostituisce, rimuove e cerca per id |
+| `SearchEngine` / `ActivityFilter` | ricerca normalizzata e fuzzy; filtri combinabili e ordinamenti |
+| `CategoryManager` | valida nomi e colori, evita duplicati e gestisce aggiornamento/rimozione |
+| `ActivityTemplateManager` | gestisce prototipi nominati e crea attività tramite `cloneWithNewId()` |
+| `AgendaJsonStorage` | salva e carica agenda, categorie e template; restituisce errori dettagliati |
+| Controller e Visitor GUI | separano interazioni, rendering e form di modifica da `MainWindow` |
 
 ## Polimorfismo non banale
 
-Il requisito principale non è dimostrato da semplici getter virtuali. Il meccanismo centrale è il Visitor pattern: ogni `Activity` concreta implementa `accept(ActivityVisitor&)`, che richiama l'overload `visit` corrispondente al proprio tipo. Si ottiene così un doppio dispatch: il codice chiamante lavora con `Activity*`, mentre il comportamento eseguito dipende sia dal visitor scelto sia dal tipo dinamico dell'attività.
+Il meccanismo principale è il Visitor pattern. `Activity::accept(ActivityVisitor&)` è astratto; ogni sottoclasse richiama l'overload `visit(...)` corrispondente al proprio tipo. Il comportamento concreto viene quindi scelto tramite doppio dispatch senza interrogare un codice di tipo e senza concentrare una catena di `if`/`switch` nella GUI o nella persistenza.
 
-| Visitor | Comportamento dinamico |
-| --- | --- |
-| `ActivityListItemVisitor` | costruisce card differenti per eventi, scadenze, promemoria e checklist |
-| `ActivityDetailVisitor` | genera sezioni specifiche: durata, stato scadenza, anticipo o progresso |
-| `ActivityEditFormVisitor` | popola, valida e ricostruisce il form corretto senza switch sul tipo esistente |
-| `ActivityJsonSerializationVisitor` | scrive nel JSON campi specifici diversi per ogni sottoclasse |
+| Visitor | Operazione dinamica | Valore aggiunto |
+| --- | --- | --- |
+| `ActivityListItemVisitor` | crea card diverse | intervallo e luogo, deadline e rigidità, anticipo o avanzamento checklist |
+| `ActivityDetailVisitor` | costruisce sezioni diverse | mostra tutti i campi specifici senza downcast nella `MainWindow` |
+| `ActivityEditFormVisitor` | Populate / Validate / Build | seleziona il form, verifica regole specifiche e ricostruisce il sottotipo |
+| `ActivityJsonSerializationVisitor` | serializza campi differenti | produce il JSON specifico dei quattro tipi |
 
-Un secondo esempio è la gerarchia `Command`. `CommandHistory` conserva puntatori all'interfaccia astratta `Command` e invoca `execute()` e `undo()` senza conoscere il comando concreto. `AddActivityCommand`, `RemoveActivityCommand`, `UpdateActivityCommand` e `ToggleCompletionCommand` memorizzano e ripristinano stati differenti.
+Ogni overload realizza una procedura profondamente diversa: crea widget differenti, applica regole di validazione diverse, costruisce oggetti di classi diverse o salva strutture JSON diverse. L'aggiunta di un tipo obbliga il compilatore a segnalare i Visitor da estendere.
 
-Metodi come `primaryDate()`, `isOverdue()` e `clone()` restano utili per ordinamento, scadenze e duplicazione polimorfica, ma non sono più presentati come unica prova del requisito: il valore aggiunto principale deriva dai visitor e dai comandi.
+Anche il sistema undo/redo usa polimorfismo. `Command` dichiara `execute()`, `undo()`, `description()`, `undoDescription()` e `redoDescription()`. `AddActivityCommand`, `RemoveActivityCommand`, `UpdateActivityCommand` e `ToggleCompletionCommand` conservano stati differenti e implementano procedure inverse differenti. `CommandHistory` usa due stack di `std::unique_ptr<Command>` e trasferisce la proprietà durante undo e redo.
 
 ## Uso controllato del tipo
 
-`ActivityKind` è mantenuto come classificatore descrittivo. Viene usato per il filtro scelto dall'utente e nella pagina di creazione, dove una scelta esplicita deve determinare quale oggetto costruire. Non viene usato per decidere come visualizzare, modificare o serializzare un'attività già esistente.
-
-La deserializzazione non contiene una catena centrale di `if` o `switch`: `ActivityFactoryRegistry` associa l'identificatore testuale del JSON a una factory. L'aggiunta di un nuovo tipo richiede la registrazione della nuova factory e dei relativi overload del visitor, senza modificare un unico blocco di dispatch sparso nella GUI.
+`ActivityKind` rimane un classificatore. È impiegato come dato del filtro, come valore scelto dall'utente nel form di creazione e nel punto in cui deve essere costruito un oggetto che ancora non esiste. Rendering, dettaglio, modifica e serializzazione di attività esistenti passano dai Visitor; la deserializzazione passa da `ActivityFactoryRegistry`. Non esiste quindi controllo di flusso basato su `getType`/`kind` in sostituzione del polimorfismo.
 
 ## Persistenza dei dati
 
-`AgendaJsonStorage` coordina salvataggio e caricamento dell'intero stato. La serializzazione comune conserva id, dati descrittivi, priorità, completamento, timestamp con precisione al millisecondo e ricorrenza; il visitor aggiunge i campi specifici. Durante il caricamento la factory ricostruisce la sottoclasse corretta e segnala tipi sconosciuti o dati malformati.
+La persistenza locale usa JSON. `AgendaJsonStorage` coordina salvataggio e caricamento di attività, categorie e template. `ActivityJsonSerializationVisitor` scrive i campi comuni e specifici; in lettura `ActivityFactoryRegistry` associa l'identificatore testuale del formato a una funzione factory, evitando uno switch centrale.
 
 ```json
 {
   "version": 1,
   "categories": [ ... ],
-  "activities": [ ... ],
+  "activities": [ { "type": "event", ... } ],
   "templates": [ ... ]
 }
 ```
 
-Save, Save As e Load sono disponibili a runtime dal menu File. `QFileDialog` permette di scegliere il percorso; non sono presenti path hardcoded. Gli errori di apertura, parsing o scrittura vengono restituiti dalla persistenza e mostrati all'utente.
+Le date sono salvate in ISO 8601 con millisecondi. Il caricamento valida struttura, campi obbligatori e tipo registrato prima di modificare i manager. Save, Save As e Load usano `QFileDialog`; Save riutilizza soltanto un percorso scelto dall'utente.
 
 ## Interfaccia grafica e navigazione
 
-`MainWindow` contiene la lista, i filtri, il pannello dettagli e un `QStackedWidget` denominato `m_workspaceStack`. `ActivityCreationPage` e `ActivityEditPage` derivano da `QWidget` e sono inserite direttamente nello stack: creazione e modifica avvengono quindi nella stessa finestra principale. Salvataggio e annullamento riportano alla pagina dei dettagli.
+`MainWindow` possiede un `QStackedWidget` denominato `m_workspaceStack`. La pagina di agenda mostra lista, dettaglio e panoramica mensile; `ActivityCreationPage` e `ActivityEditPage` sono `QWidget` nello stesso stack. Add apre la pagina di creazione, Edit o doppio click apre la modifica, Create/Save applicano un Command e ritornano all'agenda, Cancel ritorna senza modificare il modello. Le sole modali sono utilità ammesse: file dialog, conferme, messaggi e gestione categorie.
 
-La pagina di creazione presenta campi comuni e uno stack di campi specifici. La pagina di modifica mantiene il tipo concreto originale e usa `ActivityEditFormVisitor` per selezionare la sezione corretta, validare i dati e produrre il nuovo oggetto. Il dialog modale rimasto riguarda soltanto la gestione delle categorie e non sostituisce i workflow principali richiesti.
-
-## Funzionalità implementate
-
-- creazione, visualizzazione, modifica, eliminazione e completamento di quattro tipi concreti;
-- ricerca case-insensitive e parziale, filtri combinabili e ordinamenti multipli;
-- categorie personalizzate, template, ricorrenze e calendario mensile;
-- undo/redo tramite Command pattern e tracciamento delle modifiche non salvate;
-- salvataggio e caricamento JSON tramite file dialog, con file di esempio;
-- singolo click per selezione, doppio click per modifica e menu contestuale sulla voce puntata;
-- feedback visivo per priorità, scadenza, completamento e progresso checklist.
-
-## Testing e validazione
-
-Il progetto include due target Qt Test separati. La suite core verifica il modello e l'architettura; la suite GUI usa la vera `MainWindow` e un display virtuale Xvfb su Linux. I test sono eseguiti automaticamente da GitHub Actions.
-
-| Area | Evidenza automatica |
+| Workflow | Implementazione |
 | --- | --- |
-| Visitor | double dispatch e rendering specifico per tutti e quattro i tipi |
-| Persistenza | round trip completo, campi specifici, categorie, template, ricorrenza e input malformato |
-| Command | execute, undo, redo ripetuti e cancellazione del ramo redo |
-| Ricerca e filtri | ricerca, combinazioni di criteri e ordinamenti |
-| GUI | pagine interne, singolo/doppio click, menu contestuale e spazio vuoto |
+| Creazione | form comune e stack per campi specifici; validazione; `AddActivityCommand` |
+| Visualizzazione | card e dettaglio costruiti dai Visitor |
+| Modifica | `ActivityEditFormVisitor` mantiene sottotipo, id e campi specifici; `UpdateActivityCommand` |
+| Eliminazione | pulsante o menu contestuale, conferma e `RemoveActivityCommand` |
+| Lista | click singolo seleziona, doppio click modifica, click destro opera sull'elemento puntato |
 
-Risultati verificati: 9 test core superati e 3 test GUI superati sia su Ubuntu 24.04 con Qt 6.4.2 sia su macOS Apple Silicon con Qt 6.10.1. La CI controlla anche che non ricompaiano dipendenze Qt Widgets nel modello, vecchi dialog di creazione/modifica o dispatch basato su `kind()` per attività esistenti.
+## Funzionalità aggiuntive
+
+### Ricerca normalizzata, pesata e tollerante agli errori
+
+`SearchEngine` normalizza query e campi con Unicode Normalization Form D, conversione in minuscolo, semplificazione degli spazi e rimozione dei segni diacritici. Titolo, categoria, descrizione e `summary()` ricevono punteggi diversi per match esatto, prefisso o contenimento; il titolo ha priorità maggiore. I risultati sono ordinati per punteggio e poi alfabeticamente.
+
+Quando non esistono corrispondenze dirette, viene calcolata la distanza di Levenshtein sui campi completi e sulle parole di almeno tre caratteri. La soglia è 1 per query fino a 4 caratteri, 2 fino a 7 e 3 per query più lunghe.
+
+### Filtri e ordinamenti
+
+`ActivityFilter` applica tipo, categoria, priorità, ricorrenza, completamento, overdue e intervallo temporale. Per `isOverdue()` e `primaryDate()` usa dispatch virtuale. L'ordinamento supporta data, titolo, priorità, completamento, `createdAt` e `updatedAt`, con titolo e id come tie-break deterministico. La ricerca viene applicata dopo i filtri.
+
+### Categorie, ricorrenze e template
+
+`CategoryManager` rifiuta nomi vuoti, duplicati case-insensitive e colori diversi da `#RRGGBB`. Una rinomina aggiorna le attività interessate. `RecurrenceRule` supporta frequenze giornaliera, settimanale, mensile e annuale, intervallo e fine mai/entro data/dopo N occorrenze, con limite di 10.000 iterazioni di sicurezza.
+
+Un template conserva un clone polimorfico completo dell'attività. Il riuso chiama `cloneWithNewId()`: il sottotipo e tutti i dati vengono mantenuti, ma la nuova attività riceve un'identità distinta. Categorie e template sono persistiti insieme all'agenda.
+
+### Ulteriori miglioramenti
+
+- panoramica mensile con filtro rapido per giorno;
+- marker di modifiche non salvate e conferma prima di operazioni distruttive;
+- feedback I/O con nome file, percorso, conteggi e motivazione dell'errore;
+- scorciatoie standard, navigazione da tastiera e layout responsive;
+- menu contestuale portabile per mouse e trackpad;
+- file `examples/sample_agenda.json` con tutti i tipi e le funzioni persistenti.
+
+## Testing, qualità e robustezza
+
+La suite core copre doppio dispatch, renderer, serializzazione/deserializzazione, round trip dell'agenda, JSON malformato, filtri, ricerca e sequenze ripetute di undo/redo. La suite GUI istanzia la vera `MainWindow` e controlla pagine interne, doppio click e menu contestuale. In CI i test sono compilati su Ubuntu 24.04 con Qt 6.4.2 sotto Xvfb; gli stessi target sono stati eseguiti su macOS ARM con Qt 6.10.1.
+
+| Area | Controllo |
+| --- | --- |
+| Visitor | quattro overload e rendering specifico |
+| Persistenza | tutti i campi comuni e specifici, categorie, template, ricorrenze e checklist |
+| Input non valido | tipo sconosciuto e JSON malformato falliscono senza corrompere lo stato |
+| Command | execute, undo e redo ripetuti; ramo redo cancellato dopo un nuovo comando |
+| GUI | pagine interne, nessuna modale attiva, interazioni mouse corrette |
+| Audit statico | blocca Qt Widgets nel modello, dialog obsoleti e dispatch improprio tramite `kind()` |
+
+L'efficienza è adeguata alla scala di un'agenda personale: collezioni con vector e smart pointer, filtri lineari seguiti dall'ordinamento richiesto, Levenshtein con due sole righe della matrice e limite di sicurezza per le ricorrenze.
+
+## Rendicontazione delle ore
+
+| Attività | Ore previste | Ore effettive |
+| --- | ---: | ---: |
+| Analisi dei requisiti e progettazione | 7 | 10 |
+| Modello logico, gerarchia e manager | 10 | 14 |
+| Visitor, factory e polimorfismo | 6 | 11 |
+| Interfaccia Qt e navigazione interna | 11 | 17 |
+| Persistenza JSON e file di esempio | 5 | 7 |
+| Ricerca, filtri, categorie, ricorrenze e template | 6 | 11 |
+| Command, test, debug e CI/Docker | 4 | 8 |
+| README, UML e relazione | 1 | 3 |
+| **Totale** | **50** | **81** |
 
 ## Modifiche rispetto alla consegna precedente
 
-La revisione successiva alla prima valutazione non si è limitata alla documentazione. Sono stati modificati i punti architetturali che rendevano insufficienti i requisiti sul polimorfismo e sulla navigazione:
-
-- introdotta l'interfaccia `ActivityVisitor` e `accept()` nelle quattro sottoclassi;
-- sostituito il dispatch grafico basato sul tipo con visitor dedicati per lista e dettagli;
-- spostata la logica specifica del form di modifica in `ActivityEditFormVisitor`;
-- introdotto `ActivityJsonSerializationVisitor` e un `ActivityFactoryRegistry`;
-- limitato `ActivityKind` ai casi giustificati di filtro, selezione e costruzione;
-- sostituiti i vecchi dialog di creazione e modifica con pagine interne a `MainWindow`;
-- rafforzata la gerarchia Command e la cronologia undo/redo;
-- aggiunti test architetturali, di regressione e GUI con esecuzione continua in CI;
-- aggiunti controlli statici contro regressioni sui requisiti 8, 9 e 14;
-- aggiornati UML, README e relazione per descrivere il codice effettivamente consegnato.
-
-Nella relazione precedente `primaryDate()`, `isOverdue()` e `clone()` erano presentati come principali esempi di polimorfismo e la GUI era descritta con dialog dedicati. La versione attuale dimostra invece comportamento dinamico strutturale tramite Visitor e Command e ospita i workflow principali nello stesso `MainWindow`.
-
-## Rendicontazione ore
-
-Le ore sono una stima aggiornata. Le 57 ore della prima consegna sono state integrate con il lavoro di revisione architetturale, test e documentazione svolto per la riconsegna.
-
-| Attività | Prima consegna | Revisione | Totale |
-| --- | ---: | ---: | ---: |
-| Analisi e progettazione | 8 | 1 | 9 |
-| Modello logico e polimorfismo | 11 | 7 | 18 |
-| Interfaccia grafica Qt | 15 | 5 | 20 |
-| Persistenza JSON | 6 | 2 | 8 |
-| Ricerca, filtri, categorie, ricorrenze e template | 7 | 0 | 7 |
-| Undo/redo e rifiniture | 4 | 1 | 5 |
-| Testing, debug, CI e validazione | 4 | 5 | 9 |
-| README, UML e relazione | 2 | 3 | 5 |
-| **Totale** | **57** | **24** | **81** |
+Per la riconsegna sono state introdotte modifiche sostanziali al progetto: Visitor per lista, dettaglio, modifica e serializzazione; `ActivityFactoryRegistry` per il caricamento; gerarchia Command completa con undo/redo; pagine di creazione e modifica integrate nella `MainWindow`; controller dedicati alle interazioni della lista; test architetturali e GUI; audit statico in CI. Sono stati inoltre consolidati precisione temporale del JSON, gestione degli errori, documentazione e diagrammi UML. Le funzionalità utente già presenti sono state mantenute e verificate contro la nuova architettura.
 
 ## Compilazione
 
@@ -150,18 +172,15 @@ qmake6 ../agenda_qt.pro
 make -j$(nproc)
 ```
 
-Per l'ambiente standard del corso:
+Nel container del corso:
 
 ```bash
 docker build -t unipd-oop/qt-env:2025 .
 docker run --rm -it -v "$PWD":/workspace -w /workspace unipd-oop/qt-env:2025 bash
 mkdir -p build_docker && cd build_docker
-qmake6 ../agenda_qt.pro
-make -j$(nproc)
+qmake6 ../agenda_qt.pro && make -j$(nproc)
 ```
 
 ## Conclusione
 
-Agenda Qt realizza un'applicazione desktop completa e coerente con gli obiettivi del corso. Il modello contiene quattro concetti concreti significativamente differenti, la GUI permette tutti i workflow richiesti e la persistenza conserva l'intera agenda in formato strutturato.
-
-La revisione architetturale ha reso esplicito il valore del polimorfismo: i visitor selezionano comportamento grafico, di editing e di serializzazione in base al tipo dinamico, mentre la gerarchia Command incapsula operazioni reversibili differenti. Il tipo enumerato non sostituisce questi meccanismi e creazione e modifica restano all'interno della finestra principale.
+Agenda Qt soddisfa i vincoli obbligatori mediante una gerarchia di quattro attività realmente differenti, separazione tra modello e GUI, navigazione a finestra singola, persistenza JSON scelta a runtime e polimorfismo non banale basato su Visitor e Command. Le funzionalità aggiuntive - ricerca normalizzata e fuzzy, filtri e ordinamenti, categorie, ricorrenze, template, overview mensile e undo/redo - sono integrate nel modello, persistite e coperte dai test.
