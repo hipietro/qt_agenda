@@ -150,6 +150,6 @@ GitHub Actions runs the architecture audit, builds both targets, executes the co
 ## Documentation
 
 - [Mandatory requirements audit](docs/requirements_audit.md)
-- [Final project report](docs/report/Relazione_Agenda_Qt_Acampora.pdf)
+- [Final report source and validation](docs/report/README.md)
 - [UML and architecture diagrams](docs/uml/)
 - [Test commands and coverage](tests/README.md)
