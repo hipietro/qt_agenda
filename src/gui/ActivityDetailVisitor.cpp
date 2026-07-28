@@ -1,3 +1,5 @@
+// Builds a complete, type-specific detail page through Visitor double dispatch.
+
 #include "ActivityDetailVisitor.h"
 
 #include "model/Activity.h"
@@ -23,6 +25,7 @@ ActivityDetailVisitor::ActivityDetailVisitor(QWidget* parent)
 
 QWidget* ActivityDetailVisitor::takeWidget()
 {
+    // Transfer the generated widget exactly once to the presentation controller.
     QWidget* result = m_widget;
     m_widget = nullptr;
     return result;
@@ -30,6 +33,7 @@ QWidget* ActivityDetailVisitor::takeWidget()
 
 void ActivityDetailVisitor::visit(const EventActivity& activity)
 {
+    // Events emphasize their interval, duration, location, and participants.
     QVBoxLayout* contentLayout = nullptr;
     QWidget* page = createPage(activity, "EVENT", "#3F51B5", contentLayout);
 
@@ -63,6 +67,7 @@ void ActivityDetailVisitor::visit(const EventActivity& activity)
 
 void ActivityDetailVisitor::visit(const DeadlineActivity& activity)
 {
+    // Deadlines derive a live due-state description from the current time.
     QVBoxLayout* contentLayout = nullptr;
     QWidget* page = createPage(activity, "DEADLINE", "#C62828", contentLayout);
 
@@ -105,6 +110,7 @@ void ActivityDetailVisitor::visit(const DeadlineActivity& activity)
 
 void ActivityDetailVisitor::visit(const ReminderActivity& activity)
 {
+    // Reminder details expose both the scheduled time and the calculated alert time.
     QVBoxLayout* contentLayout = nullptr;
     QWidget* page = createPage(activity, "REMINDER", "#8E44AD", contentLayout);
 
@@ -144,6 +150,7 @@ void ActivityDetailVisitor::visit(const ReminderActivity& activity)
 
 void ActivityDetailVisitor::visit(const ChecklistActivity& activity)
 {
+    // Checklist rendering derives progress from child-item completion.
     QVBoxLayout* contentLayout = nullptr;
     QWidget* page = createPage(activity, "CHECKLIST", "#2E7D32", contentLayout);
 
@@ -215,6 +222,7 @@ void ActivityDetailVisitor::visit(const ChecklistActivity& activity)
     storeResult(page);
 }
 
+// Shared page chrome is centralized while each visit method supplies different sections.
 QWidget* ActivityDetailVisitor::createPage(const Activity& activity,
                                            const QString& typeText,
                                            const QString& accentColor,
@@ -334,6 +342,7 @@ void ActivityDetailVisitor::addKeyValue(QGridLayout* layout,
     layout->addWidget(valueLabel, row, 1);
 }
 
+// Common metadata remains visually consistent without flattening subtype-specific content.
 void ActivityDetailVisitor::addCommonSections(const Activity& activity,
                                               QVBoxLayout* contentLayout,
                                               QWidget* page) const
