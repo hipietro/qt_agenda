@@ -13,15 +13,7 @@ mkdir -p build-tests/core build-tests/gui
 cd build-tests/core
 ~/Qt/6.10.1/macos/bin/qmake ../../tests/agenda_tests.pro
 make -j"$(sysctl -n hw.ncpu)"
-QTEST_FUNCTION_TIMEOUT=15000 ./agenda_tests \
-  visitorDoubleDispatch \
-  visitorRenderers \
-  activityJsonRoundTrip \
-  malformedJson \
-  agendaStorageRoundTrip \
-  commandHistoryRegression \
-  filterAndSearchRegression \
-  -o -,txt
+QTEST_FUNCTION_TIMEOUT=15000 ./agenda_tests -o -,txt
 
 cd ../gui
 ~/Qt/6.10.1/macos/bin/qmake ../../tests/gui_interaction_tests.pro
@@ -30,6 +22,8 @@ QTEST_FUNCTION_TIMEOUT=15000 ./gui_interaction_tests -o -,txt
 ```
 
 The GUI target uses the normal macOS platform plugin. A small test window or contextual menu may appear briefly. A 1.5-second safety close inside the contextual-menu test prevents a native popup from blocking the terminal indefinitely.
+
+Do not set `QT_QPA_PLATFORM=offscreen` for the GUI target on macOS. The offscreen plugin does not provide the native popup behavior exercised by the contextual-menu regression test.
 
 ## Linux / Docker-style environment
 
@@ -42,15 +36,7 @@ mkdir -p build-tests/core build-tests/gui
 cd build-tests/core
 qmake6 ../../tests/agenda_tests.pro
 make -j2
-QTEST_FUNCTION_TIMEOUT=15000 xvfb-run -a ./agenda_tests \
-  visitorDoubleDispatch \
-  visitorRenderers \
-  activityJsonRoundTrip \
-  malformedJson \
-  agendaStorageRoundTrip \
-  commandHistoryRegression \
-  filterAndSearchRegression \
-  -o -,txt
+QTEST_FUNCTION_TIMEOUT=15000 xvfb-run -a ./agenda_tests -o -,txt
 
 cd ../gui
 qmake6 ../../tests/gui_interaction_tests.pro
@@ -58,7 +44,7 @@ make -j2
 QTEST_FUNCTION_TIMEOUT=15000 xvfb-run -a ./gui_interaction_tests -o -,txt
 ```
 
-GitHub Actions builds and runs both targets for pull requests and pushes to `main` or a `feature/*` branch. Xvfb provides a real virtual display for the GUI target.
+GitHub Actions builds and runs both targets for pull requests and pushes to `main` or a `feature/*` branch. Xvfb provides a real virtual display for both targets on Linux because the core suite also verifies QWidget-based Visitor renderers.
 
 ## Coverage
 
