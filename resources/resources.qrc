@@ -3,5 +3,24 @@
         <file>style.qss</file>
         <file>icons/dropdown_arrow.svg</file>
         <file>icons/app_icon.svg</file>
+        <file>icons/action_add.svg</file>
+        <file>icons/action_add_white.svg</file>
+        <file>icons/action_edit.svg</file>
+        <file>icons/action_template.svg</file>
+        <file>icons/action_complete.svg</file>
+        <file>icons/action_delete.svg</file>
+        <file>icons/action_undo.svg</file>
+        <file>icons/action_redo.svg</file>
+        <file>icons/action_open.svg</file>
+        <file>icons/action_save.svg</file>
+        <file>icons/action_category.svg</file>
+        <file>icons/search.svg</file>
+        <file>icons/chevron_left.svg</file>
+        <file>icons/chevron_right.svg</file>
+        <file>icons/calendar.svg</file>
+        <file>icons/type_event.svg</file>
+        <file>icons/type_deadline.svg</file>
+        <file>icons/type_reminder.svg</file>
+        <file>icons/type_checklist.svg</file>
     </qresource>
 </RCC>

@@ -11,8 +11,10 @@
 #include <QFont>
 #include <QFrame>
 #include <QHBoxLayout>
+#include <QIcon>
 #include <QLabel>
 #include <QProgressBar>
+#include <QSize>
 #include <QStringList>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -37,7 +39,11 @@ QString ActivityListItemVisitor::toolTip() const
 void ActivityListItemVisitor::visit(const EventActivity& activity)
 {
     QVBoxLayout* contentLayout = nullptr;
-    QWidget* card = createCard(activity, "EVENT", "#3F51B5", contentLayout);
+    QWidget* card = createCard(activity,
+                               "EVENT",
+                               "#4F46E5",
+                               ":/icons/type_event.svg",
+                               contentLayout);
 
     const QDateTime start = activity.startDateTime();
     const QDateTime end = activity.endDateTime();
@@ -70,7 +76,11 @@ void ActivityListItemVisitor::visit(const EventActivity& activity)
 void ActivityListItemVisitor::visit(const DeadlineActivity& activity)
 {
     QVBoxLayout* contentLayout = nullptr;
-    QWidget* card = createCard(activity, "DEADLINE", "#C62828", contentLayout);
+    QWidget* card = createCard(activity,
+                               "DEADLINE",
+                               "#DC2626",
+                               ":/icons/type_deadline.svg",
+                               contentLayout);
 
     const bool overdue = !activity.isCompleted()
             && activity.isOverdue(QDateTime::currentDateTime());
@@ -90,8 +100,8 @@ void ActivityListItemVisitor::visit(const DeadlineActivity& activity)
     QLabel* stateLabel = new QLabel(state, card);
     stateLabel->setObjectName("activityStateBadge");
     stateLabel->setStyleSheet(overdue
-        ? "background:#FDE7E7; color:#9B1C1C; border:1px solid #E5A5A5; border-radius:4px; padding:2px 6px; font-weight:700;"
-        : "background:#F1F1F1; color:#444444; border:1px solid #D2D2D2; border-radius:4px; padding:2px 6px; font-weight:700;");
+        ? "background:#FEECEC; color:#991B1B; border:1px solid #F3B2B2; border-radius:5px; padding:2px 6px; font-weight:700;"
+        : "background:#F1F5F9; color:#475569; border:1px solid #D5DCE6; border-radius:5px; padding:2px 6px; font-weight:700;");
 
     dueLayout->addWidget(dueLabel, 1);
     dueLayout->addWidget(stateLabel, 0);
@@ -117,7 +127,11 @@ void ActivityListItemVisitor::visit(const DeadlineActivity& activity)
 void ActivityListItemVisitor::visit(const ReminderActivity& activity)
 {
     QVBoxLayout* contentLayout = nullptr;
-    QWidget* card = createCard(activity, "REMINDER", "#8E44AD", contentLayout);
+    QWidget* card = createCard(activity,
+                               "REMINDER",
+                               "#9333EA",
+                               ":/icons/type_reminder.svg",
+                               contentLayout);
 
     QLabel* dateLabel = new QLabel(
         QString("Remind at %1").arg(formattedDateTime(activity.reminderDateTime())), card);
@@ -151,7 +165,11 @@ void ActivityListItemVisitor::visit(const ReminderActivity& activity)
 void ActivityListItemVisitor::visit(const ChecklistActivity& activity)
 {
     QVBoxLayout* contentLayout = nullptr;
-    QWidget* card = createCard(activity, "CHECKLIST", "#2E7D32", contentLayout);
+    QWidget* card = createCard(activity,
+                               "CHECKLIST",
+                               "#16A34A",
+                               ":/icons/type_checklist.svg",
+                               contentLayout);
     card->setMinimumHeight(104);
 
     const int total = activity.totalItems();
@@ -183,8 +201,8 @@ void ActivityListItemVisitor::visit(const ChecklistActivity& activity)
     progressBar->setTextVisible(false);
     progressBar->setFixedHeight(8);
     progressBar->setStyleSheet(
-        "QProgressBar { background:#E3E7E3; border:none; border-radius:4px; }"
-        "QProgressBar::chunk { background:#43A047; border-radius:4px; }");
+        "QProgressBar { background:#E4EDE6; border:none; border-radius:4px; }"
+        "QProgressBar::chunk { background:#22C55E; border-radius:4px; }");
     contentLayout->addWidget(progressBar);
 
     addCommonFooter(activity, contentLayout);
@@ -200,6 +218,7 @@ void ActivityListItemVisitor::visit(const ChecklistActivity& activity)
 QWidget* ActivityListItemVisitor::createCard(const Activity& activity,
                                               const QString& typeText,
                                               const QString& accentColor,
+                                              const QString& iconPath,
                                               QVBoxLayout*& contentLayout)
 {
     QWidget* card = new QWidget(m_parent);
@@ -209,22 +228,23 @@ QWidget* ActivityListItemVisitor::createCard(const Activity& activity,
     card->setMinimumHeight(88);
     card->setStyleSheet(
         "QWidget#activityCard { background:transparent; }"
-        "QWidget#activityCard QLabel { background:transparent; color:#222222; }"
+        "QWidget#activityCard QLabel { background:transparent; color:#1F2937; }"
         "QWidget#activityCard[selected=\"true\"] QLabel { color:#FFFFFF; }"
         "QLabel#activityCardTitle { font-size:14px; font-weight:700; }"
         "QLabel#activityCardPrimary { font-weight:600; }"
-        "QLabel#activityCardSecondary, QLabel#activityCardFooter { color:#555555; font-size:12px; }"
-        "QLabel#activityCardNote { color:#444444; font-size:12px; }"
+        "QLabel#activityCardSecondary, QLabel#activityCardFooter { color:#5B687A; font-size:12px; }"
+        "QLabel#activityCardNote { color:#475569; font-size:12px; }"
+        "QLabel#activityTypeIcon { background:#FFFFFF; border:1px solid #DCE2EB; border-radius:7px; }"
         "QWidget#activityCard[selected=\"true\"] QLabel#activityCardSecondary,"
         "QWidget#activityCard[selected=\"true\"] QLabel#activityCardFooter,"
-        "QWidget#activityCard[selected=\"true\"] QLabel#activityCardNote { color:#F2F4FF; }");
+        "QWidget#activityCard[selected=\"true\"] QLabel#activityCardNote { color:#EEF2FF; }");
 
     QHBoxLayout* rootLayout = new QHBoxLayout(card);
-    rootLayout->setContentsMargins(6, 6, 8, 6);
-    rootLayout->setSpacing(9);
+    rootLayout->setContentsMargins(5, 5, 7, 5);
+    rootLayout->setSpacing(8);
 
     QFrame* accent = new QFrame(card);
-    accent->setFixedWidth(5);
+    accent->setFixedWidth(4);
     accent->setStyleSheet(
         QString("background:%1; border-radius:2px;").arg(accentColor));
     rootLayout->addWidget(accent);
@@ -237,7 +257,13 @@ QWidget* ActivityListItemVisitor::createCard(const Activity& activity,
 
     QHBoxLayout* headerLayout = new QHBoxLayout();
     headerLayout->setContentsMargins(0, 0, 0, 0);
-    headerLayout->setSpacing(8);
+    headerLayout->setSpacing(7);
+
+    QLabel* iconLabel = new QLabel(card);
+    iconLabel->setObjectName("activityTypeIcon");
+    iconLabel->setAlignment(Qt::AlignCenter);
+    iconLabel->setFixedSize(26, 26);
+    iconLabel->setPixmap(QIcon(iconPath).pixmap(QSize(17, 17)));
 
     QLabel* titleLabel = new QLabel(activity.title(), card);
     titleLabel->setObjectName("activityCardTitle");
@@ -250,9 +276,10 @@ QWidget* ActivityListItemVisitor::createCard(const Activity& activity,
     QLabel* typeLabel = new QLabel(typeText, card);
     typeLabel->setObjectName("activityTypeBadge");
     typeLabel->setStyleSheet(
-        QString("background:%1; color:#FFFFFF; border-radius:4px; padding:2px 6px; font-size:10px; font-weight:700;")
+        QString("background:%1; color:#FFFFFF; border-radius:5px; padding:2px 6px; font-size:10px; font-weight:700;")
             .arg(accentColor));
 
+    headerLayout->addWidget(iconLabel, 0, Qt::AlignVCenter);
     headerLayout->addWidget(titleLabel, 1);
     headerLayout->addWidget(typeLabel, 0);
     contentLayout->addLayout(headerLayout);

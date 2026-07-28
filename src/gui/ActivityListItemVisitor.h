@@ -1,4 +1,4 @@
-// Builds compact list cards without exposing GUI classes to the logical model.
+// Builds compact, type-specific list cards without exposing GUI classes to the logical model.
 
 #ifndef ACTIVITYLISTITEMVISITOR_H
 #define ACTIVITYLISTITEMVISITOR_H
@@ -29,6 +29,7 @@ private:
     QWidget* createCard(const Activity& activity,
                         const QString& typeText,
                         const QString& accentColor,
+                        const QString& iconPath,
                         QVBoxLayout*& contentLayout);
     void addCommonFooter(const Activity& activity, QVBoxLayout* contentLayout);
     void storeResult(QWidget* widget, const QString& toolTip);

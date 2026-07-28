@@ -63,7 +63,7 @@ Il meccanismo principale è il Visitor pattern. `Activity::accept(ActivityVisito
 
 | Visitor | Operazione dinamica | Valore aggiunto |
 | --- | --- | --- |
-| `ActivityListItemVisitor` | crea card diverse | intervallo e luogo, deadline e rigidità, anticipo o avanzamento checklist |
+| `ActivityListItemVisitor` | crea card diverse | icona, colore, intervallo e luogo, deadline e rigidità, anticipo o avanzamento checklist |
 | `ActivityDetailVisitor` | costruisce sezioni diverse | mostra tutti i campi specifici senza downcast nella `MainWindow` |
 | `ActivityEditFormVisitor` | Populate / Validate / Build | seleziona il form, verifica regole specifiche e ricostruisce il sottotipo |
 | `ActivityJsonSerializationVisitor` | serializza campi differenti | produce il JSON specifico dei quattro tipi |
@@ -103,6 +103,10 @@ Le date sono salvate in ISO 8601 con millisecondi. Il caricamento valida struttu
 | Eliminazione | pulsante o menu contestuale, conferma e `RemoveActivityCommand` |
 | Lista | click singolo seleziona, doppio click modifica, click destro opera sull'elemento puntato |
 
+### Scorciatoie e interazioni dirette
+
+Le azioni espongono scorciatoie native Qt: New (`Ctrl/Cmd+N`), Edit (`Ctrl+E`), Find (`Ctrl/Cmd+F`), Open (`Ctrl/Cmd+O`), Save (`Ctrl/Cmd+S`), Save As (`Ctrl/Cmd+Shift+S`), template (`Ctrl+T` e `Ctrl+Shift+T`), categorie (`Ctrl+Shift+C`) e Undo/Redo secondo la convenzione del sistema operativo. Con la lista focalizzata, Enter modifica, Space cambia completamento e Delete/Backspace elimina. Nei form Enter conferma, `Ctrl/Cmd+Enter` conferma dai campi multilinea ed Esc annulla. Mouse e trackpad supportano selezione singola, doppio click e click secondario con menu contestuale applicato all'elemento puntato.
+
 ## Funzionalità aggiuntive
 
 ### Ricerca normalizzata, pesata e tollerante agli errori
@@ -123,7 +127,8 @@ Un template conserva un clone polimorfico completo dell'attività. Il riuso chia
 
 ### Ulteriori miglioramenti
 
-- panoramica mensile con filtro rapido per giorno;
+- panoramica mensile con filtro rapido per giorno e controlli Today/mese dedicati;
+- splitter ridimensionabili, palette coerente e iconografia specifica per tipi e azioni;
 - marker di modifiche non salvate e conferma prima di operazioni distruttive;
 - feedback I/O con nome file, percorso, conteggi e motivazione dell'errore;
 - scorciatoie standard, navigazione da tastiera e layout responsive;
@@ -161,7 +166,7 @@ L'efficienza è adeguata alla scala di un'agenda personale: collezioni con vecto
 
 ## Modifiche rispetto alla consegna precedente
 
-Per la riconsegna sono state introdotte modifiche sostanziali al progetto: Visitor per lista, dettaglio, modifica e serializzazione; `ActivityFactoryRegistry` per il caricamento; gerarchia Command completa con undo/redo; pagine di creazione e modifica integrate nella `MainWindow`; controller dedicati alle interazioni della lista; test architetturali e GUI; audit statico in CI. Sono stati inoltre consolidati precisione temporale del JSON, gestione degli errori, documentazione e diagrammi UML. Le funzionalità utente già presenti sono state mantenute e verificate contro la nuova architettura.
+Per la riconsegna sono state introdotte modifiche sostanziali al progetto: Visitor per lista, dettaglio, modifica e serializzazione; `ActivityFactoryRegistry` per il caricamento; gerarchia Command completa con undo/redo; pagine di creazione e modifica integrate nella `MainWindow`; controller dedicati alle interazioni della lista; test architetturali e GUI; audit statico in CI. Sono stati inoltre consolidati precisione temporale del JSON, gestione degli errori, documentazione, diagrammi UML e presentazione grafica. Le funzionalità utente già presenti sono state mantenute e verificate contro la nuova architettura.
 
 ## Compilazione
 
