@@ -1,0 +1,55 @@
+name: Qt tests
+
+on:
+  push:
+    branches:
+      - main
+      - "feature/**"
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Qt 6 test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt6-base-dev qt6-base-dev-tools xvfb
+
+      - name: Configure tests
+        run: |
+          mkdir -p build-tests/core build-tests/gui
+          cd build-tests/core
+          qmake6 ../../tests/agenda_tests.pro
+          cd ../gui
+          qmake6 ../../tests/gui_interaction_tests.pro
+
+      - name: Build tests
+        run: |
+          make -C build-tests/core -j2
+          make -C build-tests/gui -j2
+
+      - name: Run core tests
+        env:
+          QTEST_FUNCTION_TIMEOUT: 15000
+        run: xvfb-run -a ./build-tests/core/agenda_tests -o core-test-results.txt,txt
+
+      - name: Run GUI tests
+        env:
+          QTEST_FUNCTION_TIMEOUT: 15000
+        run: xvfb-run -a ./build-tests/gui/gui_interaction_tests -o gui-test-results.txt,txt
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qt-test-results
+          path: |
+            core-test-results.txt
+            gui-test-results.txt
+          if-no-files-found: error

@@ -1,0 +1,93 @@
+QT += core gui widgets testlib
+
+CONFIG += c++17 console testcase
+CONFIG -= app_bundle
+
+TARGET = gui_interaction_tests
+TEMPLATE = app
+
+INCLUDEPATH += \
+    ../src \
+    ../src/model \
+    ../src/gui \
+    ../src/persistence \
+    ../src/commands
+
+SOURCES += \
+    GuiInteractionTests.cpp \
+    ../src/model/Activity.cpp \
+    ../src/model/EventActivity.cpp \
+    ../src/model/DeadlineActivity.cpp \
+    ../src/model/ReminderActivity.cpp \
+    ../src/model/ChecklistActivity.cpp \
+    ../src/model/ActivityManager.cpp \
+    ../src/model/SearchEngine.cpp \
+    ../src/model/ActivityFilter.cpp \
+    ../src/model/Category.cpp \
+    ../src/model/RecurrenceRule.cpp \
+    ../src/model/ActivityTemplate.cpp \
+    ../src/model/ActivityTemplateManager.cpp \
+    ../src/model/CategoryManager.cpp \
+    ../src/gui/MainWindow.cpp \
+    ../src/gui/ActivityWorkflowPolishController.cpp \
+    ../src/gui/ActivityListMouseController.cpp \
+    ../src/gui/ActivityKeyboardNavigationController.cpp \
+    ../src/gui/ActivityMonthOverviewWidget.cpp \
+    ../src/gui/ActivityListItemVisitor.cpp \
+    ../src/gui/ActivityListPresentationController.cpp \
+    ../src/gui/ActivityDetailVisitor.cpp \
+    ../src/gui/ActivityDetailPresentationController.cpp \
+    ../src/gui/ActivityCreationPage.cpp \
+    ../src/gui/ActivityEditPage.cpp \
+    ../src/gui/ActivityEditFormVisitor.cpp \
+    ../src/gui/CategoryManagementDialog.cpp \
+    ../src/persistence/ActivityFactoryRegistry.cpp \
+    ../src/persistence/ActivityJsonSerializer.cpp \
+    ../src/persistence/ActivityJsonSerializationVisitor.cpp \
+    ../src/persistence/AgendaJsonStorage.cpp \
+    ../src/commands/RemoveActivityCommand.cpp \
+    ../src/commands/AddActivityCommand.cpp \
+    ../src/commands/ToggleCompletionCommand.cpp \
+    ../src/commands/CommandHistory.cpp \
+    ../src/commands/UpdateActivityCommand.cpp
+
+HEADERS += \
+    ../src/model/Priority.h \
+    ../src/model/ActivityKind.h \
+    ../src/model/ActivityVisitor.h \
+    ../src/model/Activity.h \
+    ../src/model/EventActivity.h \
+    ../src/model/DeadlineActivity.h \
+    ../src/model/ReminderActivity.h \
+    ../src/model/ChecklistActivity.h \
+    ../src/model/ActivityManager.h \
+    ../src/model/SearchEngine.h \
+    ../src/model/ActivityFilter.h \
+    ../src/model/Category.h \
+    ../src/model/RecurrenceRule.h \
+    ../src/model/ActivityTemplate.h \
+    ../src/model/ActivityTemplateManager.h \
+    ../src/model/CategoryManager.h \
+    ../src/gui/MainWindow.h \
+    ../src/gui/ActivityWorkflowPolishController.h \
+    ../src/gui/ActivityListMouseController.h \
+    ../src/gui/ActivityKeyboardNavigationController.h \
+    ../src/gui/ActivityMonthOverviewWidget.h \
+    ../src/gui/ActivityListItemVisitor.h \
+    ../src/gui/ActivityListPresentationController.h \
+    ../src/gui/ActivityDetailVisitor.h \
+    ../src/gui/ActivityDetailPresentationController.h \
+    ../src/gui/ActivityCreationPage.h \
+    ../src/gui/ActivityEditPage.h \
+    ../src/gui/ActivityEditFormVisitor.h \
+    ../src/gui/CategoryManagementDialog.h \
+    ../src/persistence/ActivityFactoryRegistry.h \
+    ../src/persistence/ActivityJsonSerializer.h \
+    ../src/persistence/ActivityJsonSerializationVisitor.h \
+    ../src/persistence/AgendaJsonStorage.h \
+    ../src/commands/Command.h \
+    ../src/commands/RemoveActivityCommand.h \
+    ../src/commands/AddActivityCommand.h \
+    ../src/commands/ToggleCompletionCommand.h \
+    ../src/commands/CommandHistory.h \
+    ../src/commands/UpdateActivityCommand.h
