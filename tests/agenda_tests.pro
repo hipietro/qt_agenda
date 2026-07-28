@@ -28,19 +28,8 @@ SOURCES += \
     ../src/model/ActivityTemplate.cpp \
     ../src/model/ActivityTemplateManager.cpp \
     ../src/model/CategoryManager.cpp \
-    ../src/gui/MainWindow.cpp \
-    ../src/gui/ActivityWorkflowPolishController.cpp \
-    ../src/gui/ActivityListMouseController.cpp \
-    ../src/gui/ActivityKeyboardNavigationController.cpp \
-    ../src/gui/ActivityMonthOverviewWidget.cpp \
     ../src/gui/ActivityListItemVisitor.cpp \
-    ../src/gui/ActivityListPresentationController.cpp \
     ../src/gui/ActivityDetailVisitor.cpp \
-    ../src/gui/ActivityDetailPresentationController.cpp \
-    ../src/gui/ActivityCreationPage.cpp \
-    ../src/gui/ActivityEditPage.cpp \
-    ../src/gui/ActivityEditFormVisitor.cpp \
-    ../src/gui/CategoryManagementDialog.cpp \
     ../src/persistence/ActivityFactoryRegistry.cpp \
     ../src/persistence/ActivityJsonSerializer.cpp \
     ../src/persistence/ActivityJsonSerializationVisitor.cpp \
@@ -68,19 +57,8 @@ HEADERS += \
     ../src/model/ActivityTemplate.h \
     ../src/model/ActivityTemplateManager.h \
     ../src/model/CategoryManager.h \
-    ../src/gui/MainWindow.h \
-    ../src/gui/ActivityWorkflowPolishController.h \
-    ../src/gui/ActivityListMouseController.h \
-    ../src/gui/ActivityKeyboardNavigationController.h \
-    ../src/gui/ActivityMonthOverviewWidget.h \
     ../src/gui/ActivityListItemVisitor.h \
-    ../src/gui/ActivityListPresentationController.h \
     ../src/gui/ActivityDetailVisitor.h \
-    ../src/gui/ActivityDetailPresentationController.h \
-    ../src/gui/ActivityCreationPage.h \
-    ../src/gui/ActivityEditPage.h \
-    ../src/gui/ActivityEditFormVisitor.h \
-    ../src/gui/CategoryManagementDialog.h \
     ../src/persistence/ActivityFactoryRegistry.h \
     ../src/persistence/ActivityJsonSerializer.h \
     ../src/persistence/ActivityJsonSerializationVisitor.h \
