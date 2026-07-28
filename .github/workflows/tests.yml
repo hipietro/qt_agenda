@@ -16,6 +16,9 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Audit mandatory architecture invariants
+        run: bash scripts/requirements_audit.sh
+
       - name: Install Qt 6 test dependencies
         run: |
           sudo apt-get update
