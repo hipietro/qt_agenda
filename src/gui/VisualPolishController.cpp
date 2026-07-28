@@ -12,6 +12,7 @@
 #include <QSize>
 #include <QSplitter>
 #include <QStyle>
+#include <QTimer>
 #include <QWidget>
 
 namespace {
@@ -77,6 +78,14 @@ void VisualPolishController::configureWindow(QMainWindow* window)
     configureCalendarButtons(window);
     configureSearchField(window);
     configureMenuIcons(window);
+
+    // Other startup controllers add the Activity menu during the same Show event.
+    // Repeat the icon pass after the event loop has completed that setup.
+    QTimer::singleShot(0, this, [this]() {
+        if (m_window) {
+            configureMenuIcons(m_window);
+        }
+    });
 }
 
 void VisualPolishController::configureSplitters(QMainWindow* window) const
@@ -125,6 +134,15 @@ void VisualPolishController::configureActionButtons(QMainWindow* window) const
         refreshStyle(button);
     };
 
+    const auto configureSecondaryButton = [](QPushButton* button) {
+        if (!button) {
+            return;
+        }
+
+        button->setObjectName(QStringLiteral("secondaryActionButton"));
+        refreshStyle(button);
+    };
+
     configureButton(addButton, QStringLiteral(":/icons/action_add_white.svg"));
     configureButton(editButton, QStringLiteral(":/icons/action_edit.svg"));
     configureButton(templateButton, QStringLiteral(":/icons/action_template.svg"));
@@ -132,6 +150,12 @@ void VisualPolishController::configureActionButtons(QMainWindow* window) const
     configureButton(deleteButton, QStringLiteral(":/icons/action_delete.svg"));
     configureButton(undoButton, QStringLiteral(":/icons/action_undo.svg"));
     configureButton(redoButton, QStringLiteral(":/icons/action_redo.svg"));
+
+    configureSecondaryButton(editButton);
+    configureSecondaryButton(templateButton);
+    configureSecondaryButton(toggleButton);
+    configureSecondaryButton(undoButton);
+    configureSecondaryButton(redoButton);
 
     const QList<QGridLayout*> gridLayouts = window->findChildren<QGridLayout*>();
     for (QGridLayout* layout : gridLayouts) {
