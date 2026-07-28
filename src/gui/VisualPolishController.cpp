@@ -10,6 +10,7 @@
 #include <QMainWindow>
 #include <QPushButton>
 #include <QSize>
+#include <QSizePolicy>
 #include <QSplitter>
 #include <QStyle>
 #include <QTimer>
@@ -131,6 +132,10 @@ void VisualPolishController::configureActionButtons(QMainWindow* window) const
         button->setProperty("compactAction", true);
         button->setIcon(QIcon(iconPath));
         button->setIconSize(iconSize);
+        button->setFixedHeight(30);
+        button->setMinimumWidth(0);
+        button->setMaximumWidth(QWIDGETSIZE_MAX);
+        button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         refreshStyle(button);
     };
 
@@ -159,15 +164,38 @@ void VisualPolishController::configureActionButtons(QMainWindow* window) const
 
     const QList<QGridLayout*> gridLayouts = window->findChildren<QGridLayout*>();
     for (QGridLayout* layout : gridLayouts) {
-        if (!layout || !editButton || !deleteButton) {
+        if (!layout || !editButton || !templateButton || !toggleButton ||
+            !deleteButton || !undoButton || !redoButton) {
             continue;
         }
 
-        if (layout->indexOf(editButton) >= 0 && layout->indexOf(deleteButton) >= 0) {
-            layout->setHorizontalSpacing(7);
-            layout->setVerticalSpacing(6);
-            break;
+        if (layout->indexOf(editButton) < 0 ||
+            layout->indexOf(templateButton) < 0 ||
+            layout->indexOf(toggleButton) < 0 ||
+            layout->indexOf(deleteButton) < 0 ||
+            layout->indexOf(undoButton) < 0 ||
+            layout->indexOf(redoButton) < 0) {
+            continue;
         }
+
+        layout->setContentsMargins(2, 2, 2, 2);
+        layout->setHorizontalSpacing(8);
+        layout->setVerticalSpacing(7);
+        layout->setColumnStretch(0, 1);
+        layout->setColumnStretch(1, 1);
+
+        for (int row = 0; row < 3; ++row) {
+            layout->setRowMinimumHeight(row, 36);
+            layout->setRowStretch(row, 1);
+        }
+
+        layout->setAlignment(editButton, Qt::AlignVCenter);
+        layout->setAlignment(templateButton, Qt::AlignVCenter);
+        layout->setAlignment(toggleButton, Qt::AlignVCenter);
+        layout->setAlignment(deleteButton, Qt::AlignVCenter);
+        layout->setAlignment(undoButton, Qt::AlignVCenter);
+        layout->setAlignment(redoButton, Qt::AlignVCenter);
+        break;
     }
 }
 
@@ -178,8 +206,8 @@ void VisualPolishController::configureCalendarButtons(QMainWindow* window) const
     QPushButton* nextButton = buttonWithText(window, QStringLiteral("›"));
 
     const auto configureNavigationButton = [](QPushButton* button,
-                                              const QString& iconPath,
-                                              const QString& objectName) {
+                                               const QString& iconPath,
+                                               const QString& objectName) {
         if (!button) {
             return;
         }
