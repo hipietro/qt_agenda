@@ -1,9 +1,11 @@
 # Final report
 
-This directory contains the updated resubmission report:
+This directory contains the version-controlled source of the updated resubmission report:
 
-- `Relazione_Agenda_Qt_Acampora.docx`: editable source;
-- `Relazione_Agenda_Qt_Acampora.pdf`: final submission document.
+- `Relazione_Agenda_Qt_Acampora.md`: reviewable report content;
+- `../uml/README.md`: updated UML and architecture diagrams.
+
+The final DOCX and PDF are generated deliverables used for the submission package rather than source-code inputs. The validated PDF is produced from this content with the diagrams embedded.
 
 The report was reviewed against issue #52 and the mandatory requirements audit. It contains:
 
