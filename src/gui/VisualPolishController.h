@@ -8,6 +8,7 @@
 class QEvent;
 class QMainWindow;
 class QPushButton;
+class QString;
 class QWidget;
 
 class VisualPolishController final : public QObject
