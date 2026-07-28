@@ -28,6 +28,7 @@ SOURCES += \
     src/model/CategoryManager.cpp \
     src/gui/MainWindow.cpp \
     src/gui/ActivityWorkflowPolishController.cpp \
+    src/gui/VisualPolishController.cpp \
     src/gui/ActivityListMouseController.cpp \
     src/gui/ActivityKeyboardNavigationController.cpp \
     src/gui/ActivityMonthOverviewWidget.cpp \
@@ -68,6 +69,7 @@ HEADERS += \
     src/model/CategoryManager.h \
     src/gui/MainWindow.h \
     src/gui/ActivityWorkflowPolishController.h \
+    src/gui/VisualPolishController.h \
     src/gui/ActivityListMouseController.h \
     src/gui/ActivityKeyboardNavigationController.h \
     src/gui/ActivityMonthOverviewWidget.h \
