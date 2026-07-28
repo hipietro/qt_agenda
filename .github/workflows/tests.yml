@@ -10,6 +10,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
@@ -36,16 +37,7 @@ jobs:
       - name: Run core tests
         env:
           QTEST_FUNCTION_TIMEOUT: 15000
-        run: |
-          xvfb-run -a ./build-tests/core/agenda_tests \
-            visitorDoubleDispatch \
-            visitorRenderers \
-            activityJsonRoundTrip \
-            malformedJson \
-            agendaStorageRoundTrip \
-            commandHistoryRegression \
-            filterAndSearchRegression \
-            -o core-test-results.txt,txt
+        run: xvfb-run -a ./build-tests/core/agenda_tests -o core-test-results.txt,txt
 
       - name: Run GUI tests
         env:
