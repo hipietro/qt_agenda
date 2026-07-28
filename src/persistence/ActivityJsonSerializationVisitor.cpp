@@ -1,3 +1,5 @@
+// Serializes concrete activity fields after writing the shared JSON representation.
+
 #include "ActivityJsonSerializationVisitor.h"
 
 #include "ActivityJsonSerializer.h"
@@ -15,6 +17,7 @@ QJsonObject ActivityJsonSerializationVisitor::json() const
 
 void ActivityJsonSerializationVisitor::visit(const EventActivity& activity)
 {
+    // Events persist interval data and the participant collection.
     m_json = ActivityJsonSerializer::commonFieldsToJson(activity, "event");
     m_json["startDateTime"] = activity.startDateTime().toString(Qt::ISODateWithMs);
     m_json["endDateTime"] = activity.endDateTime().toString(Qt::ISODateWithMs);
@@ -30,6 +33,7 @@ void ActivityJsonSerializationVisitor::visit(const EventActivity& activity)
 
 void ActivityJsonSerializationVisitor::visit(const DeadlineActivity& activity)
 {
+    // Deadline serialization keeps context and rigidity separate from common fields.
     m_json = ActivityJsonSerializer::commonFieldsToJson(activity, "deadline");
     m_json["dueDate"] = activity.dueDate().toString(Qt::ISODateWithMs);
     m_json["context"] = activity.context();
@@ -38,6 +42,7 @@ void ActivityJsonSerializationVisitor::visit(const DeadlineActivity& activity)
 
 void ActivityJsonSerializationVisitor::visit(const ReminderActivity& activity)
 {
+    // Reminder serialization stores both schedule and advance-notice policy.
     m_json = ActivityJsonSerializer::commonFieldsToJson(activity, "reminder");
     m_json["reminderDateTime"] = activity.reminderDateTime().toString(Qt::ISODateWithMs);
     m_json["advanceMinutes"] = activity.advanceMinutes();
@@ -46,6 +51,7 @@ void ActivityJsonSerializationVisitor::visit(const ReminderActivity& activity)
 
 void ActivityJsonSerializationVisitor::visit(const ChecklistActivity& activity)
 {
+    // Checklist items are nested objects so each child preserves its completion state.
     m_json = ActivityJsonSerializer::commonFieldsToJson(activity, "checklist");
     m_json["targetDate"] = activity.primaryDate().toString(Qt::ISODateWithMs);
 

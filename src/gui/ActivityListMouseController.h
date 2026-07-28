@@ -1,3 +1,5 @@
+// Centralizes list selection, double-click editing, and contextual pointer actions.
+
 #ifndef ACTIVITYLISTMOUSECONTROLLER_H
 #define ACTIVITYLISTMOUSECONTROLLER_H
 
@@ -15,6 +17,11 @@ class QSplitter;
 class QStackedWidget;
 class QWidget;
 
+/*
+ * Translates standard Qt mouse and trackpad events into the same actions
+ * exposed by MainWindow. Context operations first select the item under
+ * the pointer so commands never target a stale list selection.
+ */
 class ActivityListMouseController final : public QObject
 {
 public:

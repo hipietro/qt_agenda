@@ -1,3 +1,5 @@
+// Owns concrete-type form population, validation, and reconstruction for editing.
+
 #include "ActivityEditFormVisitor.h"
 
 #include "ActivityEditPage.h"
@@ -44,11 +46,13 @@ QDateTime ActivityEditFormVisitor::primaryDate() const
 
 std::unique_ptr<Activity> ActivityEditFormVisitor::takeActivity()
 {
+    // Building transfers exclusive ownership of the replacement activity to the caller.
     return std::move(m_activity);
 }
 
 void ActivityEditFormVisitor::visit(const EventActivity& activity)
 {
+    // The selected operation lets one Visitor overload populate, validate, or rebuild the event.
     if (m_operation == Operation::Populate) {
         m_dialog.m_typeStack->setCurrentIndex(0);
         m_dialog.m_eventStartEdit->setDateTime(activity.startDateTime());
@@ -67,6 +71,7 @@ void ActivityEditFormVisitor::visit(const EventActivity& activity)
         return;
     }
 
+    // Normalize the comma-separated editor value before rebuilding the logical object.
     QStringList participants;
     const QStringList rawParticipants =
         m_dialog.m_eventParticipantsEdit->text().split(",", Qt::SkipEmptyParts);
@@ -96,6 +101,7 @@ void ActivityEditFormVisitor::visit(const EventActivity& activity)
 
 void ActivityEditFormVisitor::visit(const DeadlineActivity& activity)
 {
+    // Deadlines have no cross-field constraint beyond the common form validation.
     if (m_operation == Operation::Populate) {
         m_dialog.m_typeStack->setCurrentIndex(1);
         m_dialog.m_deadlineDueEdit->setDateTime(activity.dueDate());
@@ -126,6 +132,7 @@ void ActivityEditFormVisitor::visit(const DeadlineActivity& activity)
 
 void ActivityEditFormVisitor::visit(const ReminderActivity& activity)
 {
+    // Reminder-specific fields are copied without exposing them through the base class.
     if (m_operation == Operation::Populate) {
         m_dialog.m_typeStack->setCurrentIndex(2);
         m_dialog.m_reminderDateEdit->setDateTime(activity.reminderDateTime());
@@ -156,6 +163,7 @@ void ActivityEditFormVisitor::visit(const ReminderActivity& activity)
 
 void ActivityEditFormVisitor::visit(const ChecklistActivity& activity)
 {
+    // A checklist remains valid only when at least one child item is present.
     if (m_operation == Operation::Populate) {
         m_dialog.m_typeStack->setCurrentIndex(3);
         m_dialog.m_checklistDueEdit->setDateTime(activity.dueDate());

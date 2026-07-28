@@ -10,6 +10,8 @@
 
 The project was developed for the Object-Oriented Programming course at the University of Padua. Its architecture focuses on non-trivial polymorphism, model/GUI separation, in-window workflows, local JSON persistence, reversible commands, and automated regression testing.
 
+> **Source release:** prebuilt application bundles are not currently provided. Qt 6 and a C++17 development environment are required to build the application. Follow [INSTALL.md](INSTALL.md) from a clean machine.
+
 ## Highlights
 
 - four concrete activity types with dedicated fields and visual presentation;
@@ -22,6 +24,43 @@ The project was developed for the Object-Oriented Programming course at the Univ
 - contextual mouse/trackpad actions and keyboard navigation;
 - resizable workspace splitters, consistent SVG icons, compact controls, and type-specific cards;
 - automated core, architecture, persistence, and GUI interaction tests.
+
+## Install and run
+
+The complete dependency, `PATH`, build, and first-run instructions are in **[INSTALL.md](INSTALL.md)**.
+
+After Qt and the compiler are available, the portable quick start is:
+
+```bash
+git clone https://github.com/hipietro/qt_agenda.git
+cd qt_agenda
+
+rm -rf build
+mkdir build
+cd build
+
+QMAKE_BIN="$(command -v qmake6 || command -v qmake)"
+"$QMAKE_BIN" ../agenda_qt.pro
+make -j2
+```
+
+Run the generated application:
+
+```bash
+# macOS
+open agenda_qt.app
+
+# Linux
+./agenda_qt
+```
+
+The installation guide also covers:
+
+- Xcode Command Line Tools and the Qt Online Installer on macOS;
+- persistent Qt `PATH` configuration for zsh;
+- Ubuntu/Debian packages and `qmake6`;
+- the supplied course Docker image;
+- verification commands and common setup errors.
 
 ## Activity types
 
@@ -42,7 +81,7 @@ The main window is divided by resizable Qt splitters:
 - the right workspace contains the selected activity details and monthly overview;
 - creation and editing replace the right workspace through a `QStackedWidget`, without opening separate activity windows.
 
-The list and detail widgets are built through Visitor double dispatch. This allows each concrete type to render different widgets, icons, badges, sections, and progress information rather than relying on one generic text summary.
+The list and detail widgets are built through Visitor double dispatch. Each concrete type therefore renders different widgets, icons, badges, sections, and progress information rather than relying on one generic text summary.
 
 ### Mouse and trackpad
 
@@ -84,17 +123,7 @@ Qt exposes the platform-native equivalent where applicable.
 
 Direct matches are weighted by field and match quality. When no direct result exists, the engine uses Levenshtein distance on complete fields and words to tolerate small typing errors.
 
-Filters can be combined by:
-
-- activity type;
-- priority;
-- category;
-- completion state;
-- recurrence state;
-- overdue state;
-- selected calendar date.
-
-Sorting supports date, title, priority, completion, creation time, and update time in both relevant directions, with deterministic tie-breaking.
+Filters can be combined by activity type, priority, category, completion state, recurrence state, overdue state, and selected calendar date. Sorting supports date, title, priority, completion, creation time, and update time with deterministic tie-breaking.
 
 ## Object-oriented architecture
 
@@ -109,22 +138,13 @@ Sorting supports date, title, priority, completion, creation time, and update ti
 | `ActivityEditFormVisitor` | populates, validates, and rebuilds the correct edit form |
 | `ActivityJsonSerializationVisitor` | writes common and type-specific JSON fields |
 
-These operations perform substantially different procedures for every subtype. Existing activities are not rendered, edited, or serialized through a `kind()` switch.
+Existing activities are not rendered, edited, or serialized through a `kind()` switch.
 
 ### Command hierarchy
 
-`CommandHistory` depends only on the abstract `Command` interface. The concrete commands implement different forward and inverse operations:
-
-- `AddActivityCommand`;
-- `RemoveActivityCommand`;
-- `UpdateActivityCommand`;
-- `ToggleCompletionCommand`.
+`CommandHistory` depends only on the abstract `Command` interface. `AddActivityCommand`, `RemoveActivityCommand`, `UpdateActivityCommand`, and `ToggleCompletionCommand` implement different forward and inverse operations.
 
 Undo and redo transfer command ownership between two `std::unique_ptr` stacks and expose descriptive labels in the GUI.
-
-### Controlled type information
-
-`ActivityKind` is retained only where a classifier is appropriate: user selection, filtering, and the initial construction boundary. Existing-object behavior uses virtual dispatch and Visitors.
 
 ### Persistence factory
 
@@ -132,14 +152,7 @@ Deserialization uses `ActivityFactoryRegistry`, which maps persisted type identi
 
 ## Persistence
 
-Agenda data is stored in local JSON files selected through `QFileDialog`. The document contains:
-
-- common and type-specific activity fields;
-- categories and their colors;
-- templates;
-- recurrence rules;
-- checklist items and completion state;
-- identifiers and timestamps with millisecond precision.
+Agenda data is stored in local JSON files selected through `QFileDialog`. The document contains common and type-specific activity fields, categories, templates, recurrence rules, checklist items, completion state, identifiers, and millisecond-precision timestamps.
 
 Loading validates the JSON structure and required values before replacing the current managers. I/O errors are shown to the user without silently corrupting the current agenda.
 
@@ -151,6 +164,9 @@ A ready-to-use example containing all activity types is available at [`examples/
 agenda_qt/
 ├── agenda_qt.pro
 ├── Dockerfile
+├── INSTALL.md
+├── LICENSE
+├── CHANGELOG.md
 ├── examples/
 │   └── sample_agenda.json
 ├── resources/
@@ -172,88 +188,27 @@ agenda_qt/
     └── uml/
 ```
 
-## Build locally
-
-Requirements:
-
-- a C++17 compiler;
-- Qt 6 with Widgets support;
-- qmake;
-- make.
-
-From the repository root:
-
-```bash
-rm -rf build
-mkdir build
-cd build
-qmake6 ../agenda_qt.pro
-make -j2
-```
-
-Run the generated executable according to the current platform.
-
-### macOS with the project Qt installation
-
-```bash
-rm -rf build
-mkdir build
-cd build
-~/Qt/6.10.1/macos/bin/qmake ../agenda_qt.pro
-make -j"$(sysctl -n hw.ncpu)"
-open agenda_qt.app
-```
-
-## Build in the course Docker environment
-
-Run these commands from the repository root, where the supplied `Dockerfile` is located.
-
-Build the image:
-
-```bash
-docker build --no-cache -t unipd-oop/qt-env:2025 .
-```
-
-Start a clean container with the repository mounted at `/workspace`:
-
-```bash
-docker run --rm -it \
-  -v "$PWD":/workspace \
-  -w /workspace \
-  unipd-oop/qt-env:2025 bash
-```
-
-Inside the container:
-
-```bash
-rm -rf build_docker
-mkdir build_docker
-cd build_docker
-qmake6 ../agenda_qt.pro
-make -j"$(nproc)"
-```
-
-The Docker validation is intended as a clean compilation check. Run the graphical application and complete the manual interaction test in a supported desktop environment such as macOS or Linux with display access.
-
 ## Automated tests
 
 The project has separate core and native GUI Qt Test targets. Full commands are documented in [`tests/README.md`](tests/README.md).
 
-The suite covers:
-
-- Visitor double dispatch for all four types;
-- type-specific list and detail rendering;
-- JSON serialization, reconstruction, malformed input, and full-agenda round trips;
-- filtering, deterministic sorting, normalized search, and fuzzy search;
-- command execution and repeated undo/redo sequences;
-- creation and editing inside `MainWindow`;
-- double-click editing and contextual mouse interactions.
+The suite covers Visitor double dispatch, type-specific rendering, JSON reconstruction and round trips, malformed input, filtering, deterministic sorting, normalized and fuzzy search, command history, internal creation/editing pages, and mouse interactions.
 
 GitHub Actions runs the architecture audit, configures and builds both test targets, executes core and GUI tests on Ubuntu under Xvfb, and uploads the results.
 
+## Release status
+
+`v1.0.0` is intended to be the first stable **source release**. It does not include a signed `.dmg`, `.app`, AppImage, or Windows installer. See [CHANGELOG.md](CHANGELOG.md) for the release summary.
+
 ## Documentation
 
+- [Installation and first run](INSTALL.md)
+- [Release history](CHANGELOG.md)
 - [Mandatory requirements audit](docs/requirements_audit.md)
 - [Final report source and validation](docs/report/README.md)
 - [UML and architecture diagrams](docs/uml/)
 - [Test commands and coverage](tests/README.md)
+
+## License
+
+The repository is published for portfolio and academic review. See [LICENSE](LICENSE) for the permitted uses and restrictions against redistribution or submission as academic work.

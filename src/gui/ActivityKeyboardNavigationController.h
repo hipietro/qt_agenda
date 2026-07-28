@@ -1,3 +1,5 @@
+// Adds discoverable, platform-native keyboard workflows without coupling them to MainWindow.
+
 #ifndef ACTIVITYKEYBOARDNAVIGATIONCONTROLLER_H
 #define ACTIVITYKEYBOARDNAVIGATIONCONTROLLER_H
 
@@ -15,6 +17,11 @@ class QPushButton;
 class QStackedWidget;
 class QWidget;
 
+/*
+ * Installs an application-level event filter after MainWindow is shown.
+ * It maps list and form keystrokes to existing GUI actions instead of
+ * duplicating model mutations inside the controller.
+ */
 class ActivityKeyboardNavigationController final : public QObject
 {
 public:

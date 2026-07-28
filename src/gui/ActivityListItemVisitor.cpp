@@ -1,3 +1,5 @@
+// Builds compact, type-specific list cards and tooltips through Visitor dispatch.
+
 #include "ActivityListItemVisitor.h"
 
 #include "model/Activity.h"
@@ -26,6 +28,7 @@ ActivityListItemVisitor::ActivityListItemVisitor(QWidget* parent)
 
 QWidget* ActivityListItemVisitor::takeWidget()
 {
+    // Transfer the generated card exactly once to the list presentation controller.
     QWidget* result = m_widget;
     m_widget = nullptr;
     return result;
@@ -38,6 +41,7 @@ QString ActivityListItemVisitor::toolTip() const
 
 void ActivityListItemVisitor::visit(const EventActivity& activity)
 {
+    // Event cards prioritize the visible interval and location.
     QVBoxLayout* contentLayout = nullptr;
     QWidget* card = createCard(activity,
                                "EVENT",
@@ -75,6 +79,7 @@ void ActivityListItemVisitor::visit(const EventActivity& activity)
 
 void ActivityListItemVisitor::visit(const DeadlineActivity& activity)
 {
+    // Deadline cards calculate a live overdue/completed state for the badge.
     QVBoxLayout* contentLayout = nullptr;
     QWidget* card = createCard(activity,
                                "DEADLINE",
@@ -126,6 +131,7 @@ void ActivityListItemVisitor::visit(const DeadlineActivity& activity)
 
 void ActivityListItemVisitor::visit(const ReminderActivity& activity)
 {
+    // Reminder cards expose the notification time and advance policy.
     QVBoxLayout* contentLayout = nullptr;
     QWidget* card = createCard(activity,
                                "REMINDER",
@@ -164,6 +170,7 @@ void ActivityListItemVisitor::visit(const ReminderActivity& activity)
 
 void ActivityListItemVisitor::visit(const ChecklistActivity& activity)
 {
+    // Checklist cards visualize child-item completion instead of a generic summary.
     QVBoxLayout* contentLayout = nullptr;
     QWidget* card = createCard(activity,
                                "CHECKLIST",
@@ -215,6 +222,7 @@ void ActivityListItemVisitor::visit(const ChecklistActivity& activity)
                     .arg(progress));
 }
 
+// Shared card chrome is centralized; each overload adds its own semantic content.
 QWidget* ActivityListItemVisitor::createCard(const Activity& activity,
                                               const QString& typeText,
                                               const QString& accentColor,
@@ -288,6 +296,7 @@ QWidget* ActivityListItemVisitor::createCard(const Activity& activity,
     return card;
 }
 
+// Category, priority, recurrence, and completion form the common footer contract.
 void ActivityListItemVisitor::addCommonFooter(const Activity& activity,
                                                QVBoxLayout* contentLayout)
 {
