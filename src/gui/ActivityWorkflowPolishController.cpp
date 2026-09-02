@@ -1,3 +1,5 @@
+// Coordinates cross-cutting form presentation while pages keep ownership of their workflows.
+
 #include "ActivityWorkflowPolishController.h"
 
 #include <QAction>
@@ -23,6 +25,7 @@
 
 namespace {
 
+// Disabled navigation buttons still identify which in-window workflow is currently active.
 const QString activeWorkflowStyle = QStringLiteral(
     "QPushButton {"
     " background-color: #3F51B5;"
@@ -54,6 +57,7 @@ const QString inactiveWorkflowStyle = QStringLiteral(
 
 void installActivityWorkflowPolishController()
 {
+    // Parenting to qApp ties the global event filter lifetime to the application.
     auto* controller = new ActivityWorkflowPolishController(qApp);
     qApp->installEventFilter(controller);
 }
@@ -69,6 +73,7 @@ ActivityWorkflowPolishController::ActivityWorkflowPolishController(QObject* pare
 
 bool ActivityWorkflowPolishController::eventFilter(QObject* watched, QEvent* event)
 {
+    // Attach lazily to MainWindow so the controller remains independent of its constructor.
     if (!m_window && event->type() == QEvent::Show) {
         if (auto* window = qobject_cast<QMainWindow*>(watched)) {
             configureWindow(window);
@@ -85,6 +90,7 @@ bool ActivityWorkflowPolishController::eventFilter(QObject* watched, QEvent* eve
         return QObject::eventFilter(watched, event);
     }
 
+    // Popups and embedded editors own their keystrokes and must receive them first.
     if (QApplication::activePopupWidget()) {
         return QObject::eventFilter(watched, event);
     }
@@ -122,6 +128,7 @@ bool ActivityWorkflowPolishController::eventFilter(QObject* watched, QEvent* eve
             return QObject::eventFilter(watched, event);
         }
 
+        // Ctrl/Cmd+Enter explicitly submits even when a multi-line editor has focus.
         const bool forcedSubmit =
             keyEvent->modifiers().testFlag(Qt::ControlModifier) ||
             keyEvent->modifiers().testFlag(Qt::MetaModifier);
@@ -161,6 +168,11 @@ void ActivityWorkflowPolishController::configureWindow(QMainWindow* window)
         return;
     }
 
+    /*
+     * Discover the existing pages, controls and undo/redo actions instead of
+     * duplicating their behavior. Actions stay the source of truth for command
+     * availability and descriptive text.
+     */
     m_window = window;
     m_workspaceStack = window->findChild<QStackedWidget*>(QStringLiteral("workspaceStack"));
     m_creationPage = window->findChild<QWidget*>(QStringLiteral("activityCreationPage"));
@@ -201,6 +213,7 @@ void ActivityWorkflowPolishController::configureWindow(QMainWindow* window)
 
         QWidget* currentPage = m_workspaceStack ? m_workspaceStack->currentWidget() : nullptr;
         if (currentPage == m_creationPage || currentPage == m_editingPage) {
+            // Recalculate after the stacked widget has completed the page switch.
             QTimer::singleShot(0, this, [this, currentPage]() {
                 compactTypeSpecificSection(currentPage);
             });
@@ -244,6 +257,7 @@ void ActivityWorkflowPolishController::configureFormPage(QWidget* page, bool edi
     }
 
     if (editingPage) {
+        // Return in the inline checklist field belongs to item creation, not form submission.
         const QList<QLineEdit*> lineEdits = page->findChildren<QLineEdit*>();
         for (QLineEdit* lineEdit : lineEdits) {
             if (lineEdit->placeholderText() == QStringLiteral("New checklist item")) {
@@ -263,6 +277,7 @@ void ActivityWorkflowPolishController::configureFormPage(QWidget* page, bool edi
                     addItemButton, &QPushButton::click, Qt::UniqueConnection);
         }
     } else {
+        // The creation page exposes no direct handle, so identify its type selector structurally.
         const QList<QComboBox*> comboBoxes = page->findChildren<QComboBox*>();
         for (QComboBox* comboBox : comboBoxes) {
             if (comboBox->count() == 4 &&
@@ -294,6 +309,11 @@ void ActivityWorkflowPolishController::compactTypeSpecificSection(QWidget* page)
         return;
     }
 
+    /*
+     * Release the previous constraint before asking Qt for the newly selected
+     * type page's size hint; otherwise the old maximum can feed back into the
+     * measurement and leave excess space or clip the form.
+     */
     group->setMaximumHeight(QWIDGETSIZE_MAX);
     group->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
     stack->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -347,6 +367,7 @@ void ActivityWorkflowPolishController::updateWorkflowButtonState()
 
 void ActivityWorkflowPolishController::updateUndoRedoPresentation()
 {
+    // Mirror command descriptions from QAction so buttons and shortcuts never drift apart.
     const auto synchronizeButton = [](QPushButton* button,
                                       QAction* action,
                                       const QString& fallbackText) {

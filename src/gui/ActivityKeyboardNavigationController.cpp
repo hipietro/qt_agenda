@@ -1,3 +1,5 @@
+// Routes application-wide keyboard input through the controls already owned by MainWindow.
+
 #include "ActivityKeyboardNavigationController.h"
 
 #include <QAction>
@@ -19,6 +21,7 @@ namespace {
 
 void installActivityKeyboardNavigationController()
 {
+    // qApp owns the controller and therefore keeps the global event filter alive until shutdown.
     auto* controller = new ActivityKeyboardNavigationController(qApp);
     qApp->installEventFilter(controller);
 }
@@ -41,6 +44,7 @@ ActivityKeyboardNavigationController::ActivityKeyboardNavigationController(QObje
 
 bool ActivityKeyboardNavigationController::eventFilter(QObject* watched, QEvent* event)
 {
+    // MainWindow is discovered on first show so this optional controller needs no construction hook.
     if (!m_window && event->type() == QEvent::Show) {
         if (auto* window = qobject_cast<QMainWindow*>(watched)) {
             configureWindow(window);
@@ -54,6 +58,7 @@ bool ActivityKeyboardNavigationController::eventFilter(QObject* watched, QEvent*
     if ((watched == m_addButton || watched == m_editButton ||
          watched == m_toggleButton || watched == m_deleteButton) &&
         event->type() == QEvent::EnabledChange) {
+        // Let the originating control finish its state transition before mirroring it to actions.
         QTimer::singleShot(0, this, [this]() {
             updateActionState();
         });
@@ -74,6 +79,11 @@ void ActivityKeyboardNavigationController::configureWindow(QMainWindow* window)
         return;
     }
 
+    /*
+     * Resolve the existing presentation surface by stable object names and labels.
+     * Keyboard commands can then delegate to MainWindow's buttons, preserving the
+     * same validation, confirmations, command dispatch and dirty-state handling.
+     */
     m_window = window;
     m_workspaceStack = window->findChild<QStackedWidget*>(QStringLiteral("workspaceStack"));
     m_detailPage = window->findChild<QWidget*>(QStringLiteral("activityDetailPage"));
@@ -136,6 +146,7 @@ void ActivityKeyboardNavigationController::configureWindow(QMainWindow* window)
                     (previousPage == m_creationPage || previousPage == m_editingPage);
 
                 if (returnedFromWorkflow) {
+                    // Page signals complete before focus is restored to the refreshed agenda.
                     QTimer::singleShot(0, this, [this]() {
                         restoreAgendaFocus();
                     });
@@ -144,6 +155,7 @@ void ActivityKeyboardNavigationController::configureWindow(QMainWindow* window)
 
     connect(m_activityList, &QListWidget::currentRowChanged,
             this, [this](int) {
+                // MainWindow updates button availability from the same selection signal.
                 QTimer::singleShot(0, this, [this]() {
                     updateActionState();
                 });
@@ -183,6 +195,7 @@ void ActivityKeyboardNavigationController::createActivityMenu()
     m_focusSearchAction->setShortcutContext(Qt::WindowShortcut);
     m_focusSearchAction->setStatusTip(QStringLiteral("Focus and select the search field"));
 
+    // Actions remain presentation adapters: the buttons retain ownership of each workflow.
     connect(m_newActivityAction, &QAction::triggered, this, [this]() {
         clickIfEnabled(m_addButton);
     });
@@ -293,6 +306,11 @@ void ActivityKeyboardNavigationController::restoreAgendaFocus()
 
 bool ActivityKeyboardNavigationController::handleActivityListKeyPress(QKeyEvent* event)
 {
+    /*
+     * Only unmodified, non-repeated list keystrokes are consumed. This avoids
+     * stealing text-editing shortcuts or dispatching destructive actions more
+     * than once while a key is held down.
+     */
     if (!event || !m_window || !m_window->isActiveWindow() ||
         !detailPageActive() || event->isAutoRepeat()) {
         return false;
